@@ -1,11 +1,9 @@
-// src/components/MunicipioSelector.jsx
-import React from "react";
 import "./MunicipioSelector.css";
 
 const MunicipioSelector = ({ municipios, onSelect }) => (
   <div className="municipio-card">
     <h2>Selecciona un municipio</h2>
-    <div className="select-group">
+    <div className="select-group-municipio">
       {municipios.length > 0 ? (
         <select onChange={onSelect} defaultValue="">
           <option value="" disabled>

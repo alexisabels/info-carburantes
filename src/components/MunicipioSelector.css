@@ -18,7 +18,7 @@
   color: #2c3e50;
 }
 
-.select-group {
+.select-group-municipio {
   display: flex;
   justify-content: center;
   margin: 20px 0;
@@ -33,8 +33,9 @@ select {
   font-size: 1em;
   cursor: pointer;
   transition: border-color 0.3s;
+  max-width: 100%;
+  box-sizing: border-box;
 }
-
 select:hover {
   border-color: #1a252f;
 }
