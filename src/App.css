@@ -173,23 +173,7 @@ header h2 {
 }
 
 .enhanced-table tbody tr:hover {
-  background-color: #e0e0e0; /* Efecto de hover */
-}
-
-.enhanced-table tr.abierta td.estado {
-  background-color: #d4edda;
-  color: #155724;
-  border-radius: 5px;
-  padding: 5px;
-  text-align: center;
-}
-
-.enhanced-table tr.cerrada td.estado {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-radius: 5px;
-  padding: 5px;
-  text-align: center;
+  background-color: #e0e0e0;
 }
 
 .enhanced-table th.gasoleo-a {

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchProvincias } from "./api";
 import ProvinciaSelector from "./components/ProvinciaSelector";
 import MunicipioSelector from "./components/MunicipioSelector";
-import { getStatusAndTimetable } from "./utils";
 import { handleSelectProvincia, handleSelectMunicipio } from "./handlers";
 import "./App.css";
 
@@ -13,7 +12,7 @@ function App() {
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState(null);
   const [listadoPrecios, setListadoPrecios] = useState([]);
   const [loadingPrecios, setLoadingPrecios] = useState(false);
-
+  const [fechaActualizacion, setFechaActualizacion] = useState(null);
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -35,7 +34,6 @@ function App() {
             <p>Encuentra las mejores ofertas de combustible cerca de ti</p>
           </div>
         </header>
-
         <main>
           <ProvinciaSelector
             provincias={provincias}
@@ -59,7 +57,8 @@ function App() {
                   municipios,
                   setMunicipioSeleccionado,
                   setListadoPrecios,
-                  setLoadingPrecios
+                  setLoadingPrecios,
+                  setFechaActualizacion
                 )
               }
             />
@@ -73,6 +72,9 @@ function App() {
           {provinciaSeleccionada && municipioSeleccionado && (
             <>
               <h1>Gasolineras en {municipioSeleccionado.Municipio}:</h1>
+              {fechaActualizacion ? (
+                <p>Datos actualizados a {fechaActualizacion}</p>
+              ) : null}
               <div className="gasolineras">
                 {loadingPrecios ? (
                   <p>Cargando datos...</p>
@@ -88,17 +90,13 @@ function App() {
                           <th className="gasolina-95">Gasolina 95</th>
                           <th className="gasolina-98">Gasolina 98</th>
                           <th>Marca</th>
-                          <th>Estado</th>
+                          <th>Horario</th>
                         </tr>
                       </thead>
                       <tbody>
                         {listadoPrecios.map((gasolinera) => {
-                          const { status, formattedTimetable } =
-                            getStatusAndTimetable(gasolinera.Horario);
-                          const estadoClass =
-                            status === "Abierta" ? "abierta" : "cerrada";
                           return (
-                            <tr key={gasolinera.IDEESS} className={estadoClass}>
+                            <tr key={gasolinera.IDEESS}>
                               <td>{gasolinera.Dirección}</td>
                               <td>{gasolinera.Localidad}</td>
                               <td className="digit gasoleo-a">
@@ -122,16 +120,7 @@ function App() {
                                 </strong>
                               </td>
                               <td>{gasolinera["Rótulo"]}</td>
-                              <td className="estado">
-                                <div className="tooltip">
-                                  <strong className="uppercase">
-                                    {status}
-                                  </strong>
-                                  <span className="tooltiptext">
-                                    {formattedTimetable}
-                                  </span>
-                                </div>
-                              </td>
+                              <td>{gasolinera.Horario}</td>
                             </tr>
                           );
                         })}

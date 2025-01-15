@@ -29,7 +29,8 @@ export const handleSelectMunicipio = async (
   municipios,
   setMunicipioSeleccionado,
   setListadoPrecios,
-  setLoadingPrecios
+  setLoadingPrecios,
+  setFechaActualizacion
 ) => {
   const municipioNombre = e.target.value;
   const municipio = municipios.find((m) => m.Municipio === municipioNombre);
@@ -41,6 +42,7 @@ export const handleSelectMunicipio = async (
       setLoadingPrecios(true);
       const data = await fetchMunicipioCompleto(municipio.IDMunicipio);
       setListadoPrecios(data.ListaEESSPrecio || []);
+      setFechaActualizacion(data.Fecha);
     } catch (error) {
       console.error("Error al cargar los datos:", error);
     } finally {
