@@ -101,22 +101,22 @@ function App() {
                             <tr key={gasolinera.IDEESS} className={estadoClass}>
                               <td>{gasolinera.Dirección}</td>
                               <td>{gasolinera.Localidad}</td>
-                              <td className="gasoleo-a">
+                              <td className="digit gasoleo-a">
                                 <strong>
                                   {gasolinera["Precio Gasoleo A"] || "-"}
                                 </strong>
                               </td>
-                              <td className="gasoleo-premium">
+                              <td className="digit gasoleo-premium">
                                 <strong>
                                   {gasolinera["Precio Gasoleo Premium"] || "-"}
                                 </strong>
                               </td>
-                              <td className="gasolina-95">
+                              <td className="digit gasolina-95">
                                 <strong>
                                   {gasolinera["Precio Gasolina 95 E5"] || "-"}
                                 </strong>
                               </td>
-                              <td className="gasolina-98">
+                              <td className="digit gasolina-98">
                                 <strong>
                                   {gasolinera["Precio Gasolina 98 E5"] || "-"}
                                 </strong>
@@ -139,7 +139,10 @@ function App() {
                     </table>
                   </div>
                 ) : (
-                  <p>No se encontraron resultados</p>
+                  <p>
+                    No se encontraron gasolineras en{" "}
+                    {municipioSeleccionado.Municipio}
+                  </p>
                 )}
               </div>
             </>
