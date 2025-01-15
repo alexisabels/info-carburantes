@@ -49,6 +49,7 @@ function App() {
     if (provincia) {
       setProvinciaSeleccionada(provincia);
       setMunicipioSeleccionado(null);
+      setProductoSeleccionado(null);
       setListadoPrecios([]);
       try {
         const municipiosData = await fetchMunicipios(provincia.IDPovincia);
@@ -65,6 +66,9 @@ function App() {
 
     if (municipio) {
       setMunicipioSeleccionado(municipio);
+      if (productoSeleccionado) {
+        handleFetchPrecios(productoSeleccionado.IDProducto);
+      }
     }
   };
 
@@ -92,6 +96,7 @@ function App() {
       console.error("Error al cargar los precios:", error);
     } finally {
       setLoadingPrecios(false);
+      console.log(listadoPrecios);
     }
   };
 
@@ -130,18 +135,21 @@ function App() {
               </h1>
             </div>
           )}
-          {provinciaSeleccionada && !productoSeleccionado && (
-            <div className="info-message">
-              <h1>
-                Selecciona un producto para ver los precios en{" "}
-                {provinciaSeleccionada.Provincia}
-              </h1>
-            </div>
-          )}
+          {provinciaSeleccionada &&
+            !productoSeleccionado &&
+            municipioSeleccionado && (
+              <div className="info-message-bottom">
+                <h1>
+                  Selecciona un producto para ver los precios en{" "}
+                  {municipioSeleccionado.Municipio}
+                </h1>
+              </div>
+            )}
           {provinciaSeleccionada && productoSeleccionado && (
             <>
               <h1>
-                Gasolineras precios para {provinciaSeleccionada.Provincia}
+                Precios de {productoSeleccionado.NombreProducto} en{" "}
+                {municipioSeleccionado.Municipio}:
               </h1>
               <div className="gasolineras">
                 {loadingPrecios ? (
@@ -155,7 +163,10 @@ function App() {
                     />
                   ))
                 ) : (
-                  <p>No se encontraron gasolineras.</p>
+                  <p>
+                    No se encontraron gasolineras que vendan{" "}
+                    {productoSeleccionado.NombreProducto}
+                  </p>
                 )}
               </div>
             </>
@@ -165,7 +176,8 @@ function App() {
 
       <footer className="footer">
         <p>
-          Desarrollado por <a href="https://alexisabel.com">alexisabels</a>
+          Desarrollado por{" "}
+          <a href="https://github.com/alexisabel">alexisabel</a>
         </p>
       </footer>
     </div>

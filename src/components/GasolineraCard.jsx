@@ -8,7 +8,11 @@ const GasolineraCard = ({ gasolinera, productoNombre }) => (
         <strong>Precio {productoNombre}:</strong> {gasolinera.PrecioProducto} €
       </p>
       <p>
-        <strong>Dirección:</strong> {gasolinera.Dirección}
+        <strong>Dirección:</strong> {gasolinera.Dirección},{" "}
+        {gasolinera.Localidad}
+      </p>
+      <p>
+        <strong>Horario:</strong> {gasolinera.Horario}
       </p>
     </div>
   </div>

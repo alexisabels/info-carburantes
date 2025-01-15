@@ -14,6 +14,7 @@ body {
   margin: 0 auto;
   padding: 20px;
   flex: 1;
+  padding-bottom: 80px;
 }
 
 .header {
@@ -57,7 +58,7 @@ header h2 {
 .gasolineras {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0px;
 }
 .footer {
   text-align: center;
@@ -67,6 +68,7 @@ header h2 {
   border-top: 2px solid #1a252f;
   width: 100%;
   position: fixed;
+
   bottom: 0;
 }
 
@@ -94,6 +96,20 @@ header h2 {
 }
 
 .info-message h1 {
+  font-size: 1.5em;
+  color: #2c3e50;
+}
+
+.info-message-bottom {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  margin-bottom: 100px;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+.info-message-bottom h1 {
   font-size: 1.5em;
   color: #2c3e50;
 }
