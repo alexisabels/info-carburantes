@@ -1,20 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  fetchProvincias,
-  fetchProductos,
-  fetchMunicipios,
-  fetchPrecios,
-} from "./api";
+import { fetchProvincias } from "./api";
 import ProvinciaSelector from "./components/ProvinciaSelector";
-import ProductoSelector from "./components/ProductoSelector";
 import MunicipioSelector from "./components/MunicipioSelector";
-import GasolineraCard from "./components/GasolineraCard";
+import { getStatusAndTimetable } from "./utils";
+import { handleSelectProvincia, handleSelectMunicipio } from "./handlers";
 import "./App.css";
-
-import "./components/GasolineraCard.css";
-import "./components/ProductoSelector.css";
-import "./components/MunicipioSelector.css";
-import "./components/ProvinciaSelector.css";
 
 function App() {
   const [provinciaSeleccionada, setProvinciaSeleccionada] = useState(null);
@@ -22,83 +12,19 @@ function App() {
   const [municipios, setMunicipios] = useState([]);
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState(null);
   const [listadoPrecios, setListadoPrecios] = useState([]);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [listaProductos, setListaProductos] = useState([]);
   const [loadingPrecios, setLoadingPrecios] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [provinciasData, productosData] = await Promise.all([
-          fetchProvincias(),
-          fetchProductos(),
-        ]);
+        const provinciasData = await fetchProvincias();
         setProvincias(provinciasData);
-        setListaProductos(productosData);
       } catch (error) {
         console.error("Error al cargar los datos:", error);
       }
     };
     loadData();
   }, []);
-
-  const handleSelectProvincia = async (e) => {
-    const provinciaNombre = e.target.value;
-    const provincia = provincias.find((p) => p.Provincia === provinciaNombre);
-
-    if (provincia) {
-      setProvinciaSeleccionada(provincia);
-      setMunicipioSeleccionado(null);
-      setProductoSeleccionado(null);
-      setListadoPrecios([]);
-      try {
-        const municipiosData = await fetchMunicipios(provincia.IDPovincia);
-        setMunicipios(municipiosData);
-      } catch (error) {
-        console.error("Error al cargar los municipios:", error);
-      }
-    }
-  };
-
-  const handleSelectMunicipio = (e) => {
-    const municipioNombre = e.target.value;
-    const municipio = municipios.find((m) => m.Municipio === municipioNombre);
-
-    if (municipio) {
-      setMunicipioSeleccionado(municipio);
-      if (productoSeleccionado) {
-        handleFetchPrecios(productoSeleccionado.IDProducto);
-      }
-    }
-  };
-
-  const handleSelectProducto = (e) => {
-    const productoNombre = e.target.value;
-    const producto = listaProductos.find(
-      (p) => p.NombreProducto === productoNombre
-    );
-
-    if (producto) {
-      setProductoSeleccionado(producto);
-      if (provinciaSeleccionada && municipioSeleccionado) {
-        handleFetchPrecios(producto.IDProducto);
-      }
-    }
-  };
-
-  const handleFetchPrecios = async (idProducto) => {
-    setLoadingPrecios(true);
-    try {
-      const idMunicipio = municipioSeleccionado.IDMunicipio;
-      const data = await fetchPrecios(idMunicipio, idProducto);
-      setListadoPrecios(data.ListaEESSPrecio || []);
-    } catch (error) {
-      console.error("Error al cargar los precios:", error);
-    } finally {
-      setLoadingPrecios(false);
-      console.log(listadoPrecios);
-    }
-  };
 
   return (
     <div className="app">
@@ -113,60 +39,107 @@ function App() {
         <main>
           <ProvinciaSelector
             provincias={provincias}
-            onSelect={handleSelectProvincia}
+            onSelect={(e) =>
+              handleSelectProvincia(
+                e,
+                provincias,
+                setProvinciaSeleccionada,
+                setMunicipioSeleccionado,
+                setListadoPrecios,
+                setMunicipios
+              )
+            }
           />
           {provinciaSeleccionada && (
             <MunicipioSelector
               municipios={municipios}
-              onSelect={handleSelectMunicipio}
+              onSelect={(e) =>
+                handleSelectMunicipio(
+                  e,
+                  municipios,
+                  setMunicipioSeleccionado,
+                  setListadoPrecios,
+                  setLoadingPrecios
+                )
+              }
             />
           )}
-          {provinciaSeleccionada && municipioSeleccionado && (
-            <ProductoSelector
-              productos={listaProductos}
-              onSelect={handleSelectProducto}
-            />
-          )}
-          {!provinciaSeleccionada && !productoSeleccionado && (
+          {!provinciaSeleccionada && (
             <div className="info-message">
-              <h1>
-                Empieza seleccionando una provincia y un producto para ver los
-                precios
-              </h1>
+              <h1>Empieza seleccionando una ubicación para ver los precios</h1>
             </div>
           )}
-          {provinciaSeleccionada &&
-            !productoSeleccionado &&
-            municipioSeleccionado && (
-              <div className="info-message-bottom">
-                <h1>
-                  Selecciona un producto para ver los precios en{" "}
-                  {municipioSeleccionado.Municipio}
-                </h1>
-              </div>
-            )}
-          {provinciaSeleccionada && productoSeleccionado && (
+
+          {provinciaSeleccionada && municipioSeleccionado && (
             <>
-              <h1>
-                Precios de {productoSeleccionado.NombreProducto} en{" "}
-                {municipioSeleccionado.Municipio}:
-              </h1>
+              <h1>Gasolineras en {municipioSeleccionado.Municipio}:</h1>
               <div className="gasolineras">
                 {loadingPrecios ? (
-                  <p>Cargando precios...</p>
+                  <p>Cargando datos...</p>
                 ) : listadoPrecios.length > 0 ? (
-                  listadoPrecios.map((gasolinera) => (
-                    <GasolineraCard
-                      key={gasolinera.IDGasolinera}
-                      gasolinera={gasolinera}
-                      productoNombre={productoSeleccionado.NombreProducto}
-                    />
-                  ))
+                  <div className="enhanced-table-wrapper">
+                    <table className="gasolinera-table enhanced-table">
+                      <thead>
+                        <tr>
+                          <th>Dirección</th>
+                          <th>Localidad</th>
+                          <th className="gasoleo-a">Gasóleo A</th>
+                          <th className="gasoleo-premium">Gasóleo Premium</th>
+                          <th className="gasolina-95">Gasolina 95</th>
+                          <th className="gasolina-98">Gasolina 98</th>
+                          <th>Marca</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {listadoPrecios.map((gasolinera) => {
+                          const { status, formattedTimetable } =
+                            getStatusAndTimetable(gasolinera.Horario);
+                          const estadoClass =
+                            status === "Abierta" ? "abierta" : "cerrada";
+                          return (
+                            <tr key={gasolinera.IDEESS} className={estadoClass}>
+                              <td>{gasolinera.Dirección}</td>
+                              <td>{gasolinera.Localidad}</td>
+                              <td className="gasoleo-a">
+                                <strong>
+                                  {gasolinera["Precio Gasoleo A"] || "-"}
+                                </strong>
+                              </td>
+                              <td className="gasoleo-premium">
+                                <strong>
+                                  {gasolinera["Precio Gasoleo Premium"] || "-"}
+                                </strong>
+                              </td>
+                              <td className="gasolina-95">
+                                <strong>
+                                  {gasolinera["Precio Gasolina 95 E5"] || "-"}
+                                </strong>
+                              </td>
+                              <td className="gasolina-98">
+                                <strong>
+                                  {gasolinera["Precio Gasolina 98 E5"] || "-"}
+                                </strong>
+                              </td>
+                              <td>{gasolinera["Rótulo"]}</td>
+                              <td className="estado">
+                                <div className="tooltip">
+                                  <strong className="uppercase">
+                                    {status}
+                                  </strong>
+                                  <span className="tooltiptext">
+                                    {formattedTimetable}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
-                  <p>
-                    No se encontraron gasolineras que vendan{" "}
-                    {productoSeleccionado.NombreProducto}
-                  </p>
+                  <p>No se encontraron resultados</p>
                 )}
               </div>
             </>
