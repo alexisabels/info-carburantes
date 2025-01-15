@@ -149,11 +149,12 @@ header h2 {
   border: 2px solid #2c3e50;
   border-radius: 10px;
   overflow: hidden;
+  background-color: #f0f0f0;
+
   width: 100%;
   margin: 20px 0;
   margin-top: 0;
   border-collapse: collapse;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .enhanced-table thead {
@@ -169,7 +170,7 @@ header h2 {
 }
 
 .enhanced-table tbody tr:nth-child(even) {
-  background-color: #f8f8f8;
+  background-color: #dee0e2; /* Tono más azulado */
 }
 
 .enhanced-table tbody tr:hover {

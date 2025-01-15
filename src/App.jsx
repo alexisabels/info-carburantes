@@ -24,7 +24,15 @@ function App() {
     };
     loadData();
   }, []);
-
+  const formatHorario = (horario) => {
+    return horario
+      .split(";")
+      .map((line, index) => (
+        <div key={index}>
+          {line.trim() + (index < horario.split(";").length - 1 ? "," : "")}
+        </div>
+      ));
+  };
   return (
     <div className="app">
       <div className="container">
@@ -120,7 +128,7 @@ function App() {
                                 </strong>
                               </td>
                               <td>{gasolinera["Rótulo"]}</td>
-                              <td>{gasolinera.Horario}</td>
+                              <td>{formatHorario(gasolinera.Horario)}</td>
                             </tr>
                           );
                         })}
