@@ -1,8 +1,7 @@
-# React + Vite
+# Gasolineras - España
+Aplicación web que permite buscar gasolineras en España por municipio y consultar sus precios de combustible y horarios de apertura.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Características principales
+Encuentra gasolineras en cualquier municipio de España.
+Muestra precios actualizados y horarios de apertura de cada gasolinera.
+Todos los datos son reales y los precios se actualizan cada media hora aprox.
