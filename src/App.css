@@ -5,12 +5,16 @@ body {
   margin: 0;
   padding: 0;
   color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  flex: 1;
 }
 
 .header {
@@ -55,4 +59,37 @@ header h2 {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.footer {
+  text-align: center;
+  padding: 2px 0;
+  background-color: #2c3e50;
+  color: white;
+  border-top: 2px solid #1a252f;
+  width: 100%;
+
+  position: absolute;
+  bottom: 0;
+}
+
+.footer a {
+  color: #b4c7fd;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+.info-message {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-message h1 {
+  font-size: 1.5em;
+  color: #2c3e50;
 }

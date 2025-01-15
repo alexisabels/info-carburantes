@@ -96,64 +96,78 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <header className="header">
-        <div className="header-content">
-          <h1>Ahorra en carburante</h1>
-          <p>Encuentra las mejores ofertas de combustible cerca de ti</p>
-        </div>
-      </header>
+    <div className="app">
+      <div className="container">
+        <header className="header">
+          <div className="header-content">
+            <h1>Comparador de Precios de Combustible</h1>
+            <p>Encuentra las mejores ofertas de combustible cerca de ti</p>
+          </div>
+        </header>
 
-      <main>
-        <ProvinciaSelector
-          provincias={provincias}
-          onSelect={handleSelectProvincia}
-        />
-        {provinciaSeleccionada && (
-          <MunicipioSelector
-            municipios={municipios}
-            onSelect={handleSelectMunicipio}
+        <main>
+          <ProvinciaSelector
+            provincias={provincias}
+            onSelect={handleSelectProvincia}
           />
-        )}
-        {provinciaSeleccionada && municipioSeleccionado && (
-          <ProductoSelector
-            productos={listaProductos}
-            onSelect={handleSelectProducto}
-          />
-        )}
-        {!provinciaSeleccionada && !productoSeleccionado && (
-          <h1>
-            Empieza seleccionando una provincia y un producto para ver los
-            precios
-          </h1>
-        )}
-        {provinciaSeleccionada && !productoSeleccionado && (
-          <h1>
-            Selecciona un producto para ver los precios en{" "}
-            {provinciaSeleccionada.Provincia}
-          </h1>
-        )}
-        {provinciaSeleccionada && productoSeleccionado && (
-          <>
-            <h1>Gasolineras precios para {provinciaSeleccionada.Provincia}</h1>
-            <div className="gasolineras">
-              {loadingPrecios ? (
-                <p>Cargando precios...</p>
-              ) : listadoPrecios.length > 0 ? (
-                listadoPrecios.map((gasolinera) => (
-                  <GasolineraCard
-                    key={gasolinera.IDGasolinera}
-                    gasolinera={gasolinera}
-                    productoNombre={productoSeleccionado.NombreProducto}
-                  />
-                ))
-              ) : (
-                <p>No se encontraron gasolineras.</p>
-              )}
+          {provinciaSeleccionada && (
+            <MunicipioSelector
+              municipios={municipios}
+              onSelect={handleSelectMunicipio}
+            />
+          )}
+          {provinciaSeleccionada && municipioSeleccionado && (
+            <ProductoSelector
+              productos={listaProductos}
+              onSelect={handleSelectProducto}
+            />
+          )}
+          {!provinciaSeleccionada && !productoSeleccionado && (
+            <div className="info-message">
+              <h1>
+                Empieza seleccionando una provincia y un producto para ver los
+                precios
+              </h1>
             </div>
-          </>
-        )}
-      </main>
+          )}
+          {provinciaSeleccionada && !productoSeleccionado && (
+            <div className="info-message">
+              <h1>
+                Selecciona un producto para ver los precios en{" "}
+                {provinciaSeleccionada.Provincia}
+              </h1>
+            </div>
+          )}
+          {provinciaSeleccionada && productoSeleccionado && (
+            <>
+              <h1>
+                Gasolineras precios para {provinciaSeleccionada.Provincia}
+              </h1>
+              <div className="gasolineras">
+                {loadingPrecios ? (
+                  <p>Cargando precios...</p>
+                ) : listadoPrecios.length > 0 ? (
+                  listadoPrecios.map((gasolinera) => (
+                    <GasolineraCard
+                      key={gasolinera.IDGasolinera}
+                      gasolinera={gasolinera}
+                      productoNombre={productoSeleccionado.NombreProducto}
+                    />
+                  ))
+                ) : (
+                  <p>No se encontraron gasolineras.</p>
+                )}
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+
+      <footer className="footer">
+        <p>
+          Desarrollado por <a href="https://alexisabel.com">alexisabels</a>
+        </p>
+      </footer>
     </div>
   );
 }
