@@ -3,23 +3,9 @@ const BASE_URL =
 
 const ENDPOINTS = {
   PROVINCIAS: `${BASE_URL}/Listados/Provincias/`,
-  PRODUCTOS: `${BASE_URL}/Listados/ProductosPetroliferos/`,
   MUNICIPIOS: (idProvincia) =>
     `${BASE_URL}/Listados/MunicipiosPorProvincia/${idProvincia}`,
-  PRECIOS: (idMunicipio, idProducto) =>
-    `${BASE_URL}/EstacionesTerrestres/FiltroMunicipioProducto/${idMunicipio}/${idProducto}`,
 };
-
-const PRODUCTOS_PERMITIDOS = [
-  "Gasolina 95 E5",
-  "Gasolina 95 E10",
-  "Gasolina 95 E5 Premium",
-  "Gasolina 98 E5",
-  "Gasóleo A habitual",
-  "Gasóleo Premium",
-  "Gases licuados del petróleo",
-  "Gas natural comprimido",
-];
 
 export const fetchProvincias = async () => {
   const response = await fetch(ENDPOINTS.PROVINCIAS);
@@ -27,17 +13,6 @@ export const fetchProvincias = async () => {
     throw new Error("Error al obtener las provincias");
   }
   return response.json();
-};
-
-export const fetchProductos = async () => {
-  const response = await fetch(ENDPOINTS.PRODUCTOS);
-  if (!response.ok) {
-    throw new Error("Error al obtener los productos");
-  }
-  const productos = await response.json();
-  return productos.filter((producto) =>
-    PRODUCTOS_PERMITIDOS.includes(producto.NombreProducto)
-  );
 };
 
 export const fetchMunicipios = async (idProvincia) => {
@@ -48,10 +23,12 @@ export const fetchMunicipios = async (idProvincia) => {
   return response.json();
 };
 
-export const fetchPrecios = async (idMunicipio, idProducto) => {
-  const response = await fetch(ENDPOINTS.PRECIOS(idMunicipio, idProducto));
+export const fetchMunicipioCompleto = async (idMunicipio) => {
+  const response = await fetch(
+    `${BASE_URL}/EstacionesTerrestres/FiltroMunicipio/${idMunicipio}`
+  );
   if (!response.ok) {
-    throw new Error("Error al obtener los precios");
+    throw new Error("Error al obtener los datos del municipio");
   }
   return response.json();
 };
