@@ -13,6 +13,7 @@ function App() {
   const [listadoPrecios, setListadoPrecios] = useState([]);
   const [loadingPrecios, setLoadingPrecios] = useState(false);
   const [fechaActualizacion, setFechaActualizacion] = useState(null);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -24,6 +25,7 @@ function App() {
     };
     loadData();
   }, []);
+
   const formatHorario = (horario) => {
     return horario
       .split(";")
@@ -33,6 +35,29 @@ function App() {
         </div>
       ));
   };
+
+  const getLowestPrices = (listadoPrecios) => {
+    const lowestPrices = {
+      "Precio Gasoleo A": Infinity,
+      "Precio Gasoleo Premium": Infinity,
+      "Precio Gasolina 95 E5": Infinity,
+      "Precio Gasolina 98 E5": Infinity,
+    };
+
+    listadoPrecios.forEach((gasolinera) => {
+      Object.keys(lowestPrices).forEach((key) => {
+        const price = parseFloat(gasolinera[key].replace(",", "."));
+        if (!isNaN(price) && price < lowestPrices[key]) {
+          lowestPrices[key] = price;
+        }
+      });
+    });
+
+    return lowestPrices;
+  };
+
+  const lowestPrices = getLowestPrices(listadoPrecios);
+
   return (
     <div className="app">
       <div className="container">
@@ -103,26 +128,54 @@ function App() {
                       </thead>
                       <tbody>
                         {listadoPrecios.map((gasolinera) => {
+                          const isLowestPrice = (key) =>
+                            parseFloat(gasolinera[key].replace(",", ".")) ===
+                            lowestPrices[key];
+
                           return (
                             <tr key={gasolinera.IDEESS}>
                               <td>{gasolinera.Dirección}</td>
                               <td>{gasolinera.Localidad}</td>
-                              <td className="digit gasoleo-a">
+                              <td
+                                className={`digit gasoleo-a ${
+                                  isLowestPrice("Precio Gasoleo A")
+                                    ? "lowest-price"
+                                    : ""
+                                }`}
+                              >
                                 <strong>
                                   {gasolinera["Precio Gasoleo A"] || "-"}
                                 </strong>
                               </td>
-                              <td className="digit gasoleo-premium">
+                              <td
+                                className={`digit gasoleo-premium ${
+                                  isLowestPrice("Precio Gasoleo Premium")
+                                    ? "lowest-price"
+                                    : ""
+                                }`}
+                              >
                                 <strong>
                                   {gasolinera["Precio Gasoleo Premium"] || "-"}
                                 </strong>
                               </td>
-                              <td className="digit gasolina-95">
+                              <td
+                                className={`digit gasolina-95 ${
+                                  isLowestPrice("Precio Gasolina 95 E5")
+                                    ? "lowest-price"
+                                    : ""
+                                }`}
+                              >
                                 <strong>
                                   {gasolinera["Precio Gasolina 95 E5"] || "-"}
                                 </strong>
                               </td>
-                              <td className="digit gasolina-98">
+                              <td
+                                className={`digit gasolina-98 ${
+                                  isLowestPrice("Precio Gasolina 98 E5")
+                                    ? "lowest-price"
+                                    : ""
+                                }`}
+                              >
                                 <strong>
                                   {gasolinera["Precio Gasolina 98 E5"] || "-"}
                                 </strong>

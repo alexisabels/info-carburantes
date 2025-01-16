@@ -139,7 +139,11 @@ header h2 {
   opacity: 0;
   transition: opacity 0.3s;
 }
-
+.lowest-price {
+  background-color: #d4edda;
+  color: #155724;
+  font-weight: bold;
+}
 .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
