@@ -1,7 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"); */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
 
 body {
-  font-family: "Roboto", sans-serif;
+  /* font-family: "Roboto", sans-serif; */
+  font-family: "Geist", serif;
+
   background: linear-gradient(to right, #f0f2f5, #d9e2ec);
   margin: 0;
   padding: 0;
@@ -217,7 +220,7 @@ body {
 }
 
 .enhanced-table {
-  border: 2px solid #2c3e50;
+  border: 0px solid #2c3e50;
   border-radius: 7px;
   overflow: hidden;
   background-color: #f0f0f0;
@@ -236,7 +239,7 @@ body {
 .enhanced-table th,
 .enhanced-table td {
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #b6b6b6;
   text-align: left;
 }
 
@@ -279,10 +282,7 @@ body {
 .enhanced-table-wrapper {
   overflow-x: auto;
 }
-@font-face {
-  font-family: "Digital7";
-  src: url("./assets/digital-7.ttf") format("truetype");
-}
+
 .digit {
   font-size: 1.2em;
 

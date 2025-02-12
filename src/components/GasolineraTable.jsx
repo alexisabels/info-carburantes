@@ -1,6 +1,4 @@
 /* eslint-disable react/prop-types */
-
-import { formatHorario } from "../utils/formatHorario.jsx";
 import { getLowestPrices } from "../utils/getLowestPrices";
 import "../App.css";
 
@@ -23,19 +21,24 @@ const GasolineraTable = ({
 
   return (
     <>
-      {fechaActualizacion && <p>Datos actualizados a {fechaActualizacion}</p>}
+      {fechaActualizacion && (
+        <div className="update-info">
+          <span className="update-icon">🕒</span>
+          <span>Datos actualizados a: {fechaActualizacion}</span>
+          <p></p>
+        </div>
+      )}{" "}
       <div className="gasolineras">
         <div className="enhanced-table-wrapper">
           <table className="gasolinera-table enhanced-table">
             <thead>
               <tr>
-                <th>Dirección</th>
-                <th className="gasoleo-a">Gasóleo A</th>
-                <th className="gasoleo-premium">Gasóleo Premium</th>
-                <th className="gasolina-95">Gasolina 95</th>
-                <th className="gasolina-98">Gasolina 98</th>
-                <th>Marca</th>
-                <th>Horario</th>
+                <th>MARCA</th>
+                <th>DIRECCIÓN</th>
+                <th className="gasoleo-a">DIÉSEL</th>
+                <th className="gasoleo-premium">DIÉSEL PREMIUM</th>
+                <th className="gasolina-95">GASOLINA 95</th>
+                <th className="gasolina-98">GASOLINA 98</th>
                 <th></th>
               </tr>
             </thead>
@@ -46,9 +49,9 @@ const GasolineraTable = ({
                   lowestPrices[key];
                 return (
                   <tr key={gasolinera.IDEESS}>
-                    <td>
-                      {gasolinera.Dirección}, {gasolinera.Localidad}
-                    </td>
+                    <td>{gasolinera["Rótulo"]}</td>
+
+                    <td>{gasolinera.Dirección}</td>
                     <td
                       className={`digit gasoleo-a ${
                         isLowestPrice("Precio Gasoleo A") ? "lowest-price" : ""
@@ -89,14 +92,19 @@ const GasolineraTable = ({
                         {gasolinera["Precio Gasolina 98 E5"] || "-"}
                       </strong>
                     </td>
-                    <td>{gasolinera["Rótulo"]}</td>
-                    <td>{formatHorario(gasolinera.Horario)}</td>
                     <td>
-                      <a
-                        href={`/gasolinera/${municipioSeleccionado.IDMunicipio}/${gasolinera.IDEESS}`}
+                      {" "}
+                      <button
+                        onClick={() =>
+                          window.open(
+                            `/gasolinera/${municipioSeleccionado.IDMunicipio}/${gasolinera.IDEESS}`,
+                            "_blank"
+                          )
+                        }
+                        className="button-10"
                       >
                         Detalles
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 );

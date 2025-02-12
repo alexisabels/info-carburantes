@@ -76,8 +76,7 @@ function Gasolinera() {
           marginBottom: "20px",
         }}
       >
-        <p style={{ margin: 0, flexShrink: 0 }}> {gasolinera.Dirección}</p>
-
+        <p className="address">{gasolinera.Dirección}</p>
         <div
           style={{
             display: "flex",
