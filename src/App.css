@@ -37,7 +37,7 @@ body {
 }
 
 .logo img {
-  height: 50px; /* Ajusta el tamaño del logo según necesites */
+  height: 50px;
 }
 
 .navbar .nav-links {
@@ -45,7 +45,7 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 20px; /* Espacio entre los enlaces */
+  gap: 20px;
 }
 
 .navbar .nav-links li a {
@@ -104,12 +104,12 @@ body {
   }
 
   .logo img {
-    height: 50px; /* reduce el tamaño para que no desacolque */
+    height: 50px;
     margin: 0 auto 5px auto;
   }
 
   .logo-a {
-    font-size: 1.6em; /* reduce ligeramente el tamaño del texto */
+    font-size: 1.6em;
   }
 
   .navbar {
@@ -218,7 +218,7 @@ body {
 
 .enhanced-table {
   border: 2px solid #2c3e50;
-  border-radius: 10px;
+  border-radius: 7px;
   overflow: hidden;
   background-color: #f0f0f0;
 
@@ -241,7 +241,7 @@ body {
 }
 
 .enhanced-table tbody tr:nth-child(even) {
-  background-color: #dee0e2; /* Tono más azulado */
+  background-color: #dee0e2;
 }
 
 .enhanced-table tbody tr:hover {

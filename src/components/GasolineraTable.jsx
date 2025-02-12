@@ -30,7 +30,6 @@ const GasolineraTable = ({
             <thead>
               <tr>
                 <th>Dirección</th>
-                <th>Localidad</th>
                 <th className="gasoleo-a">Gasóleo A</th>
                 <th className="gasoleo-premium">Gasóleo Premium</th>
                 <th className="gasolina-95">Gasolina 95</th>
@@ -47,8 +46,9 @@ const GasolineraTable = ({
                   lowestPrices[key];
                 return (
                   <tr key={gasolinera.IDEESS}>
-                    <td>{gasolinera.Dirección}</td>
-                    <td>{gasolinera.Localidad}</td>
+                    <td>
+                      {gasolinera.Dirección}, {gasolinera.Localidad}
+                    </td>
                     <td
                       className={`digit gasoleo-a ${
                         isLowestPrice("Precio Gasoleo A") ? "lowest-price" : ""
