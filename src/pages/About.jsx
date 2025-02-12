@@ -11,9 +11,12 @@ const About = () => (
       encontrar la mejor opción en tu zona.
     </p>
     <p>
-      La información se obtiene de la API oficial del Ministerio, garantizando
-      datos actualizados y precisos. El objetivo es ayudar a los usuarios a
-      tomar decisiones informadas sobre dónde repostar.
+      La información se obtiene de la{" "}
+      <a href="https://datos.gob.es/es/catalogo/e05068001-precio-de-carburantes-en-las-gasolineras-espanolas">
+        API REST oficial del Ministerio
+      </a>
+      , que proporciona información sobre los precios de los carburantes en
+      todas las estaciones de servicio de España.
     </p>
     <p>
       ¡Disfruta de la experiencia y encuentra siempre el mejor precio para tu
@@ -23,7 +26,7 @@ const About = () => (
       <p>
         Desarrollado por{" "}
         <a href="https://alexisabel.com/" target="_blank" rel="noreferrer">
-          alexisabels
+          alexisabel
         </a>
       </p>
     </footer>
