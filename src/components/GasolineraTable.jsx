@@ -11,7 +11,6 @@ const GasolineraTable = ({
   fechaActualizacion,
 }) => {
   const lowestPrices = getLowestPrices(listadoPrecios);
-
   if (loadingPrecios) {
     return <p>Cargando datos...</p>;
   }
@@ -38,6 +37,7 @@ const GasolineraTable = ({
                 <th className="gasolina-98">Gasolina 98</th>
                 <th>Marca</th>
                 <th>Horario</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +91,13 @@ const GasolineraTable = ({
                     </td>
                     <td>{gasolinera["Rótulo"]}</td>
                     <td>{formatHorario(gasolinera.Horario)}</td>
-                    <td></td>
+                    <td>
+                      <a
+                        href={`/gasolinera/${municipioSeleccionado.IDMunicipio}/${gasolinera.IDEESS}`}
+                      >
+                        Detalles
+                      </a>
+                    </td>
                   </tr>
                 );
               })}

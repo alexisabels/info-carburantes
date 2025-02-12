@@ -6,7 +6,7 @@ const Header = () => (
       <div className="logo">
         <img src="/gas.svg" alt="Logo" />
         <Link to="/" className="logo-a">
-          Comparador de Combustible{" "}
+          Comparador de Combustible
         </Link>
       </div>
       <nav className="navbar">

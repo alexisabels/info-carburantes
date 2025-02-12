@@ -32,3 +32,15 @@ export const fetchMunicipioCompleto = async (idMunicipio) => {
   }
   return response.json();
 };
+
+export const fetchGasolineraPorID = async (idMunicipio, ideess) => {
+  const municipioData = await fetchMunicipioCompleto(idMunicipio);
+  const { ListaEESSPrecio = [] } = municipioData;
+  const gasolinera = ListaEESSPrecio.find(
+    (estacion) => String(estacion.IDEESS) === String(ideess)
+  );
+  if (!gasolinera) {
+    throw new Error(`No se encontró la gasolinera con IDEESS ${ideess}`);
+  }
+  return gasolinera;
+};
