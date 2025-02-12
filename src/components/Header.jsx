@@ -4,9 +4,9 @@ const Header = () => (
   <header className="header">
     <div className="header-content">
       <div className="logo">
-        <img src="/public/gas.svg" alt="Logo" />
+        <img src="/gas.svg" alt="Logo" />
         <Link to="/" className="logo-a">
-          Comparador de Precios de Combustible
+          Comparador de Combustible{" "}
         </Link>
       </div>
       <nav className="navbar">
@@ -15,10 +15,10 @@ const Header = () => (
             <Link to="/">Inicio</Link>
           </li>
           <li>
-            <Link to="/about">Acerca de</Link>
+            <Link to="/favoritos">Favoritas</Link>
           </li>
           <li>
-            <Link to="/favoritos">Favoritas</Link>
+            <Link to="/about">Acerca de</Link>
           </li>
         </ul>
       </nav>

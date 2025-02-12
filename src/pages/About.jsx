@@ -2,7 +2,7 @@
 
 import "./About.css";
 
-const About = ({ provincias, onSelect }) => (
+const About = () => (
   <div className="provincia-card">
     <h2>Sobre esta Web</h2>
     <p>
