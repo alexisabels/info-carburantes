@@ -70,12 +70,12 @@ function Gasolinera() {
         }}
       >
         <p style={{ margin: 0, flexShrink: 0 }}> {gasolinera.Dirección}</p>
+
         <div
           style={{
             display: "flex",
             gap: "10px",
             flexShrink: 0,
-            marginTop: "10px",
           }}
         >
           <button
@@ -94,6 +94,7 @@ function Gasolinera() {
           </button>
         </div>
       </div>
+      <h4>Horario: {formatHorario(gasolinera.Horario)}</h4>
 
       <>
         <div className="gasolineras">
@@ -101,12 +102,10 @@ function Gasolinera() {
             <table className="gasolinera-table enhanced-table">
               <thead>
                 <tr>
-                  <th className="gasoleo-a">Gasóleo A</th>
-                  <th className="gasoleo-premium">Gasóleo Premium</th>
+                  <th className="gasoleo-a">Diésel</th>
+                  <th className="gasoleo-premium">Diésel Premium</th>
                   <th className="gasolina-95">Gasolina 95</th>
                   <th className="gasolina-98">Gasolina 98</th>
-                  <th>Marca</th>
-                  <th>Horario</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,25 +113,27 @@ function Gasolinera() {
                   <td className={`digit gasoleo-a `}>
                     <strong>
                       {gasolinera["Precio Gasoleo A"] || "Sin precios"}
+                      <small> €/ litro</small>
                     </strong>
                   </td>
                   <td className={`digit gasoleo-premium `}>
                     <strong>
-                      {gasolinera["Precio Gasoleo Premium"] || "Sin precios"}
+                      {gasolinera["Precio Gasoleo Premium"] || "Sin precios"}{" "}
+                      <small> €/ litro</small>
                     </strong>
                   </td>
                   <td className={`digit gasolina-95 `}>
                     <strong>
                       {gasolinera["Precio Gasolina 95 E5"] || "Sin precios"}
+                      <small> €/ litro</small>
                     </strong>
                   </td>
                   <td className={`digit gasolina-98 `}>
                     <strong>
                       {gasolinera["Precio Gasolina 98 E5"] || "Sin precios"}
+                      <small> €/ litro</small>
                     </strong>
                   </td>
-                  <td>{gasolinera["Rótulo"]}</td>
-                  <td>{formatHorario(gasolinera.Horario)}</td>
                 </tr>
               </tbody>
             </table>
