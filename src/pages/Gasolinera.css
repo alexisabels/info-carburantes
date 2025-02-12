@@ -49,3 +49,10 @@
     0px 0px 0px 3.5px rgba(46, 125, 50, 0.5);
   outline: 0;
 }
+.address {
+  max-width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
