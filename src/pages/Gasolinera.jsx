@@ -110,28 +110,52 @@ function Gasolinera() {
               </thead>
               <tbody>
                 <tr key={gasolinera.IDEESS}>
-                  <td className={`digit gasoleo-a `}>
+                  <td className="digit gasoleo-a">
                     <strong>
-                      {gasolinera["Precio Gasoleo A"] || "Sin precios"}
-                      <small> €/ litro</small>
+                      {gasolinera["Precio Gasoleo A"] ? (
+                        <>
+                          {gasolinera["Precio Gasoleo A"]}
+                          <small> €/ litro</small>
+                        </>
+                      ) : (
+                        "Sin precios"
+                      )}
                     </strong>
                   </td>
-                  <td className={`digit gasoleo-premium `}>
+                  <td className="digit gasoleo-premium">
                     <strong>
-                      {gasolinera["Precio Gasoleo Premium"] || "Sin precios"}{" "}
-                      <small> €/ litro</small>
+                      {gasolinera["Precio Gasoleo Premium"] ? (
+                        <>
+                          {gasolinera["Precio Gasoleo Premium"]}
+                          <small> €/ litro</small>
+                        </>
+                      ) : (
+                        "Sin precios"
+                      )}
                     </strong>
                   </td>
-                  <td className={`digit gasolina-95 `}>
+                  <td className="digit gasolina-95">
                     <strong>
-                      {gasolinera["Precio Gasolina 95 E5"] || "Sin precios"}
-                      <small> €/ litro</small>
+                      {gasolinera["Precio Gasolina 95 E5"] ? (
+                        <>
+                          {gasolinera["Precio Gasolina 95 E5"]}
+                          <small> €/ litro</small>
+                        </>
+                      ) : (
+                        "Sin precios"
+                      )}
                     </strong>
                   </td>
-                  <td className={`digit gasolina-98 `}>
+                  <td className="digit gasolina-98">
                     <strong>
-                      {gasolinera["Precio Gasolina 98 E5"] || "Sin precios"}
-                      <small> €/ litro</small>
+                      {gasolinera["Precio Gasolina 98 E5"] ? (
+                        <>
+                          {gasolinera["Precio Gasolina 98 E5"]}
+                          <small> €/ litro</small>
+                        </>
+                      ) : (
+                        "Sin precios"
+                      )}
                     </strong>
                   </td>
                 </tr>
