@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { fetchGasolineraPorID } from "../api";
 import { formatHorario } from "../utils/formatHorario";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import L from "leaflet";
 import "./Gasolinera.css";
 function Gasolinera() {
   const { idMunicipio, idGasolinera } = useParams();
@@ -32,7 +33,13 @@ function Gasolinera() {
   if (error) {
     return <p>{error}</p>;
   }
-
+  const customIcon = L.icon({
+    iconUrl: "/9772.svg",
+    iconRetinaUrl: "/9772.svg",
+    iconSize: [50, 50],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
   if (!gasolinera) {
     return <p>No se encontró la gasolinera</p>;
   }
@@ -174,7 +181,7 @@ function Gasolinera() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={[lat, lng]}>
+        <Marker position={[lat, lng]} icon={customIcon}>
           <Popup>{gasolinera["Rótulo"]}</Popup>
         </Marker>
       </MapContainer>
