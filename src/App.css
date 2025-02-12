@@ -101,9 +101,9 @@ body {
 
   .logo {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 15px;
     align-items: center;
-    margin-bottom: 10px;
   }
 
   .logo img {

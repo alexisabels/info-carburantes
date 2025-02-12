@@ -1,0 +1,15 @@
+.name-small {
+  display: none;
+}
+.name-large {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .name-large {
+    display: none;
+  }
+  .name-small {
+    display: inline;
+  }
+}
