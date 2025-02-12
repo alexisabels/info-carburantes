@@ -12,9 +12,6 @@ const Header = () => (
       </div>
       <nav className="navbar">
         <ul className="nav-links">
-          <li>
-            <Link to="/">Inicio</Link>
-          </li>
           {/* <li>
             <Link to="/favoritos">Favoritas</Link>
           </li> */}
