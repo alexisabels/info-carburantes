@@ -55,6 +55,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: break-word;
+  font-size: 1em;
+  color: #505a66;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #2c3e50;
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .gasolinera-detail {
@@ -64,6 +74,8 @@
 .gasolinera-header {
   margin-top: 20px;
   margin-bottom: 20px;
+  border: 1px solid #b6b6b6;
+  border-radius: 12px;
 }
 
 .gasolinera-title {
@@ -84,25 +96,13 @@
   color: #2c3e50;
 }
 
-.address {
-  font-size: 1em;
-  color: #505a66;
-  padding: 10px 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #2c3e50;
-  margin: 15px 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .horario-container {
   background-color: #fff;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin: 15px 0;
+  border: 1px solid #b6b6b6;
 }
 
 .horario-title {
@@ -126,4 +126,25 @@
 
 .horario-content div:last-child {
   border-bottom: none;
+}
+.gasolinera-title h2 {
+  margin: 0;
+  font-size: 1.5em;
+  color: #2c3e50;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+
+  padding: 5px 0;
+}
+
+.gasolinera-title {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }

@@ -10,13 +10,13 @@ const Header = () => (
           <span className="name-small">Carburantes</span>
         </Link>
       </div>
-      <nav className="navbar">
+      {/*  <nav className="navbar">
         <ul className="nav-links">
-          {/* <li>
+          <li>
             <Link to="/favoritos">Favoritas</Link>
-          </li> */}
+          </li> 
         </ul>
-      </nav>
+      </nav>*/}
     </div>
   </header>
 );

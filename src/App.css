@@ -80,6 +80,7 @@ body {
   background-color: #ffffff;
   border-radius: 15px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #b6b6b6;
 }
 
 .info-message h1 {
@@ -138,12 +139,22 @@ body {
 
 .enhanced-table tbody tr:hover {
   background-color: #e0e0e0;
+  cursor: pointer;
 }
 
 .enhanced-table th.gasoleo-a {
   color: #ffeb3b;
 }
-
+.enhanced-table-main td:first-child {
+  text-align: center;
+  padding: 5px;
+}
+.enhanced-table-main td:last-child {
+  text-align: center;
+}
+.enhanced-table-main td:first-child div {
+  justify-content: center;
+}
 .enhanced-table th.gasoleo-premium {
   color: #ffc107;
 }
@@ -177,4 +188,21 @@ body {
 
   text-align: center;
   width: 100px;
+}
+.update-info {
+  max-width: 50%;
+  white-space: wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  font-size: 0.9em;
+  color: #505a66;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #2c3e50;
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

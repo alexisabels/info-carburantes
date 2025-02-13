@@ -19,19 +19,24 @@ const GasolineraTable = ({
       <p>No se encontraron gasolineras en {municipioSeleccionado.Municipio}</p>
     );
   }
-
+  const handleGasolineraClick = (gasolinera) => {
+    window.open(
+      `/gasolinera/${municipioSeleccionado.IDMunicipio}/${gasolinera.IDEESS}`,
+      "_blank"
+    );
+  };
   return (
     <>
       {fechaActualizacion && (
         <div className="update-info">
-          <span className="update-icon">🕒</span>
+          <span>🕒</span>
           <span>Datos actualizados a: {fechaActualizacion}</span>
           <p></p>
         </div>
       )}{" "}
       <div className="gasolineras">
         <div className="enhanced-table-wrapper">
-          <table className="gasolinera-table enhanced-table">
+          <table className=" enhanced-table enhanced-table-main">
             <thead>
               <tr>
                 <th>MARCA</th>
@@ -49,13 +54,19 @@ const GasolineraTable = ({
                   parseFloat(gasolinera[key].replace(",", ".")) ===
                   lowestPrices[key];
                 return (
-                  <tr key={gasolinera.IDEESS}>
+                  <tr
+                    key={gasolinera.IDEESS}
+                    onClick={() => handleGasolineraClick(gasolinera)}
+                  >
+                    {" "}
                     <td>
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
+                          justifyContent: "center",
                           gap: "8px",
+                          width: "100%",
                         }}
                       >
                         <img
@@ -63,7 +74,7 @@ const GasolineraTable = ({
                             gasolinera["Rótulo"]
                           )}`}
                           alt={gasolinera["Rótulo"]}
-                          style={{ width: "45px", height: "45px" }}
+                          style={{ width: "55px", height: "55px" }}
                         />
                       </div>
                     </td>

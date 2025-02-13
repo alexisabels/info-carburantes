@@ -72,7 +72,7 @@ function Gasolinera() {
             className="gasolinera-logo"
           />
           <h2>
-            {gasolinera["Rótulo"]} en {gasolinera.Localidad}
+            Precios en {gasolinera["Rótulo"]} {gasolinera.Municipio}
           </h2>
         </div>
       </div>
@@ -86,7 +86,7 @@ function Gasolinera() {
         }}
       >
         <div className="address">
-          <span>📍</span> {gasolinera.Dirección}, {gasolinera.Municipio}
+          <span>📍</span> {gasolinera.Dirección}, {gasolinera.Localidad}
         </div>{" "}
         <div
           style={{
@@ -122,7 +122,7 @@ function Gasolinera() {
       <>
         <div className="gasolineras">
           <div className="enhanced-table-wrapper">
-            <table className="gasolinera-table enhanced-table">
+            <table className="enhanced-table">
               <thead>
                 <tr>
                   <th className="gasoleo-a">Diésel</th>
@@ -141,7 +141,7 @@ function Gasolinera() {
                           <small> €/ litro</small>
                         </>
                       ) : (
-                        "Sin precios"
+                        "No disp."
                       )}
                     </strong>
                   </td>
@@ -153,7 +153,7 @@ function Gasolinera() {
                           <small> €/ litro</small>
                         </>
                       ) : (
-                        "Sin precios"
+                        "No disp."
                       )}
                     </strong>
                   </td>
@@ -165,7 +165,7 @@ function Gasolinera() {
                           <small> €/ litro</small>
                         </>
                       ) : (
-                        "Sin precios"
+                        "No disp."
                       )}
                     </strong>
                   </td>
@@ -177,7 +177,7 @@ function Gasolinera() {
                           <small> €/ litro</small>
                         </>
                       ) : (
-                        "Sin precios"
+                        "No disp."
                       )}
                     </strong>
                   </td>
