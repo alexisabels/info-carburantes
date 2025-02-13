@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 
 import MainContent from "../components/MainContent";
-import About from "../pages/About";
-import Gasolinera from "../pages/Gasolinera";
+import About from "../pages/About/About";
+import Gasolinera from "../pages/Gasolinera/Gasolinera";
 
 const AppRoutes = () => {
   return (

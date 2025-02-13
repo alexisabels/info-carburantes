@@ -6,6 +6,7 @@
   transition: transform 0.3s, box-shadow 0.3s;
   margin: 20px 0;
   padding: 20px;
+  border: 1px solid #b6b6b6;
 }
 
 .municipio-card:hover {

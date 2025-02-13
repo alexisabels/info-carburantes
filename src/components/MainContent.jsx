@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchProvincias } from "../api";
-import ProvinciaSelector from "./ProvinciaSelector";
-import MunicipioSelector from "./MunicipioSelector";
-import { handleSelectProvincia, handleSelectMunicipio } from "../handlers";
+import { fetchProvincias } from "../utils/api";
+import ProvinciaSelector from "./Selectors/ProvinciaSelector";
+import MunicipioSelector from "./Selectors/MunicipioSelector";
+import {
+  handleSelectProvincia,
+  handleSelectMunicipio,
+} from "../utils/handlers";
 import GasolineraTable from "./GasolineraTable";
 import "../App.css";
 

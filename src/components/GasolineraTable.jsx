@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { getLowestPrices } from "../utils/getLowestPrices";
 import "../App.css";
+import { getLogoForGasolinera } from "../utils/logoUtils";
 
 const GasolineraTable = ({
   listadoPrecios,
@@ -49,8 +50,23 @@ const GasolineraTable = ({
                   lowestPrices[key];
                 return (
                   <tr key={gasolinera.IDEESS}>
-                    <td>{gasolinera["Rótulo"]}</td>
-
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <img
+                          src={`/station-icons/${getLogoForGasolinera(
+                            gasolinera["Rótulo"]
+                          )}`}
+                          alt={gasolinera["Rótulo"]}
+                          style={{ width: "45px", height: "45px" }}
+                        />
+                      </div>
+                    </td>
                     <td>{gasolinera.Dirección}</td>
                     <td
                       className={`digit gasoleo-a ${

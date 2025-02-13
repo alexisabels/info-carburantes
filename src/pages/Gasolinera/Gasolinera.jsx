@@ -1,10 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { fetchGasolineraPorID } from "../api";
-import { formatHorario } from "../utils/formatHorario";
+import { fetchGasolineraPorID } from "../../utils/api";
+import { formatHorario } from "../../utils/formatHorario";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "./Gasolinera.css";
+import { getLogoForGasolinera } from "../../utils/logoUtils";
 function Gasolinera() {
   const { idMunicipio, idGasolinera } = useParams();
   const [gasolinera, setGasolinera] = useState(null);
@@ -63,10 +64,18 @@ function Gasolinera() {
   };
   return (
     <div>
-      <h2>
-        Gasolinera {gasolinera["Rótulo"]} en {gasolinera.Localidad}
-      </h2>
-
+      <div className="gasolinera-header">
+        <div className="gasolinera-title">
+          <img
+            src={`/station-icons/${getLogoForGasolinera(gasolinera["Rótulo"])}`}
+            alt={gasolinera["Rótulo"]}
+            className="gasolinera-logo"
+          />
+          <h2>
+            {gasolinera["Rótulo"]} en {gasolinera.Localidad}
+          </h2>
+        </div>
+      </div>
       <div
         style={{
           display: "flex",
@@ -76,7 +85,9 @@ function Gasolinera() {
           marginBottom: "20px",
         }}
       >
-        <p className="address">{gasolinera.Dirección}</p>
+        <div className="address">
+          <span>📍</span> {gasolinera.Dirección}, {gasolinera.Municipio}
+        </div>{" "}
         <div
           style={{
             display: "flex",
@@ -100,8 +111,14 @@ function Gasolinera() {
           </button>
         </div>
       </div>
-      <h4>Horario: {formatHorario(gasolinera.Horario)}</h4>
-
+      <div className="horario-container">
+        <div className="horario-title">
+          <span>🕒</span> Horario
+        </div>
+        <div className="horario-content">
+          {formatHorario(gasolinera.Horario)}
+        </div>
+      </div>
       <>
         <div className="gasolineras">
           <div className="enhanced-table-wrapper">
