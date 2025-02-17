@@ -42,6 +42,7 @@ export const handleSelectMunicipio = async (
       setLoadingPrecios(true);
       const data = await fetchMunicipioCompleto(municipio.IDMunicipio);
       setListadoPrecios(data.ListaEESSPrecio || []);
+      console.log(data);
       setFechaActualizacion(data.Fecha);
     } catch (error) {
       console.error("Error al cargar los datos:", error);

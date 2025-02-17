@@ -42,7 +42,13 @@ function normalizeName(name) {
 
 export function getLogoForGasolinera(name) {
   const normalizedName = normalizeName(name);
-  const result = fuse.search(normalizedName);
+
+  const firstWord = normalizedName.split(" ")[0];
+  let result = fuse.search(firstWord);
+
+  if (!result.length || result[0].score >= 0.4) {
+    result = fuse.search(normalizedName);
+  }
 
   if (result.length > 0 && result[0].score < 0.4) {
     return result[0].item.logo;

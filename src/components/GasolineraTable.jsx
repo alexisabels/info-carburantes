@@ -33,7 +33,7 @@ const GasolineraTable = ({
           <span>Datos actualizados a: {fechaActualizacion}</span>
           <p></p>
         </div>
-      )}{" "}
+      )}
       <div className="gasolineras">
         <div className="enhanced-table-wrapper">
           <table className=" enhanced-table enhanced-table-main">
@@ -58,14 +58,14 @@ const GasolineraTable = ({
                     key={gasolinera.IDEESS}
                     onClick={() => handleGasolineraClick(gasolinera)}
                   >
-                    {" "}
                     <td>
                       <div
                         style={{
                           display: "flex",
+                          flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: "8px",
+                          gap: "4px",
                           width: "100%",
                         }}
                       >
@@ -76,6 +76,12 @@ const GasolineraTable = ({
                           alt={gasolinera["Rótulo"]}
                           style={{ width: "55px", height: "55px" }}
                         />
+                        <span style={{ fontSize: "12px" }}>
+                          {getLogoForGasolinera(gasolinera["Rótulo"]) ==
+                          "logo_generico.gif"
+                            ? gasolinera["Rótulo"]
+                            : ""}
+                        </span>
                       </div>
                     </td>
                     <td>{gasolinera.Dirección}</td>
