@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchGasolineraPorID } from "../../utils/api";
 import { formatHorario } from "../../utils/formatHorario";
@@ -6,8 +6,10 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "./Gasolinera.css";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
+
 function Gasolinera() {
   const { idMunicipio, idGasolinera } = useParams();
+  const navigate = useNavigate();
   const [gasolinera, setGasolinera] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,12 +30,13 @@ function Gasolinera() {
   }, [idMunicipio, idGasolinera]);
 
   if (loading) {
-    return <p>Cargando gasolinera...</p>;
+    return <div className="loading-container">Cargando gasolinera...</div>;
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return <div className="error-message">{error}</div>;
   }
+
   const customIcon = L.icon({
     iconUrl: "/9772.svg",
     iconRetinaUrl: "/9772.svg",
@@ -41,11 +44,14 @@ function Gasolinera() {
     iconAnchor: [16, 32],
     popupAnchor: [0, -32],
   });
+
   if (!gasolinera) {
     return <p>No se encontró la gasolinera</p>;
   }
+
   const lat = parseFloat(gasolinera["Latitud"].replace(",", "."));
   const lng = parseFloat(gasolinera["Longitud (WGS84)"].replace(",", "."));
+
   const handleShare = () => {
     const shareData = {
       title: `Gasolinera ${gasolinera["Rótulo"]}`,
@@ -62,8 +68,13 @@ function Gasolinera() {
       prompt("Copia este enlace para compartir:", window.location.href);
     }
   };
+
   return (
-    <div>
+    <div className="gasolinera-detail-page">
+      <button className="back-button-modern" onClick={() => navigate(-1)}>
+        ← Volver
+      </button>
+
       <div className="gasolinera-header">
         <div className="gasolinera-title">
           <img
@@ -71,30 +82,14 @@ function Gasolinera() {
             alt={gasolinera["Rótulo"]}
             className="gasolinera-logo"
           />
-          <h2>
-            Precios en {gasolinera["Rótulo"]} {gasolinera.Municipio}
-          </h2>
+          <h2>{gasolinera["Rótulo"]}</h2>
         </div>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-          marginBottom: "20px",
-        }}
-      >
+
         <div className="address">
           <span>📍</span> {gasolinera.Dirección}, {gasolinera.Localidad}
-        </div>{" "}
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexShrink: 0,
-          }}
-        >
+        </div>
+
+        <div className="action-buttons">
           <button
             onClick={() =>
               window.open(
@@ -104,94 +99,58 @@ function Gasolinera() {
             }
             className="button-10"
           >
-            Ir a Maps
+            📍 Ir a Maps
           </button>
           <button onClick={handleShare} className="button-11">
-            Compartir
+            🔗 Compartir
           </button>
         </div>
       </div>
+
+      <div className="prices-list-container">
+        <h3>Precios Actuales</h3>
+        <div className="prices-grid">
+          <div className="price-item">
+            <span className="price-label">Diésel (A)</span>
+            <span className="price-number">
+              {gasolinera["Precio Gasoleo A"] || "-"} <small>€/L</small>
+            </span>
+          </div>
+          <div className="price-item">
+            <span className="price-label">Diésel Premium</span>
+            <span className="price-number">
+              {gasolinera["Precio Gasoleo Premium"] || "-"} <small>€/L</small>
+            </span>
+          </div>
+          <div className="price-item">
+            <span className="price-label">Gasolina 95</span>
+            <span className="price-number">
+              {gasolinera["Precio Gasolina 95 E5"] || "-"} <small>€/L</small>
+            </span>
+          </div>
+          <div className="price-item">
+            <span className="price-label">Gasolina 98</span>
+            <span className="price-number">
+              {gasolinera["Precio Gasolina 98 E5"] || "-"} <small>€/L</small>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="horario-container">
         <div className="horario-title">
-          <span>🕒</span> Horario
+          <span>🕒</span> Horario de Apertura
         </div>
         <div className="horario-content">
           {formatHorario(gasolinera.Horario)}
         </div>
       </div>
-      <>
-        <div className="gasolineras">
-          <div className="enhanced-table-wrapper">
-            <table className="enhanced-table">
-              <thead>
-                <tr>
-                  <th className="gasoleo-a">Diésel</th>
-                  <th className="gasoleo-premium">Diésel Premium</th>
-                  <th className="gasolina-95">Gasolina 95</th>
-                  <th className="gasolina-98">Gasolina 98</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr key={gasolinera.IDEESS}>
-                  <td className="digit gasoleo-a">
-                    <strong>
-                      {gasolinera["Precio Gasoleo A"] ? (
-                        <>
-                          {gasolinera["Precio Gasoleo A"]}
-                          <small> €/ litro</small>
-                        </>
-                      ) : (
-                        "No disp."
-                      )}
-                    </strong>
-                  </td>
-                  <td className="digit gasoleo-premium">
-                    <strong>
-                      {gasolinera["Precio Gasoleo Premium"] ? (
-                        <>
-                          {gasolinera["Precio Gasoleo Premium"]}
-                          <small> €/ litro</small>
-                        </>
-                      ) : (
-                        "No disp."
-                      )}
-                    </strong>
-                  </td>
-                  <td className="digit gasolina-95">
-                    <strong>
-                      {gasolinera["Precio Gasolina 95 E5"] ? (
-                        <>
-                          {gasolinera["Precio Gasolina 95 E5"]}
-                          <small> €/ litro</small>
-                        </>
-                      ) : (
-                        "No disp."
-                      )}
-                    </strong>
-                  </td>
-                  <td className="digit gasolina-98">
-                    <strong>
-                      {gasolinera["Precio Gasolina 98 E5"] ? (
-                        <>
-                          {gasolinera["Precio Gasolina 98 E5"]}
-                          <small> €/ litro</small>
-                        </>
-                      ) : (
-                        "No disp."
-                      )}
-                    </strong>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </>
+
       <MapContainer
         center={[lat, lng]}
         zoom={15}
         scrollWheelZoom={false}
-        style={{ height: "400px", width: "100%", marginTop: "20px" }}
+        className="map-container-rounded"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

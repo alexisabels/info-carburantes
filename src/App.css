@@ -109,99 +109,418 @@ body {
   font-weight: bold;
 }
 
-.enhanced-table {
-  border: 0px solid #2c3e50;
-  border-radius: 7px;
-  overflow: hidden;
-  background-color: #f0f0f0;
-
-  width: 100%;
-  margin: 20px 0;
-  margin-top: 0;
-  border-collapse: collapse;
+/* Card Grid Layout */
+.gasolineras-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  padding-bottom: 2rem;
 }
 
-.enhanced-table thead {
-  background-color: #2c3e50;
-  color: #fff;
-}
-
-.enhanced-table th,
-.enhanced-table td {
-  padding: 12px;
-  border: 1px solid #b6b6b6;
-  text-align: left;
-}
-
-.enhanced-table tbody tr:nth-child(even) {
-  background-color: #dee0e2;
-}
-
-.enhanced-table tbody tr:hover {
-  background-color: #e0e0e0;
+.gasolinera-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #eee;
+  transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.enhanced-table th.gasoleo-a {
-  color: #ffeb3b;
+.gasolinera-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #2196f3;
 }
-.enhanced-table-main td:first-child {
+
+.cheapest-card {
+  border: 2px solid #4caf50;
+  background: #fcfdfc;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.card-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.card-address {
+  font-size: 0.85rem;
+  color: #666;
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.card-price-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
   text-align: center;
-  padding: 5px;
+  margin-bottom: 1rem;
 }
-.enhanced-table-main td:last-child {
+
+.main-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.fuel-type-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  font-weight: 600;
+}
+
+.price-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
+}
+
+.price-value small {
+  font-size: 1rem;
+  color: #888;
+  font-weight: 400;
+}
+
+.price-cheapest {
+  color: #2e7d32;
+}
+
+/* Detail View Styles */
+.back-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-button:hover {
+  color: #2196f3;
+  text-decoration: underline;
+}
+
+.prices-list-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+
+.prices-list-container h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.8rem;
+}
+
+.prices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.price-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.price-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.price-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.price-number small {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #888;
+}
+
+.price-unavailable {
+  color: #999;
+  font-style: italic;
+}
+
+.card-actions {
+  margin-top: auto;
+}
+
+.button-card-action {
+  width: 100%;
+  padding: 0.8rem;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.button-card-action:hover {
+  background: #1976d2;
+}
+
+.loading-container, .no-results {
   text-align: center;
-}
-.enhanced-table-main td:first-child div {
-  justify-content: center;
-}
-.enhanced-table th.gasoleo-premium {
-  color: #ffc107;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
 }
 
-.enhanced-table th.gasolina-98 {
-  color: #99c34a;
+.update-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border-radius: 20px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.enhanced-table th.gasolina-95 {
-  color: #4caf50;
-}
-
-@media (max-width: 600px) {
-  .enhanced-table th,
-  .enhanced-table td {
-    font-size: 0.8em;
-    padding: 6px;
+@media (max-width: 480px) {
+  .gasolineras-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-header {
+    gap: 0.8rem;
+  }
+  
+  .card-logo {
+    width: 40px;
+    height: 40px;
   }
 }
 
-.uppercase {
-  text-transform: uppercase;
-  text-decoration: underline;
-}
-.enhanced-table-wrapper {
-  overflow-x: auto;
-}
 
-.digit {
-  font-size: 1.2em;
-
-  text-align: center;
-  width: 100px;
-}
-.update-info {
-  display: inline-flex;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-  font-size: 0.9em;
-  color: #505a66;
-  padding: 8px 12px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #2c3e50;
-  margin: 15px 0;
+.location-controls {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.button-near-me {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.button-near-me:hover {
+  background: #34495e;
+  transform: translateY(-2px);
+}
+
+.separator {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.card-distance {
+  display: block;
+  font-size: 0.85rem;
+  color: #2196f3;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.sort-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.sort-buttons {
+  display: flex;
+  gap: 0.5rem;
+  background: #f0f2f5;
+  padding: 4px;
+  border-radius: 20px;
+}
+
+.sort-button {
+  border: none;
+  background: none;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-button:hover {
+  color: #333;
+}
+
+.sort-button.active {
+  background: white;
+  color: #2196f3;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+/* Welcome Screen */
+.welcome-container {
+  text-align: center;
+  padding: 2rem 0;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+}
+
+.welcome-subtitle {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 3rem;
+}
+
+.search-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.search-option-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-option-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-color: #2196f3;
+}
+
+.option-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.search-option-card h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #2c3e50;
+}
+
+.search-option-card p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.back-to-home {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.back-to-home:hover {
+  color: #2c3e50;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.results-title {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin: 2rem 0 1rem;
 }

@@ -44,3 +44,11 @@ export const fetchGasolineraPorID = async (idMunicipio, ideess) => {
   }
   return gasolinera;
 };
+
+export const fetchTodasLasEstaciones = async () => {
+  const response = await fetch(`${BASE_URL}/EstacionesTerrestres/`);
+  if (!response.ok) {
+    throw new Error("Error al obtener todas las estaciones");
+  }
+  return response.json();
+};
