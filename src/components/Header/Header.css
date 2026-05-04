@@ -1,69 +1,68 @@
-/* Modern Header Styles */
-.header {
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  color: #2c3e50;
-  padding: 1rem 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+.appbar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  position: static;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
+.appbar__inner {
+  max-width: var(--maxw);
   margin: 0 auto;
-}
-
-.logo {
+  padding: 12px var(--gutter);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  text-decoration: none;
+  min-height: 56px;
 }
 
-.logo img {
-  height: 40px;
+.appbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+
+.appbar__brand img {
+  height: 26px;
   width: auto;
 }
 
-.logo-a {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: #2c3e50;
+.appbar__brand:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
-.name-large {
-  font-family: 'Geist', sans-serif;
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.name-small {
-  font-family: 'Geist', sans-serif;
-  font-weight: 500;
+.appbar__nav {
   font-size: 0.875rem;
-  color: #64748b;
+  font-weight: 500;
+  color: var(--ink-muted);
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .header {
-    padding: 0.75rem 1rem;
-  }
+.appbar__nav:hover {
+  background: var(--bg-2);
+  color: var(--ink);
+}
 
-  .name-large {
-    font-size: 1.1rem;
-  }
-  
-  .logo img {
-    height: 32px;
-  }
+.appbar__nav:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.appbar__nav--active {
+  color: var(--ink);
+  background: var(--bg-2);
+  font-weight: 600;
 }

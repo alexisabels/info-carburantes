@@ -1,0 +1,131 @@
+/*
+ * Color del estado "favorito": #d97706 (amber-600 de Tailwind).
+ * Razón: el ámbar tostado es legible sobre el blanco --bg sin competir con
+ * el verde --accent (precio más barato) y se distingue de un naranja
+ * brillante. Lo suficientemente sobrio para no parecer una alerta.
+ */
+
+.favbtn {
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--ink-muted);
+  /* Touch target mínimo 44x44 incluso en sm: el wrapper interno crece con
+     padding para alcanzar ese tamaño aunque el icono sea más pequeño. */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  line-height: 0;
+  transition: background-color 120ms linear, border-color 120ms linear,
+    color 120ms linear;
+}
+
+.favbtn__hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.favbtn:hover {
+  background: var(--bg-2);
+  border-color: var(--line);
+}
+
+.favbtn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.favbtn:active .favbtn__icon {
+  transform: scale(0.94);
+}
+
+.favbtn--active {
+  color: #d97706;
+}
+
+.favbtn--active:hover {
+  background: var(--bg-2);
+  border-color: var(--line);
+}
+
+.favbtn__icon {
+  display: block;
+  transform-origin: center;
+  transition: transform 120ms cubic-bezier(0.34, 1.4, 0.64, 1), color 120ms
+      linear;
+}
+
+/* Animación al activar: pequeño "pop" sin pasarse. Sólo se aplica cuando el
+   estado pasa a filled; en transitorio inverso el cambio es instantáneo. */
+@keyframes favbtn-pop {
+  0% {
+    transform: scale(1);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.favbtn--active .favbtn__icon--filled {
+  animation: favbtn-pop 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favbtn__icon,
+  .favbtn--active .favbtn__icon--filled {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Tamaños: el min-width/min-height del botón ya garantiza 44x44; aquí sólo
+   ajustamos el wrapper visual interno para que el "área hover" siga siendo
+   compacta cuando el icono es pequeño. Si un consumidor con más
+   especificidad (p. ej. `.favsec__star.favbtn`) baja el tamaño del botón,
+   el suelo aceptable para sm es 40px en touch para no romper el target
+   recomendado por completo. */
+.favbtn--sm {
+  /* El min de .favbtn (44px) gana por igualdad de especificidad y orden,
+     pero lo dejamos explícito para que cualquier consumidor que sobreescriba
+     el sm sepa que el suelo recomendado es 40px. */
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.favbtn--sm .favbtn__hit {
+  width: 24px;
+  height: 24px;
+}
+
+.favbtn--md {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.favbtn--md .favbtn__hit {
+  width: 32px;
+  height: 32px;
+}
+
+.favbtn--lg {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.favbtn--lg .favbtn__hit {
+  width: 44px;
+  height: 44px;
+}

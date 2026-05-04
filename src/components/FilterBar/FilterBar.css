@@ -1,0 +1,763 @@
+/* =========================================================================
+   FilterBar + FilterSheet
+   Estética editorial-precisa: hairlines de 1px, monoespaciado para números,
+   uppercase tracking para títulos de sección, una sola tinta de acento.
+   Todo el motion entra y sale con curva suave (no bounces): los datos no
+   deben ser juguetes.
+   ========================================================================= */
+
+/* Inicia los tokens locales con una caída a los del proyecto. */
+.fbar,
+.fsheet {
+  --fb-radius: 10px;
+  --fb-radius-lg: 16px;
+  --fb-tap: 40px;
+  --fb-shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.04);
+  --fb-shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  --fb-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.08),
+    0 -2px 6px rgba(0, 0, 0, 0.05);
+  --fb-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* -------------------------------------------------------------------------
+   Toolbar
+   ------------------------------------------------------------------------- */
+
+.fbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+
+.fbar__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.fbar__count {
+  flex: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+  letter-spacing: -0.005em;
+}
+
+.fbar__count strong {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo,
+      monospace);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Trigger de filtros: pill con borde, badge cuadrada en --ink. */
+.fbar__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--fb-tap);
+  padding: 0 12px 0 11px;
+  border-radius: var(--fb-radius);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fbar__trigger:hover {
+  background: var(--bg-2);
+  border-color: var(--line-strong, var(--line));
+}
+
+.fbar__trigger:active {
+  transform: scale(0.98);
+}
+
+.fbar__trigger[data-active] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.fbar__trigger[data-active]:hover {
+  background: var(--ink-2, var(--ink));
+}
+
+.fbar__trigger svg {
+  flex-shrink: 0;
+}
+
+/* Badge: cuadrado con esquinas mínimas, no redondeado total. Hace contraste
+   con la pill exterior. */
+.fbar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 2px;
+  margin-right: -2px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo,
+      monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  animation: fbBadgeIn 220ms var(--fb-ease) both;
+}
+
+@keyframes fbBadgeIn {
+  from {
+    transform: scale(0.7) translateY(2px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Active filter strip
+   ------------------------------------------------------------------------- */
+
+.fbar__active {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 0 calc(var(--gutter, 16px) * -1);
+  padding: 2px var(--gutter, 16px);
+}
+
+.fbar__active::-webkit-scrollbar {
+  display: none;
+}
+
+.ftoken {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+  animation: fbTokenIn 220ms var(--fb-ease) both;
+}
+
+.ftoken:hover {
+  background: var(--bg-3);
+  border-color: var(--line-strong, var(--line));
+}
+
+.ftoken:active {
+  transform: translateY(0.5px);
+}
+
+.ftoken svg {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: color 140ms ease;
+}
+
+.ftoken:hover svg {
+  color: var(--ink);
+}
+
+@keyframes fbTokenIn {
+  from {
+    transform: translateX(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Sort dropdown (en la barra)
+   ------------------------------------------------------------------------- */
+
+.fsort {
+  position: relative;
+}
+
+.fsort__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--fb-tap);
+  padding: 0 11px;
+  border-radius: var(--fb-radius);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fsort__trigger:hover {
+  background: var(--bg-2);
+}
+
+.fsort__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.fsort__prefix {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 420px) {
+  /* En móvil quitamos el "Ordenar" para ahorrar espacio. */
+  .fsort__prefix {
+    display: none;
+  }
+}
+
+.fsort__value {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fsort__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--fb-radius);
+  box-shadow: var(--fb-shadow-pop);
+  animation: fbPopIn 160ms var(--fb-ease) both;
+}
+
+@keyframes fbPopIn {
+  from {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.fsort__opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 100ms ease;
+}
+
+.fsort__opt:hover {
+  background: var(--bg-2);
+}
+
+.fsort__opt[data-active] {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.fsort__opt[data-active] svg {
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------------------
+   Bottom Sheet
+   ------------------------------------------------------------------------- */
+
+.fsheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fsheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(10, 10, 10, 0.42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 200ms var(--fb-ease);
+}
+
+.fsheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: var(--fb-radius-lg) var(--fb-radius-lg) 0 0;
+  box-shadow: var(--fb-shadow-sheet);
+  transform: translateY(100%);
+  transition: transform 280ms var(--fb-ease);
+  overscroll-behavior: contain;
+}
+
+.fsheet[data-state="open"] .fsheet__backdrop {
+  opacity: 1;
+}
+
+.fsheet[data-state="open"] .fsheet__panel {
+  transform: translateY(0);
+}
+
+.fsheet[data-state="exiting"] .fsheet__backdrop {
+  opacity: 0;
+}
+
+.fsheet[data-state="exiting"] .fsheet__panel {
+  transform: translateY(100%);
+  transition-duration: 220ms;
+}
+
+@media (min-width: 720px) {
+  /* En desktop centramos y dejamos hueco arriba/abajo (modal estándar). */
+  .fsheet {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .fsheet__panel {
+    max-height: 80vh;
+    border-radius: var(--fb-radius-lg);
+    transform: translateY(16px) scale(0.98);
+    opacity: 0;
+    transition:
+      transform 240ms var(--fb-ease),
+      opacity 200ms var(--fb-ease);
+  }
+
+  .fsheet[data-state="open"] .fsheet__panel {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  .fsheet[data-state="exiting"] .fsheet__panel {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+/* Drag handle visual (no-funcional, decorativo) */
+.fsheet__handle {
+  width: 36px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 999px;
+  background: var(--line-strong, #d0d0d0);
+  flex-shrink: 0;
+}
+
+@media (min-width: 720px) {
+  .fsheet__handle {
+    display: none;
+  }
+}
+
+/* Header */
+.fsheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.fsheet__title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.fsheet__clear {
+  background: transparent;
+  border: 0;
+  padding: 6px 0;
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition:
+    color 140ms ease,
+    text-decoration-color 140ms ease;
+}
+
+.fsheet__clear:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+/* Body scrollable */
+.fsheet__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Sombra interna superior cuando se ha hecho scroll, para que se note
+   la separación con el header. Lo dejamos siempre puesto pero sutil:
+   un degradado muy ligero al inicio del body. */
+.fsheet__body::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  left: 0;
+  display: block;
+  height: 12px;
+  margin: -14px -18px 6px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.04),
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------
+   Sections
+   ------------------------------------------------------------------------- */
+
+.fsec {
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.fsec:last-child {
+  border-bottom: 0;
+}
+
+.fsec__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Pequeña barra vertical antes del título — el toque editorial. */
+.fsec__bar {
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+
+.fsec__title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.fsec__count {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo,
+      monospace);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--bg-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.fsec__hint {
+  margin: 0 0 10px;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+  line-height: 1.4;
+}
+
+.fsec__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* -------------------------------------------------------------------------
+   Segmented (radio compacto)
+   ------------------------------------------------------------------------- */
+
+.fseg {
+  display: inline-flex;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--fb-radius);
+  background: var(--bg);
+  padding: 3px;
+  gap: 0;
+}
+
+.fseg__btn {
+  flex: 1;
+  height: 34px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fseg__btn:hover {
+  color: var(--ink);
+}
+
+.fseg__btn[data-active] {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--line-strong, var(--line)),
+    var(--fb-shadow-soft);
+}
+
+/* -------------------------------------------------------------------------
+   Chips multi (con check)
+   ------------------------------------------------------------------------- */
+
+.fchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--fb-radius);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 80ms ease,
+    color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fchip:hover {
+  background: var(--bg-2);
+  border-color: var(--line-strong, var(--line));
+}
+
+.fchip:active {
+  transform: scale(0.97);
+}
+
+.fchip__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  margin-left: -6px;
+  overflow: hidden;
+  color: var(--ink);
+  transition:
+    width 180ms var(--fb-ease),
+    margin-left 180ms var(--fb-ease);
+}
+
+.fchip[data-active] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.fchip[data-active] .fchip__check {
+  width: 14px;
+  margin-left: 0;
+  color: var(--bg);
+}
+
+.fchip[data-active]:hover {
+  background: var(--ink-2, var(--ink));
+}
+
+.fchip__label {
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+}
+
+.fchip__count {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Menlo,
+      monospace);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  margin-left: -2px;
+}
+
+.fchip[data-active] .fchip__count {
+  color: var(--bg);
+  opacity: 0.75;
+}
+
+/* -------------------------------------------------------------------------
+   Footer (sticky)
+   ------------------------------------------------------------------------- */
+
+.fsheet__footer {
+  flex-shrink: 0;
+  padding: 12px 18px calc(env(safe-area-inset-bottom, 0px) + 14px);
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.fsheet__apply {
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: var(--fb-radius);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 80ms ease,
+    opacity 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fsheet__apply:hover {
+  background: var(--ink-2, var(--ink));
+}
+
+.fsheet__apply:active {
+  transform: scale(0.99);
+}
+
+.fsheet__apply:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fsheet__apply-label {
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------------
+   Focus visible (consistente con el resto de la app)
+   ------------------------------------------------------------------------- */
+
+.fbar__trigger:focus-visible,
+.ftoken:focus-visible,
+.fsort__trigger:focus-visible,
+.fsort__opt:focus-visible,
+.fseg__btn:focus-visible,
+.fchip:focus-visible,
+.fsheet__clear:focus-visible,
+.fsheet__apply:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Reduced motion: respetamos la preferencia del usuario. */
+@media (prefers-reduced-motion: reduce) {
+  .fsheet__panel,
+  .fsheet__backdrop,
+  .fbar__badge,
+  .ftoken,
+  .fsort__menu,
+  .fchip__check {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,1 +1,16 @@
-{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }
+{
+  "rewrites": [
+    {
+      "source": "/gasolinera/:idMunicipio/:idGasolinera",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|facebookcatalog|Facebot|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Slack-ImgProxy|Discordbot|Embedly|Iframely|Pinterest|Mastodon|SkypeUriPreview|vkShare|redditbot|YandexBot|Applebot|Googlebot|bingbot|DuckDuckBot).*"
+        }
+      ],
+      "destination": "/api/og/:idMunicipio/:idGasolinera"
+    },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}

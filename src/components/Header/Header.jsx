@@ -1,22 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
+
 const Header = () => (
-  <header className="header">
-    <div className="header-content">
-      <div className="logo">
-        <img src="/gas.svg" alt="Logo" />
-        <Link to="/" className="logo-a">
-          <span className="name-large">Comparador de Combustible</span>
-          <span className="name-small">Carburantes</span>
-        </Link>
-      </div>
-      {/*  <nav className="navbar">
-        <ul className="nav-links">
-          <li>
-            <Link to="/favoritos">Favoritas</Link>
-          </li> 
-        </ul>
-      </nav>*/}
+  <header className="appbar">
+    <div className="appbar__inner">
+      <Link to="/" className="appbar__brand" aria-label="Inicio">
+        <img src="/gas.svg" alt="" aria-hidden="true" />
+        <span>Carburantes</span>
+      </Link>
+      <NavLink
+        to="/about"
+        className={({ isActive }) =>
+          isActive ? "appbar__nav appbar__nav--active" : "appbar__nav"
+        }
+      >
+        Sobre
+      </NavLink>
     </div>
   </header>
 );

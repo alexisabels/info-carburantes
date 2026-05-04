@@ -1,0 +1,309 @@
+/* MainContent — estilos locales (NO tocar App.css) */
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Home — botones primarios "Cerca de mí" / "Buscar por municipio"
+ * Reglas locales que afinan ergonomía sin pisar App.css:
+ * - touch target ≥ 56px (acción primaria, regla pulgar)
+ * - icon SVG mínimo 24×24 dentro del círculo
+ * - estado disabled con cursor progress y opacidad clara
+ * ────────────────────────────────────────────────────────────────────── */
+.bigbtn {
+  min-height: 56px;
+}
+
+.bigbtn:disabled,
+.bigbtn[aria-busy="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Reasignamos el tamaño del icono interno (App.css lo deja en 22). El
+ * círculo (40px) sigue siendo cómodo y el SVG no se desborda. */
+.bigbtn__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* La flecha SVG hereda el alineado vertical del span y queda centrada
+ * con el resto de tipografía. */
+.bigbtn__chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  flex-shrink: 0;
+  /* Anulamos el font-size tipográfico del chevron textual original. */
+  font-size: 0;
+  line-height: 0;
+}
+
+.bigbtn__chev svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Select inline para cambiar combustible desde el home.
+ * Touch target mínimo 36px en móvil; usamos appearance:none para tener
+ * control total sobre el chrome y un foco visible coherente. */
+.home__fuelselect {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 6px 28px 6px 10px;
+  min-height: 36px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      currentColor 50%
+    ),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.home__fuelselect:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Sección "Tus favoritas"
+ * App.css ya pone padding 12px 56px 12px 14px (52px right, suficiente
+ * para que la estrella absolute no se solape con texto). Aquí solo
+ * elevamos la altura mínima a 56px (multilínea) y damos affordance al
+ * botón "Ver todos / Ver menos".
+ * ────────────────────────────────────────────────────────────────────── */
+.favsec__link {
+  min-height: 56px;
+  justify-content: center;
+}
+
+/* Botón "Ver todos" en sección de favoritas */
+.favsec__more {
+  margin-top: 0.5rem;
+  background: none;
+  border: 0;
+  padding: 8px 12px;
+  min-height: 36px;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: 6px;
+  align-self: flex-start;
+  transition: color 120ms linear, background-color 120ms linear;
+}
+
+.favsec__more:hover {
+  color: var(--ink);
+  background: var(--bg-2);
+  text-decoration-thickness: 2px;
+}
+
+.favsec__more:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Empty para "sin municipios" */
+.empty--nomun {
+  margin-top: 0.5rem;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * errorbox — botones más altos para tap cómodo
+ * App.css define padding y color base; aquí garantizamos min-height 44px
+ * y un padding horizontal que evite labels apretados.
+ * ────────────────────────────────────────────────────────────────────── */
+.errorbox button {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Toolbar: contenedor de filtros (FuelTypeSelector + segmented vista)
+ * En móvil el segmented vista no se renderiza (usamos FAB). En desktop
+ * lo metemos como segunda fila — o, si hay sitio, alineado a la derecha
+ * del FuelTypeSelector.
+ * ────────────────────────────────────────────────────────────────────── */
+.toolbar__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (min-width: 900px) {
+  .toolbar__filters {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  /* El FuelTypeSelector usa .segmented (App.css) con margin-bottom: 8px;
+   * en desktop dentro del flex queremos cero margin lateral extra. */
+  .toolbar__filters > .segmented {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Segmented "Lista | Mapa" dentro del toolbar (solo desktop).
+ * Reutilizamos el sabor visual del .segmented (FuelTypeSelector) pero
+ * con un color de pill activo distinto (var(--ink) sólido) para que el
+ * usuario lo lea como "modo de vista", no como otro filtro. */
+.toolbar__viewseg {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg-2);
+  padding: 4px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-bottom: 8px;
+}
+
+.toolbar__viewseg button {
+  background: transparent;
+  border: 0;
+  padding: 8px 16px;
+  min-height: 36px;
+  min-width: 72px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 120ms linear, color 120ms linear;
+}
+
+.toolbar__viewseg button:hover:not([aria-pressed="true"]) {
+  color: var(--ink);
+}
+
+.toolbar__viewseg button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+}
+
+.toolbar__viewseg button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * FAB Lista ↔ Mapa (SOLO MÓVIL)
+ * Botón flotante centrado abajo (patrón Google Maps móvil). Cuando estás
+ * en lista muestra "Mapa" con icono pin; cuando estás en mapa, "Lista"
+ * con icono hamburguesa.
+ *
+ * En desktop ≥900px lo escondemos: el JS ya no lo monta, pero esta
+ * salvaguarda CSS evita doble render si el effect tarda en ejecutarse.
+ * ────────────────────────────────────────────────────────────────────── */
+.viewfab {
+  position: fixed;
+  z-index: 95;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px 12px 18px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 6px 16px rgba(0, 0, 0, 0.22),
+    0 24px 48px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 160ms cubic-bezier(0.2, 0, 0.2, 1),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  /* aparece desde abajo cuando se monta */
+  animation: viewfab-in 220ms cubic-bezier(0.2, 0, 0.2, 1) both;
+}
+
+@keyframes viewfab-in {
+  from {
+    transform: translate(-50%, 24px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.viewfab:hover {
+  background: #1a1a1a;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    0 28px 56px rgba(0, 0, 0, 0.14);
+}
+
+.viewfab:active {
+  transform: translate(-50%, 1px);
+}
+
+.viewfab:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.viewfab__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.viewfab__label {
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewfab {
+    animation: none;
+    transition: none;
+  }
+  .toolbar__viewseg button {
+    transition: none;
+  }
+  .favsec__more {
+    transition: none;
+  }
+}
+
+/* En desktop el FAB se oculta: usamos el segmented del toolbar. */
+@media (min-width: 900px) {
+  .viewfab {
+    display: none;
+  }
+}

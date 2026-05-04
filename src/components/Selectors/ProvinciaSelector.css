@@ -1,23 +1,190 @@
-.provincia-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  margin: 1rem 0;
-  padding: 1.5rem;
-  border: 1px solid rgba(0,0,0,0.05);
-  transition: transform 0.2s;
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.provincia-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+.field__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  letter-spacing: 0;
 }
 
-.provincia-card h2 {
-  text-align: left;
-  color: #1e293b;
-  font-size: 1.1rem;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-weight: 600;
+.field__loading {
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+  padding: 14px;
+  background: var(--bg-2);
+  border-radius: 8px;
+}
+
+.rselect__control {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  min-height: 48px !important;
+  padding: 2px 4px !important;
+  transition: border-color 120ms linear !important;
+}
+
+.rselect__control:hover {
+  border-color: var(--line-strong) !important;
+}
+
+.rselect__control--is-focused {
+  border-color: var(--ink) !important;
+  box-shadow: 0 0 0 1px var(--ink) !important;
+}
+
+.rselect__placeholder {
+  color: var(--ink-faint) !important;
+  font-size: 1rem !important;
+}
+
+.rselect__single-value {
+  color: var(--ink) !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+
+.rselect__indicator-separator {
+  display: none !important;
+}
+
+.rselect__dropdown-indicator,
+.rselect__clear-indicator {
+  color: var(--ink-muted) !important;
+  /* Touch target ≥ 32x32 (recomendado para indicadores secundarios dentro
+     de un control que ya cumple 48px). El padding asimétrico mantiene la
+     altura del control sin desbordarlo. */
+  padding: 6px 8px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.rselect__dropdown-indicator:hover,
+.rselect__clear-indicator:hover {
+  color: var(--ink) !important;
+}
+
+.rselect__dropdown-indicator:focus-visible,
+.rselect__clear-indicator:focus-visible {
+  outline: 2px solid var(--ink) !important;
+  outline-offset: 1px !important;
+  border-radius: 4px !important;
+}
+
+@media (pointer: coarse) {
+  .rselect__dropdown-indicator,
+  .rselect__clear-indicator {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+}
+
+.rselect__control--is-focused {
+  outline: 2px solid var(--ink) !important;
+  outline-offset: 0 !important;
+}
+
+.rselect__menu {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+}
+
+.rselect__option {
+  font-size: 0.9375rem !important;
+  color: var(--ink) !important;
+  background: transparent !important;
+  padding: 12px 14px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+.rselect__option--is-focused {
+  background: var(--bg-2) !important;
+}
+
+.rselect__option--is-selected {
+  background: var(--ink) !important;
+  color: var(--bg) !important;
+}
+
+.rselect__input-container {
+  color: var(--ink) !important;
+}
+
+.rselect__no-options-message,
+.rselect__loading-message {
+  font-size: 0.875rem !important;
+  color: var(--ink-muted) !important;
+  padding: 14px !important;
+}
+
+@media (pointer: coarse) {
+  .provincia-select .rselect__control {
+    min-height: 52px !important;
+  }
+
+  .provincia-select .rselect__option {
+    min-height: 48px !important;
+    padding: 14px !important;
+  }
+}
+
+.provincia-select__skeleton {
+  position: relative;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 0%,
+    var(--bg-2) 40%,
+    rgba(0, 0, 0, 0.04) 50%,
+    var(--bg-2) 60%,
+    var(--bg-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: provincia-skeleton-shimmer 1.2s linear infinite;
+  overflow: hidden;
+}
+
+.provincia-select__skeleton .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes provincia-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provincia-select__skeleton {
+    animation: none;
+  }
 }

@@ -1,156 +1,975 @@
-/* Modern Detail View Styles */
-.gasolinera-header {
-  margin: 2rem 0;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+.station {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter) 120px;
+  flex: 1;
+  width: 100%;
+  position: relative;
+}
+
+.station__back {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin: 16px 0 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.station__back svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.station__back-label {
+  line-height: 1;
+}
+
+.station__back:hover {
+  background: var(--bg-3);
+  border-color: var(--line-strong, var(--line));
+}
+
+.station__back:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Linkback de la pantalla de error: mismo aspecto que station__back. */
+.linkback {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin: 16px 0 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.linkback:hover {
+  background: var(--bg-3);
+}
+
+.linkback:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Caja de error y botón "Ir al inicio": padding cómodo, 44px mínimo. */
+.errorbox {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.errorbox > button {
+  align-self: flex-start;
+  background: var(--ink);
+  color: var(--bg);
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+}
+
+.errorbox > button:hover {
+  background: var(--ink-2);
+}
+
+.errorbox > button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* 1. Cabecera */
+.station__head {
+  padding: 16px 0 20px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 380px) {
+  /* En anchos muy estrechos reducimos el gap para que la estrella (48px)
+     no devore el espacio del título. */
+  .station__head {
+    gap: 8px;
+  }
+}
+
+.station__fav {
+  align-self: start;
+  margin-top: -4px;
+  flex-shrink: 0;
+}
+
+.station__logo {
+  width: 56px;
+  height: 56px;
+  background: var(--bg-2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-.gasolinera-title {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  background: linear-gradient(to right, #ffffff, #f8f9fa);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.gasolinera-logo {
-  width: 80px;
-  height: 80px;
+.station__logo img {
+  max-width: 70%;
+  max-height: 70%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
-.gasolinera-title h2 {
-  margin: 0;
-  font-size: 1.8rem;
-  color: #1e293b;
-  font-weight: 800;
-  line-height: 1.2;
+.station__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.station__name {
+  font-size: clamp(1.5rem, 5vw, 1.875rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-.address {
+.station__addr {
+  font-size: 0.9375rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.station__distance {
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fila de chips en cabecera (estado, margen) */
+.station__chips {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chip {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 2rem;
-  background: white;
-  color: #64748b;
-  font-size: 1rem;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  gap: 4px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid transparent;
 }
 
-.action-buttons {
+.chip--open {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chip--closed {
+  background: var(--warn);
+  color: #fff;
+}
+
+.chip--margen {
+  background: var(--bg-2);
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+
+/* AdBlue: azul tipo "líquido azul". Apaga el tono para no competir con
+   el chip de abierta/cerrada, pero lo mantiene reconocible. */
+.chip--adblue {
+  background: #e7f0ff;
+  color: #1d4ed8;
+  border-color: #bfd5fb;
+}
+
+/* GLP/Autogas: verde discreto, alude al "fuel alternativo". */
+.chip--glp {
+  background: #e8f6ee;
+  color: #1f7a3a;
+  border-color: #bfe2cb;
+}
+
+.chip--restricted {
+  margin-top: 6px;
+  align-self: flex-start;
+  height: auto;
+  padding: 6px 10px;
+  background: #fff4e5;
+  color: #8a4b00;
+  border-color: #f0c48a;
+  white-space: normal;
+}
+
+.chip--restricted svg {
+  flex-shrink: 0;
+}
+
+/* 2. Precio principal */
+.bigprice {
+  padding: 28px 0 24px;
   display: flex;
-  gap: 1rem;
-  padding: 1.5rem 2rem;
-  background: #f8fafc;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
 }
 
-.button-10, .button-11 {
+.bigprice__label {
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.bigprice__value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.bigprice__num {
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 12vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bigprice__unit {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+/* 3. Acciones primarias arriba */
+.actions {
+  display: flex;
+  gap: 8px;
+  padding: 20px 0 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0;
+  padding-bottom: 24px;
+}
+
+/* En móvil ocultamos .actions: la sticky-bar inferior cubre las dos acciones
+   y queremos evitar duplicación visual. */
+@media (max-width: 719.98px) {
+  .actions {
+    display: none;
+  }
+}
+
+.actions__btn {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  border: 0;
   border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.button-10 {
-  background: #2196f3;
-  color: white;
-}
-
-.button-10:hover {
-  background: #1976d2;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(33, 150, 243, 0.2);
-}
-
-.button-11 {
-  background: white;
-  color: #2c3e50;
-  border: 1px solid #e2e8f0;
-}
-
-.button-11:hover {
-  background: #f1f5f9;
-  transform: translateY(-2px);
-}
-
-.horario-container {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-.horario-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.horario-content {
-  color: #64748b;
-  line-height: 1.6;
-}
-
-@media (max-width: 600px) {
-  .gasolinera-title {
-    flex-direction: column;
-    text-align: center;
-    padding: 1.5rem;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .button-10, .button-11 {
-    width: 100%;
-  }
-}
-
-.back-button-modern {
-  background: none;
-  border: none;
-  color: #64748b;
+  padding: 14px 18px;
   font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 48px;
   cursor: pointer;
-  padding: 0.5rem 0;
-  margin-bottom: 1rem;
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.actions__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.actions__btn:disabled,
+.actions__btn[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.actions__btn--primary {
+  background: var(--ink);
+  color: var(--bg);
+  flex: 2;
+}
+
+.actions__btn--primary:hover {
+  background: var(--ink-2);
+}
+
+.actions__btn--primary:focus-visible {
+  outline-color: var(--accent, var(--ink));
+  outline-offset: 3px;
+}
+
+.actions__btn--ghost {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.actions__btn--ghost:hover:not(:disabled) {
+  background: var(--bg-3);
+}
+
+.actions__btn--ghost:disabled {
+  background: var(--bg-2);
+  color: var(--ink-faint);
+}
+
+.section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+
+/* 4. Otros precios */
+.otherprices {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.otherprices__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0;
+}
+
+.otherprices__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.otherprices__item:first-child {
+  border-top: 0;
+}
+
+.otherprices__label {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
   font-weight: 500;
-  transition: color 0.2s;
 }
 
-.back-button-modern:hover {
-  color: #2196f3;
-  transform: translateX(-4px);
+.otherprices__value {
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
-.map-container-rounded {
-  height: 400px;
-  width: 100%;
-  margin-top: 2rem;
-  border-radius: 20px;
+.otherprices__value small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.otherprices__na {
+  font-size: 0.875rem;
+  color: var(--ink-faint);
+}
+
+/* 5. Horario */
+.schedule {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.schedule__content {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule__content > div {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.schedule__content > div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* 6. Mapa */
+.mapsec {
+  padding: 24px 0;
+}
+
+.mapsec__frame {
+  position: relative;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+}
+
+.mapsec__map {
+  height: 50vh;
+  max-height: 480px;
+  min-height: 280px;
+  width: 100%;
+}
+
+.mapsec__map.leaflet-container,
+.mapsec__frame .leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--bg-2);
+}
+
+/* Atribución más discreta. */
+.mapsec__frame .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink-muted);
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 6px 0 0 0;
+}
+
+.mapsec__frame .leaflet-control-attribution a {
+  color: var(--ink-2);
+}
+
+/* Botón flotante "Abrir en Google Maps" */
+.mapsec__open {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  min-height: 44px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.06);
+  transition: background-color 120ms linear, transform 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mapsec__open:hover {
+  background: var(--bg-2);
+}
+
+.mapsec__open:active {
+  transform: translateY(1px);
+}
+
+.mapsec__open:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* FAB para recentrar en la gasolinera (sobre el mapa). */
+.mapsec__recenter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 500;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.06);
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mapsec__recenter:hover {
+  background: var(--bg-2);
+}
+
+.mapsec__recenter:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Pin custom con CSS puro: círculo blanco con borde negro y punto negro. */
+.map-pin-wrap {
+  background: transparent;
+  border: 0;
+}
+
+.map-pin {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.map-pin::after {
+  /* "Cola" del pin */
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: var(--bg);
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+
+.map-pin__dot {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: block;
+}
+
+@media (min-width: 720px) {
+  .mapsec__map {
+    height: 360px;
+    max-height: 360px;
+  }
+}
+
+/* 7. Pie */
+.station__foot {
+  padding: 20px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+/* Sticky bottom-bar (móvil) */
+.stickybar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 12px var(--gutter);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 8px;
+  z-index: 80;
+}
+
+.stickybar__btn {
+  flex: 1;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 48px;
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stickybar__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.stickybar__btn:disabled,
+.stickybar__btn[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.stickybar__btn--primary {
+  background: var(--ink);
+  color: var(--bg);
+  flex: 2;
+}
+
+.stickybar__btn--primary:hover:not(:disabled) {
+  background: var(--ink-2);
+}
+
+.stickybar__btn--primary:focus-visible {
+  outline-color: var(--accent, var(--ink));
+  outline-offset: 3px;
+}
+
+.stickybar__btn--primary:disabled {
+  background: var(--bg-3);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.stickybar__btn--ghost {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.stickybar__btn--ghost:hover:not(:disabled) {
+  background: var(--bg-3);
+}
+
+.stickybar__btn--ghost:disabled {
+  background: var(--bg-2);
+  color: var(--ink-faint);
+}
+
+@media (min-width: 720px) {
+  /* En desktop, la sticky vuelve a flujo normal y las acciones de arriba ya bastan: la ocultamos para no duplicar. */
+  .stickybar {
+    display: none;
+  }
+}
+
+/* Wrappers para botón principal + kebab */
+.actions__primary-wrap {
+  flex: 2;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.actions__primary-wrap .actions__btn--primary {
+  flex: 1;
+}
+
+.actions__kebab {
+  flex: 0 0 auto;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.actions__kebab:hover {
+  background: var(--bg-3);
+}
+
+.actions__kebab:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.stickybar__primary-wrap {
+  flex: 2;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.stickybar__primary-wrap .stickybar__btn--primary {
+  flex: 1;
+}
+
+.stickybar__kebab {
+  flex: 0 0 auto;
+  width: 48px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stickybar__kebab:hover {
+  background: var(--bg-3);
+}
+
+.stickybar__kebab:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Bottom sheet de selección de app de mapas */
+.mapssheet {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mapssheet__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  animation: mapssheet-fade 160ms ease-out;
+}
+
+.mapssheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-top: 1px solid var(--line);
+  padding: 12px var(--gutter);
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  animation: mapssheet-slide 200ms ease-out;
+}
+
+.mapssheet__handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong, var(--line));
+  margin: 4px auto 8px;
+}
+
+.mapssheet__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.mapssheet__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mapssheet__option {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 120ms linear, border-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mapssheet__option:hover {
+  background: var(--bg-3);
+}
+
+.mapssheet__option:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.mapssheet__option-name {
+  line-height: 1.2;
+}
+
+.mapssheet__remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px 2px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mapssheet__remember input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.mapssheet__cancel {
+  margin-top: 4px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--ink);
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+}
+
+.mapssheet__cancel:hover {
+  background: var(--bg-3);
+}
+
+.mapssheet__cancel:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@keyframes mapssheet-slide {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes mapssheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 720px) {
+  /* En desktop el sheet aparece centrado tipo modal (aunque el flujo desktop no lo dispara). */
+  .mapssheet {
+    align-items: center;
+  }
+  .mapssheet__panel {
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    padding-bottom: 20px;
+  }
+}
+
+/* Respeta prefers-reduced-motion: sin animaciones en el sheet. */
+@media (prefers-reduced-motion: reduce) {
+  .mapssheet__backdrop,
+  .mapssheet__panel,
+  .toast {
+    animation: none !important;
+  }
+}
+
+/* Toast inline no bloqueante (sustituye al alert al copiar) */
+.toast {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  animation: toast-fade 2500ms ease-out forwards;
+  max-width: calc(100% - 32px);
+  text-align: center;
+  pointer-events: none;
+}
+
+@keyframes toast-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
 }

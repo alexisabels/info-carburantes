@@ -8,19 +8,34 @@ export const handleSelectProvincia = async (
   setListadoPrecios,
   setMunicipios
 ) => {
-  const provinciaNombre = e.target.value;
-  const provincia = provincias.find((p) => p.Provincia === provinciaNombre);
+  const provinciaNombre = e?.target?.value;
 
-  if (provincia) {
-    setProvinciaSeleccionada(provincia);
+  // Clear (X de react-select) o valor vacío: reseteamos toda la cadena
+  // dependiente para que no queden municipios/precios huérfanos en pantalla.
+  if (!provinciaNombre) {
+    setProvinciaSeleccionada(null);
+    setMunicipios([]);
     setMunicipioSeleccionado(null);
     setListadoPrecios([]);
-    try {
-      const municipiosData = await fetchMunicipios(provincia.IDPovincia);
-      setMunicipios(municipiosData);
-    } catch (error) {
-      console.error("Error al cargar los municipios:", error);
-    }
+    return;
+  }
+
+  if (!Array.isArray(provincias)) return;
+  const provincia = provincias.find((p) => p.Provincia === provinciaNombre);
+  if (!provincia) return;
+
+  setProvinciaSeleccionada(provincia);
+  setMunicipioSeleccionado(null);
+  setListadoPrecios([]);
+  setMunicipios([]);
+  try {
+    const municipiosData = await fetchMunicipios(provincia.IDPovincia);
+    setMunicipios(Array.isArray(municipiosData) ? municipiosData : []);
+  } catch {
+    // Mantenemos consistencia: sin municipios y sin selección colgando.
+    setMunicipios([]);
+    setMunicipioSeleccionado(null);
+    setListadoPrecios([]);
   }
 };
 
@@ -32,22 +47,30 @@ export const handleSelectMunicipio = async (
   setLoadingPrecios,
   setFechaActualizacion
 ) => {
-  const municipioNombre = e.target.value;
-  const municipio = municipios.find((m) => m.Municipio === municipioNombre);
+  const municipioNombre = e?.target?.value;
 
-  if (municipio) {
-    setMunicipioSeleccionado(municipio);
+  // Clear (X de react-select): limpiamos municipio y precios.
+  if (!municipioNombre) {
+    setMunicipioSeleccionado(null);
     setListadoPrecios([]);
-    try {
-      setLoadingPrecios(true);
-      const data = await fetchMunicipioCompleto(municipio.IDMunicipio);
-      setListadoPrecios(data.ListaEESSPrecio || []);
-      console.log(data);
-      setFechaActualizacion(data.Fecha);
-    } catch (error) {
-      console.error("Error al cargar los datos:", error);
-    } finally {
-      setLoadingPrecios(false);
-    }
+    return;
+  }
+
+  if (!Array.isArray(municipios)) return;
+  const municipio = municipios.find((m) => m.Municipio === municipioNombre);
+  if (!municipio) return;
+
+  setMunicipioSeleccionado(municipio);
+  setListadoPrecios([]);
+  setLoadingPrecios(true);
+  try {
+    const data = await fetchMunicipioCompleto(municipio.IDMunicipio);
+    setListadoPrecios(data?.ListaEESSPrecio || []);
+    setFechaActualizacion(data?.Fecha || null);
+  } catch {
+    setListadoPrecios([]);
+    setFechaActualizacion(null);
+  } finally {
+    setLoadingPrecios(false);
   }
 };

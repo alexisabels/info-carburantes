@@ -1,71 +1,59 @@
-.fuel-selector-container {
-  display: flex;
-  flex-direction: column;
+/* Estilos base del segmented viven en App.css (.segmented).
+   Aquí solo añadimos refuerzos locales: touch targets y el icono sutil. */
+
+.fuel-selector .fuel-selector__btn {
+  display: inline-flex;
   align-items: center;
-  margin: 1rem 0;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.fuel-selector-label {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-}
-
-.fuel-selector-options {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
   justify-content: center;
-  width: 100%;
-}
-
-.fuel-option {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  background: white;
+  gap: 6px;
+  /* Desktop: 40px (segmented base es 36px, lo subimos un poco para confort).
+     Móvil/touch: 44px mínimo (regla de touch target). El override de móvil
+     vive en el media query @media (pointer: coarse) más abajo. */
+  min-height: 40px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  color: #444;
-  min-width: 80px;
-  display: flex;
-  justify-content: center;
+}
+
+.fuel-selector .fuel-selector__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  .fuel-selector .fuel-selector__btn {
+    min-height: 44px;
+  }
+}
+
+.fuel-selector .fuel-selector__icon {
+  display: inline-flex;
   align-items: center;
-}
-
-.fuel-option:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
-}
-
-.fuel-option.active {
-  background: #2196f3;
-  color: white;
-  border-color: #2196f3;
-  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
   font-weight: 600;
+  line-height: 1;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 1px solid currentColor;
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: color 120ms linear, opacity 120ms linear;
 }
 
-.fuel-label-short {
-  display: none;
+.fuel-selector .fuel-selector__btn[aria-pressed="true"] .fuel-selector__icon {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.fuel-selector .fuel-selector__label {
+  white-space: nowrap;
 }
 
 @media (max-width: 480px) {
-  .fuel-option {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    min-width: auto;
-    flex: 1;
-  }
-  
-  .fuel-label-full {
+  .fuel-selector .fuel-selector__icon {
     display: none;
-  }
-  
-  .fuel-label-short {
-    display: block;
   }
 }

@@ -1,0 +1,82 @@
+.about {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px var(--gutter) 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.about__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about h1 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.about h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.about__lede {
+  font-size: 1.0625rem;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.about section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.about a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.about__list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.about__list li {
+  list-style: disc;
+}
+
+.about__steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.about__steps li {
+  list-style: decimal;
+}
+
