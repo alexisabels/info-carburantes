@@ -7,6 +7,7 @@ import L from "leaflet";
 import "./Gasolinera.css";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import FavoriteButton from "../../components/Favorites/FavoriteButton";
+import PriceHistoryChart from "../../components/PriceHistoryChart/PriceHistoryChart";
 import { useTheme } from "../../hooks/useTheme";
 
 const TILE_URL = {
@@ -414,6 +415,15 @@ function Gasolinera() {
 
   const otros = precios.filter((p) => p !== principal);
 
+  // Lista de combustibles disponibles en el histórico: solo los que tienen
+  // precio actual (los que la API histórica también devolverá). El primero
+  // es el "principal" para que arranque con la preferencia del usuario.
+  const chartFuels = preciosConValor.map(({ etiqueta, campo }) => ({
+    etiqueta,
+    campo,
+  }));
+  const chartDefaultFuel = principal?.campo || chartFuels[0]?.campo || null;
+
   const km =
     hasCoords && userPos
       ? distanciaKm(userPos, { lat, lng })
@@ -817,7 +827,17 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 7. Última actualización + atribución */}
+      {/* 7. Histórico de precios (con selector de combustible) */}
+      {chartFuels.length > 0 && gasolinera.IDMunicipio && gasolinera.IDEESS && (
+        <PriceHistoryChart
+          idMunicipio={gasolinera.IDMunicipio}
+          idEstacion={gasolinera.IDEESS}
+          fuels={chartFuels}
+          defaultFuel={chartDefaultFuel}
+        />
+      )}
+
+      {/* 8. Última actualización + atribución */}
       <footer className="station__foot">
         {gasolinera["Toma de datos"] && (
           <p>Última actualización: {gasolinera["Toma de datos"]}</p>

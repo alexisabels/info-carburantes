@@ -2,6 +2,8 @@
 // Demográfico). El dominio sigue siendo `minetur.gob.es` por el cambio de
 // denominación del ministerio en 2018: la administración mantuvo la URL
 // legada para no romper integraciones existentes.
+import { formatFechaApi } from "./dateRange";
+
 const BASE_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
 
@@ -19,6 +21,10 @@ const ENDPOINTS = {
       idMunicipio
     )}`,
   TODAS_ESTACIONES: `${BASE_URL}/EstacionesTerrestres/`,
+  HISTORICO_MUNICIPIO: (fechaStr, idMunicipio) =>
+    `${BASE_URL}/EstacionesTerrestresHist/FiltroMunicipio/${fechaStr}/${encodeURIComponent(
+      idMunicipio
+    )}`,
 };
 
 const sleep = (ms) =>
@@ -302,4 +308,80 @@ export const fetchTodasLasEstaciones = async ({
   })();
 
   return allStationsInflight;
+};
+
+// --- Histórico por municipio ------------------------------------------------
+// El histórico de un día pasado es inmutable; lo cacheamos en sessionStorage
+// con TTL largo. Clave: (idMunicipio, fechaStr). Se descarga una sola vez
+// para todos los combustibles del día (la respuesta los trae todos).
+const HIST_TTL_MS = 24 * 60 * 60 * 1000;
+const HIST_SS_PREFIX = "histcarb.muni:";
+
+const ssGetHist = (key) => {
+  try {
+    if (typeof sessionStorage === "undefined") return null;
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || Date.now() - parsed.t > HIST_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+};
+
+const ssSetHist = (key, data) => {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), data }));
+  } catch {
+    // cuota llena o modo privado: ignorar y servir sin caché.
+  }
+};
+
+// Dedup de in-flight: si dos componentes piden la misma fecha/municipio a la
+// vez, comparten la promesa. Mapa por clave compuesta.
+const histInflight = new Map();
+
+export const fetchHistoricoMunicipio = async (
+  fecha,
+  idMunicipio,
+  { signal } = {}
+) => {
+  if (idMunicipio === undefined || idMunicipio === null || idMunicipio === "") {
+    return { Fecha: "", ListaEESSPrecio: [] };
+  }
+  const fechaStr = formatFechaApi(fecha);
+  const cacheKey = `${HIST_SS_PREFIX}${idMunicipio}:${fechaStr}`;
+  const cached = ssGetHist(cacheKey);
+  if (cached) return cached;
+
+  const inflight = histInflight.get(cacheKey);
+  if (inflight) return inflight;
+
+  const promise = (async () => {
+    try {
+      const data = await fetchJson(
+        ENDPOINTS.HISTORICO_MUNICIPIO(fechaStr, idMunicipio),
+        `No se pudo cargar el histórico de ${fechaStr}`,
+        { signal, retry: true }
+      );
+      const result =
+        data && typeof data === "object"
+          ? data
+          : { Fecha: fechaStr, ListaEESSPrecio: [] };
+      ssSetHist(cacheKey, result);
+      return result;
+    } catch (err) {
+      // Cancelación del usuario: propagar para que el componente pare.
+      if (signal && signal.aborted) throw err;
+      // Día sin datos (festivo, error puntual): degradar a hueco para no
+      // romper el render del resto de la serie.
+      return { Fecha: fechaStr, ListaEESSPrecio: [] };
+    } finally {
+      histInflight.delete(cacheKey);
+    }
+  })();
+  histInflight.set(cacheKey, promise);
+  return promise;
 };

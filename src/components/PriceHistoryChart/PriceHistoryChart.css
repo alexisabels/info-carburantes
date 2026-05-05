@@ -1,0 +1,193 @@
+.pricehist {
+  margin: 1.5rem 0;
+  padding: 14px 16px 16px;
+  background: var(--bg-2);
+  border-radius: 12px;
+  color: var(--ink);
+}
+
+.pricehist__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.pricehist__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pricehist__pills {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.pricehist__pill {
+  background: transparent;
+  border: 0;
+  padding: 6px 12px;
+  min-height: 32px;
+  min-width: 44px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 120ms linear, color 120ms linear;
+}
+
+.pricehist__pill:hover:not([aria-pressed="true"]) {
+  color: var(--ink);
+}
+
+.pricehist__pill[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.pricehist__pill:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Selector de combustible: chips individuales (no un segmented), para
+   diferenciarlo visualmente del rango (escala temporal vs categórico). */
+.pricehist__fuels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.pricehist__fuel {
+  background: transparent;
+  border: 1px solid var(--bg-3);
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 28px;
+  transition: background-color 120ms linear, color 120ms linear,
+    border-color 120ms linear;
+}
+
+.pricehist__fuel:hover:not([aria-pressed="true"]) {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+
+.pricehist__fuel[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  font-weight: 600;
+}
+
+.pricehist__fuel:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Contenedor del chart: altura responsive. Recharts requiere altura
+   explícita en el padre del ResponsiveContainer. */
+.pricehist__chartwrap {
+  width: 100%;
+  height: 200px;
+  margin-top: 4px;
+  /* color hereda --ink a través del CSS — Recharts usa "currentColor"
+     en stroke y fills para integrarse con el tema. */
+  color: var(--ink);
+}
+
+@media (min-width: 700px) {
+  .pricehist__chartwrap {
+    height: 240px;
+  }
+}
+
+/* Recharts inyecta su propia capa de surface; no queremos focus ring
+   feo en el SVG raíz. */
+.pricehist__chartwrap .recharts-surface:focus {
+  outline: none;
+}
+
+.pricehist__summary {
+  margin: 10px 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.pricehist__summary strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pricehist__loading,
+.pricehist__error,
+.pricehist__empty {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+.pricehist__error {
+  color: #c0392b;
+}
+
+/* Tooltip flotante. Recharts envuelve el contenido en un div sin estilos
+   propios, así que el look es íntegramente de aquí. */
+.pricehist__tip {
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--bg-3, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  pointer-events: none;
+  min-width: 140px;
+}
+
+.pricehist__tip-date {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+
+.pricehist__tip-price {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pricehist__tip-price strong {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pricehist__tip-price span {
+  color: var(--ink-muted);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricehist__pill,
+  .pricehist__fuel {
+    transition: none;
+  }
+}
