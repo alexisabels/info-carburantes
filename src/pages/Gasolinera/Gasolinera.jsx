@@ -822,7 +822,7 @@ function Gasolinera() {
         {gasolinera["Toma de datos"] && (
           <p>Última actualización: {gasolinera["Toma de datos"]}</p>
         )}
-        <p>Datos: Ministerio para la Transición Ecológica (MINETUR).</p>
+        <p>Datos: Ministerio para la Transición Ecológica (MITECO).</p>
       </footer>
 
       {/* Sticky inferior en móvil (en desktop se vuelve normal).

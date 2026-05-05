@@ -11,6 +11,28 @@
       ],
       "destination": "/api/og/:idMunicipio/:idGasolinera"
     },
+    {
+      "source": "/municipio/:idMunicipio",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|facebookcatalog|Facebot|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Slack-ImgProxy|Discordbot|Embedly|Iframely|Pinterest|Mastodon|SkypeUriPreview|vkShare|redditbot|YandexBot|Applebot|Googlebot|bingbot|DuckDuckBot).*"
+        }
+      ],
+      "destination": "/api/og/municipio/:idMunicipio"
+    },
+    {
+      "source": "/municipio/:idMunicipio/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|facebookcatalog|Facebot|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Slack-ImgProxy|Discordbot|Embedly|Iframely|Pinterest|Mastodon|SkypeUriPreview|vkShare|redditbot|YandexBot|Applebot|Googlebot|bingbot|DuckDuckBot).*"
+        }
+      ],
+      "destination": "/api/og/municipio/:idMunicipio"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

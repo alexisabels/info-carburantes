@@ -43,7 +43,15 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<MainContent />} />
       <Route path="/cerca" element={<MainContent />} />
+      {/* /municipio (picker), /municipio/:id (listado), /municipio/:id/:slug
+        * (canónica con slug SEO). Las tres caen en MainContent y este se
+        * sincroniza con la URL para decidir qué render. */}
+      <Route path="/municipio" element={<MainContent />} />
       <Route path="/municipio/:idMunicipio" element={<MainContent />} />
+      <Route
+        path="/municipio/:idMunicipio/:slug"
+        element={<MainContent />}
+      />
       <Route
         path="/gasolinera/:idMunicipio/:idGasolinera"
         element={<Gasolinera />}

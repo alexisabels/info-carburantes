@@ -1,12 +1,19 @@
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { fetchProvincias, fetchTodasLasEstaciones } from "../utils/api";
+import {
+  fetchMunicipioCompleto,
+  fetchProvincias,
+  fetchTodasLasEstaciones,
+} from "../utils/api";
+import { slugify } from "../utils/slug";
 import ProvinciaSelector from "./Selectors/ProvinciaSelector";
 import MunicipioSelector from "./Selectors/MunicipioSelector";
-import {
-  handleSelectProvincia,
-  handleSelectMunicipio,
-} from "../utils/handlers";
+import { handleSelectProvincia } from "../utils/handlers";
 import GasolineraTable from "./GasolineraTable";
 import MapView from "./MapView/MapView";
 import FuelTypeSelector from "./Selectors/FuelTypeSelector";
@@ -152,8 +159,23 @@ const clearSnapshot = () => {
 };
 
 const MainContent = () => {
+  // ─── Navegación. La URL es la fuente de verdad para el scope:
+  //     /                            → home
+  //     /cerca                       → near
+  //     /municipio                   → manual (picker)
+  //     /municipio/:id[/:slug]       → manual (listado)
+  // Esto reemplaza al snapshot en sessionStorage como mecanismo principal:
+  // refrescar la página o pegar una URL aterriza directo en la vista
+  // correcta, y compartir un link de un municipio funciona end-to-end.
+  const navigate = useNavigate();
+  // Nombrado `routeLocation` para no chocar con el `location` (lat/lng) que
+  // devuelve getUserLocation() dentro de handleNearMe.
+  const routeLocation = useLocation();
+  const params = useParams();
+
   // Snapshot leído una sola vez al montar para rehidratar la vista que el
-  // usuario tenía antes de entrar en la ficha de una gasolinera.
+  // usuario tenía antes de entrar en la ficha de una gasolinera. Solo se
+  // usa cuando la URL es `/` (sin información), como fallback amistoso.
   const initialSnapshot = useRef(readSnapshot()).current;
   // Último ámbito recordado (sin auto-iniciar GPS): null | "near" | "manual"
   const initialLastScope = useRef(readStoredScope()).current;
@@ -291,8 +313,8 @@ const MainContent = () => {
   }, []);
 
   // Persistimos un snapshot de la búsqueda mientras estemos fuera del home,
-  // para que volver desde /gasolinera/... rehidrate la vista en lugar de
-  // resetearla. En home limpiamos.
+  // como fallback amistoso. Con el routing por URL es mayormente redundante
+  // (la URL ya rehidrata) pero lo mantenemos por si alguien llega a `/`.
   useEffect(() => {
     if (scope === "home") {
       clearSnapshot();
@@ -315,6 +337,149 @@ const MainContent = () => {
     municipios,
     listadoPrecios,
     fechaActualizacion,
+  ]);
+
+  // ─── URL → estado ─────────────────────────────────────────────────────
+  // La URL es la fuente de verdad: refresh, deep-link o back/forward
+  // aterrizan en la vista correcta. Si pegamos /municipio/X/slug, fetcheamos
+  // el municipio, derivamos su nombre y canonicalizamos el slug.
+  const lastFetchedMunicipioRef = useRef(null);
+
+  useEffect(() => {
+    const path = routeLocation.pathname;
+
+    if (path === "/") {
+      // Volver al home desde otra vista (por back de navegador, por
+      // ejemplo). Reseteamos lo que se vea raro al pintar la home.
+      lastFetchedMunicipioRef.current = null;
+      if (scope !== "home") setScope("home");
+      return undefined;
+    }
+
+    if (path === "/cerca") {
+      if (scope !== "near") setScope("near");
+      // Disparamos near-me solo si no hay datos ni petición en curso.
+      // Diferimos al siguiente tick para no llamar setState dentro del
+      // render-fase del effect.
+      if (
+        listadoPrecios.length === 0 &&
+        !loadingPrecios &&
+        !nearMeError
+      ) {
+        const t = setTimeout(() => {
+          if (isMountedRef.current) handleNearMe();
+        }, 0);
+        return () => clearTimeout(t);
+      }
+      return undefined;
+    }
+
+    if (path === "/municipio") {
+      // Picker (no hay id todavía).
+      if (scope !== "manual") setScope("manual");
+      lastFetchedMunicipioRef.current = null;
+      if (municipioSeleccionado || listadoPrecios.length > 0) {
+        setListadoPrecios([]);
+        setMunicipioSeleccionado(null);
+      }
+      return undefined;
+    }
+
+    if (path.startsWith("/municipio/") && params.idMunicipio) {
+      const idMun = String(params.idMunicipio);
+      if (scope !== "manual") setScope("manual");
+
+      if (lastFetchedMunicipioRef.current === idMun) {
+        // Ya estamos pintando este municipio; solo canonicalizamos slug
+        // si hace falta.
+        if (municipioSeleccionado?.Municipio) {
+          const canonical = slugify(municipioSeleccionado.Municipio);
+          if (canonical && params.slug !== canonical) {
+            navigate(`/municipio/${idMun}/${canonical}`, { replace: true });
+          }
+        }
+        return undefined;
+      }
+
+      lastFetchedMunicipioRef.current = idMun;
+      let cancelled = false;
+      setLoadingPrecios(true);
+      setListadoPrecios([]);
+      setMunicipioSeleccionado(null);
+      setOnlyOpen(false);
+      setSortBy("price");
+      setViewMode("list");
+
+      (async () => {
+        try {
+          const data = await fetchMunicipioCompleto(idMun);
+          if (cancelled || !isMountedRef.current) return;
+          const lista = data?.ListaEESSPrecio || [];
+          setListadoPrecios(lista);
+          setFechaActualizacion(data?.Fecha || null);
+          const first = lista[0] || {};
+          const nombre = first.Municipio || "";
+          setMunicipioSeleccionado({
+            IDMunicipio: idMun,
+            Municipio: nombre,
+            Provincia: first.Provincia || "",
+            IDProvincia: first.IDProvincia || "",
+          });
+
+          // Canonicalización del slug.
+          if (nombre) {
+            const canonical = slugify(nombre);
+            if (canonical && params.slug !== canonical) {
+              navigate(`/municipio/${idMun}/${canonical}`, { replace: true });
+            }
+          }
+        } catch {
+          if (!cancelled && isMountedRef.current) {
+            setListadoPrecios([]);
+            setFechaActualizacion(null);
+          }
+        } finally {
+          if (!cancelled && isMountedRef.current) {
+            setLoadingPrecios(false);
+          }
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    return undefined;
+    // Solo respondemos a cambios en la URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeLocation.pathname, params.idMunicipio, params.slug]);
+
+  // Document title por ruta — útil para tab del navegador y SEO complementario.
+  // El OG meta de los bots se sirve desde /api/og/... cuando aplique.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const path = routeLocation.pathname;
+    const baseTitle = "Carburantes — Precios de gasolineras en España";
+    if (path === "/cerca") {
+      document.title = "Gasolineras cerca de ti · Carburantes";
+    } else if (
+      path.startsWith("/municipio/") &&
+      municipioSeleccionado?.Municipio
+    ) {
+      const m = municipioSeleccionado.Municipio;
+      const p = municipioSeleccionado.Provincia;
+      document.title = p
+        ? `Precios de gasolineras en ${m} (${p}) · Carburantes`
+        : `Precios de gasolineras en ${m} · Carburantes`;
+    } else if (path === "/municipio") {
+      document.title = "Buscar por municipio · Carburantes";
+    } else {
+      document.title = baseTitle;
+    }
+  }, [
+    routeLocation.pathname,
+    municipioSeleccionado?.Municipio,
+    municipioSeleccionado?.Provincia,
   ]);
 
   const handleNearMe = async () => {
@@ -417,25 +582,30 @@ const MainContent = () => {
   };
 
   const handleManualSearchClick = () => {
+    // La URL → estado se encarga del scope y del reseteo de listado.
     nearMeRequestIdRef.current++;
-    setScope("manual");
     writeStoredScope("manual");
-    setListadoPrecios([]);
     setProvinciaSeleccionada(null);
     setMunicipioSeleccionado(null);
     setLoadingPrecios(false);
     setNearMePhase(null);
     setNearMeError(null);
     setSortBy("price");
-    // En manual arrancamos en lista.
     setViewMode("list");
     setUserPos(null);
     setOnlyOpen(false);
+    navigate("/municipio");
+  };
+
+  const goNearMe = () => {
+    // Disparamos navegación; el URL effect llamará a handleNearMe()
+    // cuando el path se actualice a /cerca.
+    if (loadingPrecios) return;
+    navigate("/cerca");
   };
 
   const goHome = () => {
     nearMeRequestIdRef.current++;
-    setScope("home");
     setListadoPrecios([]);
     setProvinciaSeleccionada(null);
     setMunicipioSeleccionado(null);
@@ -444,6 +614,17 @@ const MainContent = () => {
     setNearMeError(null);
     setOnlyOpen(false);
     clearSnapshot();
+    navigate("/");
+  };
+
+  // Navega al listado de un municipio con slug canónico. Lo llamamos desde
+  // el MunicipioSelector cuando el usuario lo elige.
+  const navigateToMunicipio = (municipio) => {
+    if (!municipio || !municipio.IDMunicipio) return;
+    const slug = slugify(municipio.Municipio || "");
+    const id = municipio.IDMunicipio;
+    if (slug) navigate(`/municipio/${id}/${slug}`);
+    else navigate(`/municipio/${id}`);
   };
 
   const showHome = scope === "home";
@@ -509,7 +690,7 @@ const MainContent = () => {
             <button
               type="button"
               className={`bigbtn${initialLastScope === "near" ? " bigbtn--recent" : ""}`}
-              onClick={handleNearMe}
+              onClick={goNearMe}
               disabled={loadingPrecios}
               aria-busy={loadingPrecios || undefined}
               autoFocus={initialLastScope === "near"}
@@ -560,6 +741,17 @@ const MainContent = () => {
                     </option>
                   ))}
                 </select>
+                <span className="home__fuelselect-chev" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+                    <path
+                      d="m6 9 6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
               </label>
             </p>
           </div>
@@ -686,16 +878,21 @@ const MainContent = () => {
               {provinciaSeleccionada && (
                 <MunicipioSelector
                   municipios={municipios}
-                  onSelect={(e) =>
-                    handleSelectMunicipio(
-                      e,
-                      municipios,
-                      setMunicipioSeleccionado,
-                      setListadoPrecios,
-                      setLoadingPrecios,
-                      setFechaActualizacion
-                    )
-                  }
+                  onSelect={(e) => {
+                    // Con routing por URL no fetcheamos aquí: navegamos a
+                    // /municipio/:id/:slug y el URL effect se encarga de
+                    // traer el listado y canonicalizar el slug.
+                    const nombre = e?.target?.value;
+                    if (!nombre) {
+                      setMunicipioSeleccionado(null);
+                      setListadoPrecios([]);
+                      return;
+                    }
+                    const mun = municipios.find(
+                      (m) => m.Municipio === nombre
+                    );
+                    if (mun) navigateToMunicipio(mun);
+                  }}
                 />
               )}
             </section>

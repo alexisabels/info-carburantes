@@ -10,6 +10,7 @@ import FilterBar, {
   SERVICE_DEFS,
   FUEL_DEFS,
 } from "./FilterBar/FilterBar";
+import { fuelShortLabel, noPriceLabel } from "../utils/fuelLabels";
 import "../App.css";
 
 const collator = new Intl.Collator("es", { sensitivity: "base" });
@@ -269,7 +270,7 @@ const GasolineraTable = ({
             : "";
           const pricePart = hasPrice
             ? `, ${price} euros por litro`
-            : ", sin precio disponible";
+            : `, sin ${fuelShortLabel(selectedFuel)} disponible`;
           const ariaLabel = `${stationName}${distancePart}${pricePart}. Ver detalle`;
           const href = buildHref(gasolinera);
           const cardClassName = [
@@ -329,7 +330,9 @@ const GasolineraTable = ({
                       <span className="station-card__unit">€/L</span>
                     </>
                   ) : (
-                    <span className="station-card__price--na">Sin precio</span>
+                    <span className="station-card__price--na">
+                      {noPriceLabel(selectedFuel)}
+                    </span>
                   )}
                 </span>
               </Link>

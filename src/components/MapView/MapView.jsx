@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getLowestPrices } from "../../utils/getLowestPrices";
 import { isOpenNow } from "../../utils/formatHorario";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
+import { noPriceLabel } from "../../utils/fuelLabels";
 import { useTheme } from "../../hooks/useTheme";
 import "./MapView.css";
 
@@ -324,7 +325,9 @@ const MapView = ({
                       ·
                     </span>
                     <span className="map-tooltip__price">
-                      {formatted ? `${formatted} €/L` : "Sin precio"}
+                      {formatted
+                        ? `${formatted} €/L`
+                        : noPriceLabel(selectedFuel)}
                     </span>
                   </Tooltip>
                   <Popup
@@ -338,6 +341,7 @@ const MapView = ({
                       station={s}
                       formatted={formatted}
                       distancia={distancia}
+                      selectedFuel={selectedFuel}
                       mapsHref={buildHrefForProvider(s._lat, s._lng)}
                       onOpenDetail={() =>
                         navigate(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
@@ -368,7 +372,14 @@ const MapView = ({
 
 // Contenido del Popup en desktop. Layout compacto: logo + rótulo, dirección,
 // distancia (si la tenemos), precio destacado, dos botones.
-function MarkerPopup({ station, formatted, distancia, mapsHref, onOpenDetail }) {
+function MarkerPopup({
+  station,
+  formatted,
+  distancia,
+  selectedFuel,
+  mapsHref,
+  onOpenDetail,
+}) {
   return (
     <div className="map-popup__inner">
       <div className="map-popup__head">
@@ -395,7 +406,7 @@ function MarkerPopup({ station, formatted, distancia, mapsHref, onOpenDetail }) 
             <span className="map-popup__unit">€/L</span>
           </div>
         ) : (
-          <div className="map-popup__nodata">Sin precio</div>
+          <div className="map-popup__nodata">{noPriceLabel(selectedFuel)}</div>
         )}
         {distancia && (
           <span className="map-popup__dist">{distancia}</span>
@@ -499,7 +510,7 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
                 <span className="peeksheet__unit">€/L</span>
               </>
             ) : (
-              <span className="peeksheet__nodata">Sin precio</span>
+              <span className="peeksheet__nodata">{noPriceLabel(selectedFuel)}</span>
             )}
           </div>
         </div>
