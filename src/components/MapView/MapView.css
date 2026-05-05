@@ -327,23 +327,37 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.map-popup__btn--primary {
+/* Reset de los estilos por defecto de Leaflet para enlaces dentro del
+ * popup (azul + subrayado), que se colaban en el botón "Cómo llegar". */
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn:hover,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn:focus {
+  text-decoration: none;
+}
+
+.map-popup__btn--primary,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn--primary {
   background: var(--ink);
   color: var(--bg);
   flex: 1.4;
 }
 
-.map-popup__btn--primary:hover {
+.map-popup__btn--primary:hover,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn--primary:hover {
   background: var(--ink-2);
+  color: var(--bg);
 }
 
-.map-popup__btn--ghost {
+.map-popup__btn--ghost,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn--ghost {
   background: var(--bg-2);
   color: var(--ink);
 }
 
-.map-popup__btn--ghost:hover {
+.map-popup__btn--ghost:hover,
+.leaflet-popup.map-popup .leaflet-popup-content a.map-popup__btn--ghost:hover {
   background: var(--bg-3);
+  color: var(--ink);
 }
 
 .map-popup__btn:focus-visible {
