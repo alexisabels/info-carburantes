@@ -32,7 +32,17 @@ const Footer = () => {
         </nav>
       </div>
       <div className="appfoot__bottom">
-        <div className="appfoot__copy">© {year} Carburantes</div>
+        <div className="appfoot__copy">
+          © {year} Carburantes — Hecho por{" "}
+          <a
+            href="https://alexisabel.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="appfoot__author"
+          >
+            alexisabel
+          </a>
+        </div>
         <ThemeToggle />
       </div>
     </footer>
