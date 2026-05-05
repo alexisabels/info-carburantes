@@ -3,7 +3,7 @@
 // condicional por User-Agent en vercel.json), por lo que no consume
 // invocaciones con tráfico humano normal.
 
-const MINETUR_BASE =
+const MITECO_BASE =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
 
 const escapeHtml = (str) =>
@@ -32,7 +32,7 @@ const formatearPrecio = (raw) => {
 };
 
 const fetchMunicipio = async (idMunicipio) => {
-  const url = `${MINETUR_BASE}/EstacionesTerrestres/FiltroMunicipio/${encodeURIComponent(
+  const url = `${MITECO_BASE}/EstacionesTerrestres/FiltroMunicipio/${encodeURIComponent(
     idMunicipio
   )}`;
   const controller = new AbortController();

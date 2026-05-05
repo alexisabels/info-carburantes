@@ -1,3 +1,7 @@
+// API pública del MITECO (Ministerio para la Transición Ecológica y el Reto
+// Demográfico). El dominio sigue siendo `minetur.gob.es` por el cambio de
+// denominación del ministerio en 2018: la administración mantuvo la URL
+// legada para no romper integraciones existentes.
 const BASE_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
 
@@ -107,7 +111,7 @@ const fetchJsonOnce = async (url, errorMessage, { timeoutMs, signal }) => {
     });
   }
 
-  // La API del MINETUR a veces responde con HTTP 200 pero ResultadoConsulta != "OK".
+  // La API del MITECO a veces responde con HTTP 200 pero ResultadoConsulta != "OK".
   if (
     data &&
     typeof data === "object" &&
@@ -257,7 +261,7 @@ export const fetchGasolineraPorID = async (
 };
 
 // Caché en memoria del listado completo: el JSON pesa varios MB y la API del
-// MINETUR es lenta. La fecha de actualización oficial cambia varias veces al
+// MITECO es lenta. La fecha de actualización oficial cambia varias veces al
 // día, así que un TTL de 10 min es seguro y evita re-descarga al alternar
 // entre vistas dentro de la misma sesión.
 const ALL_STATIONS_TTL_MS = 10 * 60 * 1000;

@@ -3,7 +3,7 @@
 // (ver `has` en vercel.json), para no consumir invocaciones con tráfico
 // humano normal — la SPA se sirve estática a los usuarios de carne y hueso.
 
-const MINETUR_BASE =
+const MITECO_BASE =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
 
 const escapeHtml = (str) =>
@@ -24,7 +24,7 @@ const formatearPrecio = (raw) => {
 };
 
 const fetchEstacion = async (idMunicipio, idGasolinera) => {
-  const url = `${MINETUR_BASE}/EstacionesTerrestres/FiltroMunicipio/${encodeURIComponent(
+  const url = `${MITECO_BASE}/EstacionesTerrestres/FiltroMunicipio/${encodeURIComponent(
     idMunicipio
   )}`;
   const controller = new AbortController();

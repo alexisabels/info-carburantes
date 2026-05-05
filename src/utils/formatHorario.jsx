@@ -74,6 +74,7 @@ export const formatHorario = (horario) => {
     return (
       <div key={index}>
         <span className="dias">{dias}</span>
+        <span className="horario-sep" aria-hidden="true">: </span>
         <span className="franja">{renderFranjas(franjas)}</span>
       </div>
     );
