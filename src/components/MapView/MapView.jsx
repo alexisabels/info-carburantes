@@ -18,11 +18,21 @@ import { noPriceLabel } from "../../utils/fuelLabels";
 import { useTheme } from "../../hooks/useTheme";
 import "./MapView.css";
 
+// Light: CARTO Voyager. Dark: CARTO Dark Matter con un filtro CSS
+// derivado del análisis estadístico de los tiles raw — la banda de
+// luminancia de Dark Matter está agrupada entre L=9 (fondo) y L=45
+// (calles), gap de solo 36 puntos. Contrast > 1 sobre esa banda
+// agrupada CLAMPA todo a negro (lo que pasaba antes). El filtro
+// principled para mapearla al target Apple Maps (bg~30, calles~120,
+// gap~90) es brightness ALTO con contrast LIGERAMENTE < 1 — desplaza
+// la banda hacia arriba sin aplastarla. Ver MapView.css.
 const TILE_URL = {
   light:
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
 };
+const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const MAPS_PREF_KEY = "maps.preferred";
 const MAPS_OPTIONS = ["google", "apple", "waze"];
@@ -266,7 +276,7 @@ const MapView = ({
       >
         <TileLayer
           key={theme}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution={TILE_ATTRIBUTION}
           url={TILE_URL[theme] || TILE_URL.light}
           subdomains={["a", "b", "c", "d"]}
           maxZoom={19}

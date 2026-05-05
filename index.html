@@ -3,7 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- maximum-scale=1 + user-scalable=no desactivan el pinch-zoom del
+       NAVEGADOR a nivel de página. Leaflet mantiene su pinch-zoom propio
+       sobre el mapa porque captura los eventos touch directamente, así
+       que el efecto neto es: pinch sobre el mapa hace zoom del mapa,
+       pinch fuera del mapa (sobre tarjetas, popups, listas) no hace
+       nada — comportamiento nativo de apps móviles. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Carburantes — Precios de gasolineras en España</title>
   <meta name="description"
     content="Consulta precios actualizados de gasolina y diésel en estaciones de servicio de España. Encuentra la gasolinera más barata cerca de ti en tiempo real." />

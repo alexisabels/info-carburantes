@@ -266,14 +266,48 @@ export const fetchGasolineraPorID = async (
   return gasolinera;
 };
 
-// Caché en memoria del listado completo: el JSON pesa varios MB y la API del
-// MITECO es lenta. La fecha de actualización oficial cambia varias veces al
-// día, así que un TTL de 10 min es seguro y evita re-descarga al alternar
-// entre vistas dentro de la misma sesión.
-const ALL_STATIONS_TTL_MS = 10 * 60 * 1000;
+// Caché del listado nacional. El JSON pesa varios MB y la API del MITECO
+// es lenta (~3-8s en 4G). MITECO actualiza ~3 veces/día, así que TTL 1h es
+// holgado. Usamos localStorage para que la 2ª "Cerca de mí" del día no
+// vuelva a descargar aunque el usuario cierre la pestaña — el caché en
+// memoria por sí solo solo cubre la sesión actual.
+//
+// Capa 1 (memoria): hit instantáneo dentro de la sesión.
+// Capa 2 (localStorage): sobrevive a recargas, TTL 1h.
+const ALL_STATIONS_TTL_MS = 60 * 60 * 1000;
+const ALL_STATIONS_LS_KEY = "carb.allStations.v1";
 let allStationsCache = null;
 let allStationsCachedAt = 0;
 let allStationsInflight = null;
+
+const lsGetAllStations = () => {
+  try {
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem(ALL_STATIONS_LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (typeof parsed.t !== "number") return null;
+    if (Date.now() - parsed.t > ALL_STATIONS_TTL_MS) return null;
+    if (!parsed.data || typeof parsed.data !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const lsSetAllStations = (data) => {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(
+      ALL_STATIONS_LS_KEY,
+      JSON.stringify({ t: Date.now(), data })
+    );
+  } catch {
+    // QuotaExceededError o modo privado: el JSON puede acercarse a la cuota
+    // de 5MB de localStorage. No es fatal: seguimos sirviendo desde memoria.
+  }
+};
 
 export const fetchTodasLasEstaciones = async ({
   force = false,
@@ -286,6 +320,14 @@ export const fetchTodasLasEstaciones = async ({
     now - allStationsCachedAt < ALL_STATIONS_TTL_MS
   ) {
     return allStationsCache;
+  }
+  if (!force) {
+    const persisted = lsGetAllStations();
+    if (persisted) {
+      allStationsCache = persisted.data;
+      allStationsCachedAt = persisted.t;
+      return persisted.data;
+    }
   }
   if (allStationsInflight) return allStationsInflight;
 
@@ -301,6 +343,7 @@ export const fetchTodasLasEstaciones = async ({
         data && typeof data === "object" ? data : { ListaEESSPrecio: [] };
       allStationsCache = result;
       allStationsCachedAt = Date.now();
+      lsSetAllStations(result);
       return result;
     } finally {
       allStationsInflight = null;

@@ -59,6 +59,34 @@
   background: var(--bg-2);
 }
 
+/* Modo oscuro del mapa: CARTO Dark Matter (URL en MapView.jsx) tiene la
+ * estructura correcta — calles claras sobre fondo casi-negro tipo Apple
+ * Maps oscuro — pero con su luminancia clusterizada entre L=9 (fondo) y
+ * L=45 (calles). Necesitamos estirar esa banda al rango Apple Maps
+ * (bg~30, calles~120, gap~90).
+ *
+ * MATEMÁTICA. CSS aplica brightness y contrast como:
+ *   out = (in * b - 0.5) * c + 0.5
+ * Para mapear [low_in, high_in] → [low_out, high_out] linealmente
+ * resolvemos b y c. Entradas Dark Matter normalizadas: [0.035, 0.176].
+ * Salidas Apple-target normalizadas: [0.118, 0.471]. Resolviendo:
+ *   slope = b*c = 2.50  → desplazamiento de la banda
+ *   bias  = 0.5*(1-c) = 0.030  → c ≈ 0.94, b ≈ 2.66
+ *
+ * Por qué intentos previos fallaban:
+ *   - contrast > 1 sobre banda agrupada en zona oscura → clampa todo
+ *     a 0 (negro literal). Lo opuesto de lo que parece intuitivo.
+ *   - invert sobre Voyager light → calles blancas se vuelven LO MÁS
+ *     OSCURO posible (estructuralmente invertido).
+ *   - brightness < 1 sobre Voyager light → atenúa todo, pero no separa
+ *     calles del fondo (gap ya minúsculo en origen).
+ *
+ * SÓLO al pane de tiles: si afectara a markers/popups, se irían los
+ * precios y FABs por la luminancia. */
+[data-theme="dark"] .mapview .leaflet-tile-pane {
+  filter: brightness(2.66) contrast(0.94);
+}
+
 .mapview .leaflet-control-attribution {
   background: var(--map-attribution-bg);
   color: var(--ink-muted);
@@ -118,6 +146,15 @@
   pointer-events: none;
 }
 
+/* En oscuro la burbuja se eleva: el mapa filtrado tiene fondo a L≈30,
+ * `--bg-2` (L≈22) la dejaba HUNDIDA en lugar de flotando. Usamos el
+ * token de elevación específico para UI flotante sobre mapa, que es
+ * deliberadamente más claro que el fondo del mapa. */
+[data-theme="dark"] .map-price__bubble {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
+}
+
 .map-price--cheapest .map-price__bubble {
   background: var(--accent);
   color: #ffffff;
@@ -129,12 +166,33 @@
   z-index: 1000 !important;
 }
 
+/* Cheapest en oscuro: el mapa filtrado ahora es calmado, así que la
+ * "aureola" puede ser más sutil sin perder protagonismo. Bajamos opacidades
+ * (0.28→0.22 y 0.45→0.35), pequeño border de --accent-strong para que la
+ * pill no parezca un sticker pegado. Mantenemos texto oscuro (legibilidad
+ * sobre verde es mejor que con blanco). */
+[data-theme="dark"] .map-price--cheapest .map-price__bubble {
+  background: var(--accent);
+  color: #0a0a0a;
+  border-color: var(--accent-strong);
+  box-shadow:
+    0 0 0 3px rgba(45, 181, 103, 0.22),
+    0 4px 10px rgba(45, 181, 103, 0.35);
+}
+
 .map-price--na .map-price__bubble {
   color: var(--ink-muted);
   background: var(--bg-2);
   border-color: var(--line-strong);
   box-shadow: var(--shadow-sm);
   opacity: 0.85;
+}
+
+/* NA: misma elevación que las normales pero con menos opacidad para
+ * que no compitan con las que sí tienen precio. */
+[data-theme="dark"] .map-price--na .map-price__bubble {
+  background: var(--map-card);
+  border-color: var(--map-card-strong);
 }
 
 /* ───────── Tooltip al hover (desktop) ─────────
@@ -153,6 +211,13 @@
   line-height: 1.2;
   box-shadow: var(--shadow-sm);
   /* Quitamos la flecha por defecto de Leaflet, reduce ruido visual. */
+}
+
+/* Tooltip elevado sobre el mapa: igual que las burbujas, sube de
+ * --bg-2 al token específico de UI sobre mapa. */
+[data-theme="dark"] .map-tooltip {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
 }
 
 .map-tooltip.leaflet-tooltip-top::before {
@@ -189,6 +254,11 @@
   padding: 0;
 }
 
+[data-theme="dark"] .leaflet-popup.map-popup .leaflet-popup-content-wrapper {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
+}
+
 .leaflet-popup.map-popup .leaflet-popup-content {
   margin: 0;
   padding: 0;
@@ -202,6 +272,11 @@
   background: var(--bg);
   border: 1px solid var(--line);
   box-shadow: none;
+}
+
+[data-theme="dark"] .leaflet-popup.map-popup .leaflet-popup-tip {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
 }
 
 .map-popup__inner {
@@ -230,9 +305,9 @@
 }
 
 .map-popup__logo img {
-  max-width: 78%;
-  max-height: 78%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .map-popup__heading {
@@ -385,6 +460,14 @@
   display: block;
 }
 
+/* Estilo iconoclasta tipo Google Maps: aro claro alrededor del punto azul
+ * para separarlo visualmente del fondo. En oscuro, `--bg` es casi negro
+ * y el aro desaparecía → forzamos un aro claro fijo. */
+[data-theme="dark"] .map-userpos__dot {
+  border-color: #f5f5f5;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
 .map-userpos__pulse {
   position: absolute;
   inset: 0;
@@ -425,6 +508,17 @@
   cursor: pointer;
   box-shadow: var(--shadow-md-strong);
   transition: background-color 150ms ease, transform 150ms ease;
+}
+
+/* FAB elevado sobre el mapa: token de elevación específico — más claro
+ * que el fondo del mapa, borde visible que separa sin chillar. */
+[data-theme="dark"] .mapview__fab {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
+}
+
+[data-theme="dark"] .mapview__fab:hover {
+  background: var(--map-card-strong);
 }
 
 .mapview__fab--recenter {
@@ -577,9 +671,9 @@
 }
 
 .peeksheet__logo img {
-  max-width: 78%;
-  max-height: 78%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .peeksheet__main {

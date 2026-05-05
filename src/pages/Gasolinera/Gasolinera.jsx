@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { fetchGasolineraPorID } from "../../utils/api";
 import { formatHorario, isOpenNow } from "../../utils/formatHorario";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
@@ -7,14 +7,23 @@ import L from "leaflet";
 import "./Gasolinera.css";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import FavoriteButton from "../../components/Favorites/FavoriteButton";
-import PriceHistoryChart from "../../components/PriceHistoryChart/PriceHistoryChart";
 import { useTheme } from "../../hooks/useTheme";
 
+// Lazy: recharts pesa ~75KB gzip y dispara 7 fetches secuenciales al montar.
+// No queremos eso en la primera pintura de la ficha. Solo se carga cuando el
+// usuario pulsa "Ver histórico".
+const PriceHistoryChart = lazy(
+  () => import("../../components/PriceHistoryChart/PriceHistoryChart")
+);
+
+// Light: Voyager. Dark: Dark Matter con boost stretching. Ver MapView.jsx.
 const TILE_URL = {
   light:
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
 };
+const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const PRECIOS = [
   { etiqueta: "Diésel A", campo: "Precio Gasoleo A" },
@@ -174,12 +183,32 @@ function Gasolinera() {
   const [gasolinera, setGasolinera] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [userPos, setUserPos] = useState(null);
+  // Si MainContent ya tiene un fix GPS reciente (<10 min) lo reusamos en
+  // vez de pedir GPS otra vez al entrar a la ficha. iOS Safari tarda 1-3s
+  // en `getCurrentPosition` y a veces dispara prompt si el último fix
+  // expiró: no nos hace falta para mostrar "a X km".
+  const [userPos, setUserPos] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("main.snapshot");
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const pos = data?.userPos;
+      if (!pos || !Number.isFinite(pos.lat) || !Number.isFinite(pos.lng))
+        return null;
+      if (pos.t && Date.now() - pos.t > 10 * 60 * 1000) return null;
+      return { lat: pos.lat, lng: pos.lng };
+    } catch {
+      return null;
+    }
+  });
   const [mapsSheetOpen, setMapsSheetOpen] = useState(false);
   const [rememberChoice, setRememberChoice] = useState(true);
   const [preferredMaps, setPreferredMaps] = useState(() => readPreferredMaps());
   const [toastMsg, setToastMsg] = useState("");
   const [sharing, setSharing] = useState(false);
+  // Histórico bajo demanda: recharts + 7 fetches solo cuando el usuario lo
+  // pide. En móvil esto era el principal motivo de "ficha lenta".
+  const [showHistory, setShowHistory] = useState(false);
   const isMobile = useMemo(() => isMobileLikely(), []);
   const sheetRef = useRef(null);
   const triggerRef = useRef(null);
@@ -239,8 +268,12 @@ function Gasolinera() {
   }, [idMunicipio, idGasolinera]);
 
   // Geolocalización ligera y silenciosa para mostrar km en la cabecera.
+  // Solo pedimos GPS si no rehidratamos posición del snapshot: evita prompt
+  // / wait extra al venir desde "Cerca de mí" (donde MainContent ya tenía
+  // la coord) o entre fichas.
   useEffect(() => {
-    if (!("geolocation" in navigator)) return;
+    if (userPos) return undefined;
+    if (!("geolocation" in navigator)) return undefined;
     let cancelled = false;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -256,6 +289,9 @@ function Gasolinera() {
     return () => {
       cancelled = true;
     };
+    // Solo en el primer montaje: si después userPos cambia, no queremos
+    // re-disparar GPS.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const preferredFuel = useMemo(() => readPreferredFuel(), []);
@@ -801,7 +837,7 @@ function Gasolinera() {
             >
               <TileLayer
                 key={theme}
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                attribution={TILE_ATTRIBUTION}
                 url={TILE_URL[theme] || TILE_URL.light}
                 subdomains={["a", "b", "c", "d"]}
                 maxZoom={19}
@@ -827,14 +863,53 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 7. Histórico de precios (con selector de combustible) */}
+      {/* 7. Histórico de precios — bajo demanda. Cargar el chart de inicio
+          significaba 7 fetches y la librería recharts (~75KB) en cada
+          ficha; en móvil eso hacía la página visiblemente lenta. */}
       {chartFuels.length > 0 && gasolinera.IDMunicipio && gasolinera.IDEESS && (
-        <PriceHistoryChart
-          idMunicipio={gasolinera.IDMunicipio}
-          idEstacion={gasolinera.IDEESS}
-          fuels={chartFuels}
-          defaultFuel={chartDefaultFuel}
-        />
+        showHistory ? (
+          <Suspense
+            fallback={
+              <div className="loading" role="status" aria-live="polite">
+                <div className="loading__bar" aria-hidden="true" />
+                <span>Cargando histórico…</span>
+              </div>
+            }
+          >
+            <PriceHistoryChart
+              idMunicipio={gasolinera.IDMunicipio}
+              idEstacion={gasolinera.IDEESS}
+              fuels={chartFuels}
+              defaultFuel={chartDefaultFuel}
+            />
+          </Suspense>
+        ) : (
+          <section className="histtoggle" aria-label="Histórico de precios">
+            <button
+              type="button"
+              className="histtoggle__btn"
+              onClick={() => setShowHistory(true)}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M3 17l5-5 4 4 7-9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Ver histórico de precios
+            </button>
+          </section>
+        )
       )}
 
       {/* 8. Última actualización + atribución */}

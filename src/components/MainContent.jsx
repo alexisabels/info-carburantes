@@ -4,7 +4,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   fetchMunicipioCompleto,
   fetchProvincias,
@@ -15,13 +15,16 @@ import ProvinciaSelector from "./Selectors/ProvinciaSelector";
 import MunicipioSelector from "./Selectors/MunicipioSelector";
 import { handleSelectProvincia } from "../utils/handlers";
 import GasolineraTable from "./GasolineraTable";
-import MapView from "./MapView/MapView";
 import FuelTypeSelector from "./Selectors/FuelTypeSelector";
 import FavoriteButton from "./Favorites/FavoriteButton";
 import useFavorites from "../hooks/useFavorites";
 import { getUserLocation, calculateDistance } from "../utils/locationUtils";
 import "../App.css";
 import "./MainContent.css";
+
+// react-leaflet + leaflet (~70KB gzip) solo se cargan cuando el usuario
+// alterna a la vista mapa. La home y el listado nunca lo necesitan.
+const MapView = lazy(() => import("./MapView/MapView"));
 
 const PinIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -127,8 +130,9 @@ const writeStoredFuel = (value) => {
 
 // Snapshot de la búsqueda en curso. Lo persistimos en sessionStorage para
 // que al volver desde la ficha de una gasolinera (navigate(-1)) recuperemos
-// el listado y los selectores en lugar de aterrizar otra vez en el home.
+// el listado, los selectores, la vista (lista/mapa) y la posición GPS.
 const SNAPSHOT_KEY = "main.snapshot";
+const VALID_VIEWMODES = new Set(["list", "map"]);
 
 const readSnapshot = () => {
   try {
@@ -180,11 +184,22 @@ const MainContent = () => {
   // Último ámbito recordado (sin auto-iniciar GPS): null | "near" | "manual"
   const initialLastScope = useRef(readStoredScope()).current;
 
+  // En cold-load la URL es la fuente de verdad. Solo rehidratamos del
+  // snapshot si la URL dice algo que casa con él (al volver desde /gasolinera
+  // con navigate(-1), la URL ya es /cerca o /municipio/...). Si el usuario
+  // abre directamente /, ignoramos el snapshot para no parpadear contenido
+  // antes de que el URL effect rectifique a home.
+  const initialPath =
+    typeof window !== "undefined" ? window.location.pathname : "/";
+  const urlSuggestsResults =
+    initialPath === "/cerca" || initialPath.startsWith("/municipio/");
+
   // Visita recurrente: si la última vez el usuario buscó por municipio y el
   // snapshot trae listado + municipio válidos, arrancamos directamente en
   // resultados (no welcome). En "near" mantenemos welcome porque no debemos
   // pedir GPS sin gesto, pero destacamos el botón.
   const canRehydrateManual =
+    urlSuggestsResults &&
     initialSnapshot &&
     initialSnapshot.scope === "manual" &&
     Array.isArray(initialSnapshot.listadoPrecios) &&
@@ -193,24 +208,30 @@ const MainContent = () => {
 
   const initialScope = canRehydrateManual
     ? "manual"
-    : initialSnapshot?.scope || "home";
+    : urlSuggestsResults
+      ? initialSnapshot?.scope || "home"
+      : "home";
 
+  // Solo rehidratamos contenido del snapshot cuando la URL sugiere
+  // resultados (/cerca, /municipio/...). En home arrancamos limpio para
+  // que la siguiente acción (cerca/manual) parta de cero.
+  const seedSnapshot = urlSuggestsResults ? initialSnapshot : null;
   const [provinciaSeleccionada, setProvinciaSeleccionada] = useState(
-    initialSnapshot?.provinciaSeleccionada || null
+    seedSnapshot?.provinciaSeleccionada || null
   );
   const [provincias, setProvincias] = useState([]);
   const [municipios, setMunicipios] = useState(
-    initialSnapshot?.municipios || []
+    seedSnapshot?.municipios || []
   );
   const [municipioSeleccionado, setMunicipioSeleccionado] = useState(
-    initialSnapshot?.municipioSeleccionado || null
+    seedSnapshot?.municipioSeleccionado || null
   );
   const [listadoPrecios, setListadoPrecios] = useState(
-    initialSnapshot?.listadoPrecios || []
+    seedSnapshot?.listadoPrecios || []
   );
   const [loadingPrecios, setLoadingPrecios] = useState(false);
   const [fechaActualizacion, setFechaActualizacion] = useState(
-    initialSnapshot?.fechaActualizacion || null
+    seedSnapshot?.fechaActualizacion || null
   );
 
   // Combustible: leemos preferencia almacenada al montar. Si no hay,
@@ -227,20 +248,30 @@ const MainContent = () => {
 
   const [scope, setScope] = useState(initialScope);
   // Sort default: en near-me siempre por precio (la app vende ahorro).
-  const [sortBy, setSortBy] = useState(initialSnapshot?.sortBy || "price");
+  const [sortBy, setSortBy] = useState(seedSnapshot?.sortBy || "price");
   const [nearMeError, setNearMeError] = useState(null);
   // Sub-estado del flujo "cerca de mí": null | "geo" | "fetch"
   const [nearMePhase, setNearMePhase] = useState(null);
-  // Vista de los resultados: dependerá del scope. En manual rehidratado
-  // arrancamos en "list".
-  const [viewMode, setViewMode] = useState(
-    canRehydrateManual ? "list" : "list"
-  );
-  // Posición del usuario para pintarla en el mapa (si la conocemos).
-  const [userPos, setUserPos] = useState(null);
+  // Vista de los resultados: rehidratamos del snapshot para que volver desde
+  // una ficha al mapa no te tire a la lista.
+  const [viewMode, setViewMode] = useState(() => {
+    const stored = seedSnapshot?.viewMode;
+    return stored && VALID_VIEWMODES.has(stored) ? stored : "list";
+  });
+  // Posición del usuario para pintarla en el mapa. La rehidratamos del
+  // snapshot si era reciente (<10 min); GPS no es gratis y si volvemos a
+  // /cerca tras una ficha, el último fix sigue siendo válido.
+  const [userPos, setUserPos] = useState(() => {
+    const pos = seedSnapshot?.userPos;
+    if (!pos || !Number.isFinite(pos.lat) || !Number.isFinite(pos.lng)) return null;
+    if (pos.t && Date.now() - pos.t > 10 * 60 * 1000) return null;
+    return { lat: pos.lat, lng: pos.lng };
+  });
   // Filtro "Abierto ahora" elevado a este componente para que tanto la lista
   // como el mapa lo respeten.
-  const [onlyOpen, setOnlyOpen] = useState(false);
+  const [onlyOpen, setOnlyOpen] = useState(
+    !!seedSnapshot?.onlyOpen
+  );
   // Error de carga de provincias (sin internet inicial, etc.).
   const [loadError, setLoadError] = useState(false);
   // Toggle inline para "Ver todas" en la sección de favoritas.
@@ -312,17 +343,21 @@ const MainContent = () => {
     };
   }, []);
 
-  // Persistimos un snapshot de la búsqueda mientras estemos fuera del home,
-  // como fallback amistoso. Con el routing por URL es mayormente redundante
-  // (la URL ya rehidrata) pero lo mantenemos por si alguien llega a `/`.
+  // Persistimos un snapshot de la búsqueda para rehidratarla al volver
+  // desde una ficha (navigate(-1)). Si estamos en home no sobreescribimos:
+  // dejamos que el último snapshot útil sobreviva al paso por `/`, así el
+  // back/forward del navegador no rompe la continuidad. La limpieza
+  // explícita ocurre solo en goHome().
   useEffect(() => {
-    if (scope === "home") {
-      clearSnapshot();
-      return;
-    }
+    if (scope === "home") return;
     writeSnapshot({
       scope,
       sortBy,
+      viewMode,
+      onlyOpen,
+      userPos: userPos
+        ? { lat: userPos.lat, lng: userPos.lng, t: Date.now() }
+        : null,
       provinciaSeleccionada,
       municipioSeleccionado,
       municipios,
@@ -332,6 +367,9 @@ const MainContent = () => {
   }, [
     scope,
     sortBy,
+    viewMode,
+    onlyOpen,
+    userPos,
     provinciaSeleccionada,
     municipioSeleccionado,
     municipios,
@@ -343,7 +381,16 @@ const MainContent = () => {
   // La URL es la fuente de verdad: refresh, deep-link o back/forward
   // aterrizan en la vista correcta. Si pegamos /municipio/X/slug, fetcheamos
   // el municipio, derivamos su nombre y canonicalizamos el slug.
-  const lastFetchedMunicipioRef = useRef(null);
+  //
+  // El ref arranca con el ID del snapshot rehidratado (si lo hay): si el
+  // usuario vuelve desde una ficha a /municipio/:id y el snapshot ya trae
+  // listado y municipioSeleccionado, no queremos que el effect dispare un
+  // reset+refetch (parpadeo a "Cargando…" + selectores en blanco).
+  const lastFetchedMunicipioRef = useRef(
+    canRehydrateManual && seedSnapshot?.municipioSeleccionado?.IDMunicipio
+      ? String(seedSnapshot.municipioSeleccionado.IDMunicipio)
+      : null
+  );
 
   useEffect(() => {
     const path = routeLocation.pathname;
@@ -599,8 +646,16 @@ const MainContent = () => {
 
   const goNearMe = () => {
     // Disparamos navegación; el URL effect llamará a handleNearMe()
-    // cuando el path se actualice a /cerca.
+    // cuando el path se actualice a /cerca. Limpiamos lista/municipio del
+    // ámbito anterior para que el effect detecte "no hay datos" y arranque
+    // el flujo de geolocalización (si no, mostraríamos resultados de
+    // /municipio/X bajo la cabecera "Cerca de ti").
     if (loadingPrecios) return;
+    setListadoPrecios([]);
+    setMunicipioSeleccionado(null);
+    setProvinciaSeleccionada(null);
+    setNearMeError(null);
+    lastFetchedMunicipioRef.current = null;
     navigate("/cerca");
   };
 
@@ -968,12 +1023,21 @@ const MainContent = () => {
           )}
 
           {showResults && viewMode === "map" && !loadingPrecios && (
-            <MapView
-              listadoPrecios={listadoPrecios}
-              selectedFuel={effectiveFuel}
-              userPos={scope === "near" ? userPos : null}
-              onlyOpen={onlyOpen}
-            />
+            <Suspense
+              fallback={
+                <div className="loading" role="status" aria-live="polite">
+                  <div className="loading__bar" aria-hidden="true" />
+                  <span>Cargando mapa…</span>
+                </div>
+              }
+            >
+              <MapView
+                listadoPrecios={listadoPrecios}
+                selectedFuel={effectiveFuel}
+                userPos={scope === "near" ? userPos : null}
+                onlyOpen={onlyOpen}
+              />
+            </Suspense>
           )}
 
           {/* Mientras carga "Cerca de mí" en modo mapa, GasolineraTable no

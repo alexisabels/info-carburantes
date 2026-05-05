@@ -146,9 +146,9 @@
 }
 
 .station__logo img {
-  max-width: 70%;
-  max-height: 70%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .station__heading {
@@ -473,6 +473,12 @@
   background: var(--bg-2);
 }
 
+/* CARTO Dark Matter con stretch de banda al target Apple Maps oscuro.
+ * Ver MapView.css para la matemática completa. */
+[data-theme="dark"] .mapsec__frame .leaflet-tile-pane {
+  filter: brightness(2.66) contrast(0.94);
+}
+
 /* Atribución más discreta. */
 .mapsec__frame .leaflet-control-attribution {
   background: var(--map-attribution-bg);
@@ -484,6 +490,28 @@
 
 .mapsec__frame .leaflet-control-attribution a {
   color: var(--ink-2);
+}
+
+/* Popup default de Leaflet en oscuro: por defecto Leaflet pinta una
+ * tarjeta blanca con texto negro y "cola" blanca, completamente fuera
+ * de tono sobre el mapa oscuro. La elevamos al token de map-card. */
+[data-theme="dark"] .mapsec__frame .leaflet-popup-content-wrapper {
+  background: var(--map-card);
+  color: var(--ink);
+  border: 1px solid var(--map-card-border);
+}
+
+[data-theme="dark"] .mapsec__frame .leaflet-popup-tip {
+  background: var(--map-card);
+  border: 1px solid var(--map-card-border);
+}
+
+[data-theme="dark"] .mapsec__frame .leaflet-popup-close-button {
+  color: var(--ink-muted);
+}
+
+[data-theme="dark"] .mapsec__frame .leaflet-popup-close-button:hover {
+  color: var(--ink);
 }
 
 /* Botón flotante "Abrir en Google Maps" */
@@ -522,6 +550,16 @@
   outline-offset: 2px;
 }
 
+/* "Abrir en Google Maps" elevado sobre el mapa: token de elevación. */
+[data-theme="dark"] .mapsec__open {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
+}
+
+[data-theme="dark"] .mapsec__open:hover {
+  background: var(--map-card-strong);
+}
+
 /* FAB para recentrar en la gasolinera (sobre el mapa). */
 .mapsec__recenter {
   position: absolute;
@@ -554,6 +592,16 @@
   outline-offset: 2px;
 }
 
+/* FAB recenter elevado sobre mapa. */
+[data-theme="dark"] .mapsec__recenter {
+  background: var(--map-card);
+  border-color: var(--map-card-border);
+}
+
+[data-theme="dark"] .mapsec__recenter:hover {
+  background: var(--map-card-strong);
+}
+
 /* Pin custom con CSS puro: círculo blanco con borde negro y punto negro. */
 .map-pin-wrap {
   background: transparent;
@@ -569,6 +617,12 @@
   background: var(--bg);
   border: 2px solid var(--ink);
   box-shadow: var(--shadow-md-strong);
+}
+
+/* Pin elevado sobre el mapa. */
+[data-theme="dark"] .map-pin,
+[data-theme="dark"] .map-pin::after {
+  background: var(--map-card);
 }
 
 .map-pin::after {
@@ -981,4 +1035,41 @@
     opacity: 0;
     transform: translate(-50%, -8px);
   }
+}
+
+/* Toggle "Ver histórico de precios" — el chart se carga bajo demanda. */
+.histtoggle {
+  margin: 1.5rem 0;
+}
+
+.histtoggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-2);
+  color: var(--ink);
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 44px;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.histtoggle__btn:hover {
+  background: var(--bg-3);
+}
+
+.histtoggle__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.histtoggle__btn svg {
+  flex-shrink: 0;
+  opacity: 0.7;
 }
