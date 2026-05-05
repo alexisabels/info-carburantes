@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ThemeToggle from "../ThemeToggle/ThemeToggle";
 import "./Footer.css";
 
 const Footer = () => {
@@ -30,7 +31,10 @@ const Footer = () => {
           </a>
         </nav>
       </div>
-      <div className="appfoot__copy">© {year} Carburantes</div>
+      <div className="appfoot__bottom">
+        <div className="appfoot__copy">© {year} Carburantes</div>
+        <ThemeToggle />
+      </div>
     </footer>
   );
 };

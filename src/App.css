@@ -14,6 +14,53 @@
   --warn: #b3261e;
   --warn-bg: #fde8e7;
 
+  /* Tokens semánticos para chips informativos. */
+  --info-bg: #e7f0ff;
+  --info-fg: #1d4ed8;
+  --info-border: #bfd5fb;
+  --success-bg: #e8f6ee;
+  --success-fg: #1f7a3a;
+  --success-border: #bfe2cb;
+  --restricted-bg: #fff4e5;
+  --restricted-fg: #8a4b00;
+  --restricted-border: #f0c48a;
+
+  /* Color del estado favorito (ámbar). Mismo tono en ambos temas para no
+     desorientar al usuario que ya lo identifica como "favorito". */
+  --fav: #d97706;
+
+  /* Fondo de los contenedores de logo de marca. Se mantiene claro en
+     ambos temas: los .gif/.png del directorio /public/station-icons tienen
+     fondos blancos en muchos casos (Repsol, Cepsa…) y sobre superficie
+     oscura aparecerían como cuadrados blancos. Mantenerlo claro mantiene
+     una "caja" coherente que no compite con el entorno. */
+  --logo-bg: #f4f4f3;
+
+  /* Sombras. En dark se suben en intensidad y ganan tinte negro porque
+     una sombra suave sobre fondo oscuro es invisible. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-md-strong: 0 2px 6px rgba(0, 0, 0, 0.18);
+  --shadow-lg: 0 4px 14px rgba(0, 0, 0, 0.18);
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.08), 0 -2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-fab: 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.22),
+    0 24px 48px rgba(0, 0, 0, 0.12);
+  --shadow-fab-hover: 0 1px 2px rgba(0, 0, 0, 0.22),
+    0 8px 20px rgba(0, 0, 0, 0.28), 0 28px 56px rgba(0, 0, 0, 0.14);
+
+  /* Backdrops de hojas modales y atribución del mapa. */
+  --scrim: rgba(10, 10, 10, 0.42);
+  --scrim-soft: rgba(0, 0, 0, 0.18);
+  --scrim-strong: rgba(0, 0, 0, 0.45);
+  --scrim-edge: rgba(0, 0, 0, 0.04);
+  --map-attribution-bg: rgba(255, 255, 255, 0.85);
+
+  /* Overlay translúcido sobre el botón "ink" (dark sobre light, claro
+     sobre dark). Se usa en .bigbtn__icon y .bigbtn__badge. */
+  --overlay-on-ink: rgba(255, 255, 255, 0.16);
+  --overlay-on-ink-strong: rgba(255, 255, 255, 0.18);
+
   --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
@@ -21,6 +68,58 @@
   --gutter: 16px;
   --r: 12px;
   --r-sm: 8px;
+}
+
+/* Modo oscuro. Aplicado por JS a <html data-theme="dark">. La paleta busca
+   un casi-negro neutro (sin tinte azul-morado), conservando la jerarquía
+   perceptual del modo claro y respetando los hairlines de 1px. */
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --bg-2: #161616;
+  --bg-3: #1f1f1f;
+  --ink: #f5f5f5;
+  --ink-2: #d8d8d8;
+  --ink-muted: #a3a3a3;
+  --ink-faint: #8a8a8a;
+  --line: #2a2a2a;
+  --line-strong: #3a3a3a;
+  --accent: #2db567;
+  --accent-bg: #102516;
+  --accent-strong: #6fd693;
+  --warn: #ef4444;
+  --warn-bg: #1a0d0d;
+
+  --info-bg: #122036;
+  --info-fg: #93b8ff;
+  --info-border: #1f3a66;
+  --success-bg: #102516;
+  --success-fg: #6fd693;
+  --success-border: #1f4a2c;
+  --restricted-bg: #2a1a08;
+  --restricted-fg: #f0b97a;
+  --restricted-border: #4a3318;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-md-strong: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.6), 0 -2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-fab: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.55),
+    0 24px 48px rgba(0, 0, 0, 0.5);
+  --shadow-fab-hover: 0 1px 2px rgba(0, 0, 0, 0.55),
+    0 8px 20px rgba(0, 0, 0, 0.6), 0 28px 56px rgba(0, 0, 0, 0.55);
+
+  --scrim: rgba(0, 0, 0, 0.65);
+  --scrim-soft: rgba(0, 0, 0, 0.45);
+  --scrim-strong: rgba(0, 0, 0, 0.7);
+  --scrim-edge: rgba(255, 255, 255, 0.06);
+  --map-attribution-bg: rgba(10, 10, 10, 0.85);
+
+  --overlay-on-ink: rgba(0, 0, 0, 0.18);
+  --overlay-on-ink-strong: rgba(0, 0, 0, 0.22);
+
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -349,7 +448,7 @@ a:focus-visible,
 .viewtoggle button[aria-pressed="true"] {
   background: var(--bg);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .bigbtn {
@@ -373,7 +472,7 @@ a:focus-visible,
 
 .bigbtn:hover:not(:disabled) {
   background: var(--ink-2);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .bigbtn:active:not(:disabled) {
@@ -399,14 +498,14 @@ a:focus-visible,
 
 .bigbtn--ghost:hover:not(:disabled) {
   background: var(--bg-3);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .bigbtn__icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--overlay-on-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -458,7 +557,7 @@ a:focus-visible,
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--overlay-on-ink-strong);
   color: inherit;
   padding: 3px 8px;
   border-radius: 999px;
@@ -574,7 +673,7 @@ a:focus-visible,
 .segmented button[aria-pressed="true"] {
   background: var(--bg);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .segmented button:hover:not([aria-pressed="true"]) {
@@ -746,7 +845,7 @@ a:focus-visible,
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .station-card:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
   }
 }
 
@@ -763,7 +862,7 @@ a:focus-visible,
 
 /* Card favorita: borde ámbar discreto. */
 .station-card--fav {
-  border-color: #d97706;
+  border-color: var(--fav);
 }
 
 /* Cheapest gana sobre fav cuando coinciden. */
@@ -775,7 +874,7 @@ a:focus-visible,
   width: 44px;
   height: 44px;
   border-radius: var(--r-sm);
-  background: var(--bg-2);
+  background: var(--logo-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -833,9 +932,9 @@ a:focus-visible,
    como el "Mejor precio" del accent, pero suficientemente visible como
    para que el usuario sepa que probablemente no puede repostar ahí. */
 .station-card__tag--restricted {
-  background: #fff4e5;
-  color: #8a4b00;
-  border: 1px solid #f0c48a;
+  background: var(--restricted-bg);
+  color: var(--restricted-fg);
+  border: 1px solid var(--restricted-border);
   padding: 1px 5px;
 }
 

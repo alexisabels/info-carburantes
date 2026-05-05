@@ -1,12 +1,20 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Link, useNavigate } from "react-router-dom";
 import { getLowestPrices } from "../../utils/getLowestPrices";
 import { isOpenNow } from "../../utils/formatHorario";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
+import { useTheme } from "../../hooks/useTheme";
 import "./MapView.css";
+
+const TILE_URL = {
+  light:
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  dark: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+};
 
 const MAPS_PREF_KEY = "maps.preferred";
 const MAPS_OPTIONS = ["google", "apple", "waze"];
@@ -29,6 +37,10 @@ const formatPrice = (raw) => {
 // Marker custom: pill redondeada con el precio, sin "cola triangular"
 // agresiva. La cheapest tiene anillo verde + halo. Tipografía mono tabular
 // asegura que precios distintos no descuadren al ojo.
+//
+// Hit area 84×44 (Apple HIG mínimo 44pt en táctil). El pill visible es más
+// pequeño y se centra en el wrapper; CSS hace que la zona transparente de
+// alrededor también capture el tap.
 const buildPriceIcon = (priceText, isCheapest, hasPrice) => {
   const classes = ["map-price"];
   if (isCheapest) classes.push("map-price--cheapest");
@@ -36,9 +48,9 @@ const buildPriceIcon = (priceText, isCheapest, hasPrice) => {
   return L.divIcon({
     className: classes.join(" "),
     html: `<span class="map-price__bubble">${priceText}</span>`,
-    iconSize: [62, 26],
-    iconAnchor: [31, 13],
-    popupAnchor: [0, -16],
+    iconSize: [84, 44],
+    iconAnchor: [42, 22],
+    popupAnchor: [0, -22],
   });
 };
 
@@ -123,6 +135,7 @@ const MapView = ({
   onRequestLocation,
 }) => {
   const navigate = useNavigate();
+  const { resolved: theme } = useTheme();
   const [selectedId, setSelectedId] = useState(null);
 
   const lowestPrices = useMemo(
@@ -218,8 +231,9 @@ const MapView = ({
         className="mapview__map"
       >
         <TileLayer
+          key={theme}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url={TILE_URL[theme] || TILE_URL.light}
           subdomains={["a", "b", "c", "d"]}
           maxZoom={19}
         />
@@ -305,7 +319,11 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
     onClose();
   };
 
-  return (
+  // Portalizamos el sheet a <body>: si lo dejamos dentro de .mapview, que
+  // tiene `isolation: isolate`, su z-index queda confinado y el FAB
+  // Lista|Mapa (z-index 800 en body) lo tapa visualmente. Así escapa al
+  // contexto global y puede subir por encima del FAB sin tocar el mapa.
+  return createPortal(
     <>
       <button
         type="button"
@@ -382,7 +400,8 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
           {station["Rótulo"]}
         </Link>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

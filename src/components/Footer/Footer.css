@@ -46,10 +46,18 @@
   border-radius: 4px;
 }
 
-.appfoot__copy {
+.appfoot__bottom {
   max-width: var(--maxw);
   margin: 8px auto 0;
   padding: 0 var(--gutter);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.appfoot__copy {
   font-size: 0.75rem;
   color: var(--ink-muted);
   opacity: 0.8;

@@ -6,17 +6,17 @@
    deben ser juguetes.
    ========================================================================= */
 
-/* Inicia los tokens locales con una caída a los del proyecto. */
+/* Inicia los tokens locales con una caída a los del proyecto.
+   Las sombras se delegan en los tokens globales (--shadow-*) para que el
+   modo oscuro solo tenga que sobreescribirlos en un único sitio. */
 .fbar,
 .fsheet {
   --fb-radius: 10px;
   --fb-radius-lg: 16px;
   --fb-tap: 40px;
-  --fb-shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.04);
-  --fb-shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.08),
-    0 2px 4px rgba(0, 0, 0, 0.05);
-  --fb-shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.08),
-    0 -2px 6px rgba(0, 0, 0, 0.05);
+  --fb-shadow-soft: var(--shadow-sm);
+  --fb-shadow-pop: var(--shadow-pop);
+  --fb-shadow-sheet: var(--shadow-sheet);
   --fb-ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -338,7 +338,7 @@
   inset: 0;
   border: 0;
   padding: 0;
-  background: rgba(10, 10, 10, 0.42);
+  background: var(--scrim);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   cursor: pointer;
@@ -412,7 +412,7 @@
   height: 4px;
   margin: 8px auto 0;
   border-radius: 999px;
-  background: var(--line-strong, #d0d0d0);
+  background: var(--line-strong);
   flex-shrink: 0;
 }
 
@@ -481,8 +481,8 @@
   margin: -14px -18px 6px;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.04),
-    rgba(0, 0, 0, 0)
+    var(--scrim-edge),
+    transparent
   );
   pointer-events: none;
 }

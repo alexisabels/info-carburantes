@@ -7,6 +7,13 @@ import L from "leaflet";
 import "./Gasolinera.css";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import FavoriteButton from "../../components/Favorites/FavoriteButton";
+import { useTheme } from "../../hooks/useTheme";
+
+const TILE_URL = {
+  light:
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  dark: "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
+};
 
 const PRECIOS = [
   { etiqueta: "Diésel A", campo: "Precio Gasoleo A" },
@@ -162,6 +169,7 @@ function RecenterFAB({ position, zoom }) {
 function Gasolinera() {
   const { idMunicipio, idGasolinera } = useParams();
   const navigate = useNavigate();
+  const { resolved: theme } = useTheme();
   const [gasolinera, setGasolinera] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -782,8 +790,9 @@ function Gasolinera() {
               className="mapsec__map"
             >
               <TileLayer
+                key={theme}
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                url={TILE_URL[theme] || TILE_URL.light}
                 subdomains={["a", "b", "c", "d"]}
                 maxZoom={19}
               />

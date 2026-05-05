@@ -4,6 +4,7 @@ import Footer from "./components/Footer/Footer";
 import "./App.css";
 import AppRoutes from "./config/routes";
 import { BrowserRouter } from "react-router-dom";
+import { useTheme } from "./hooks/useTheme";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -97,6 +98,9 @@ class ErrorBoundary extends Component {
 }
 
 function App() {
+  // Mantén el listener de matchMedia vivo en el root para que el cambio de
+  // tema del SO se refleje también cuando el usuario nunca abre el toggle.
+  useTheme();
   return (
     <ErrorBoundary>
       <BrowserRouter>

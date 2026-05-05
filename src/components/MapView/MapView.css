@@ -2,6 +2,11 @@
  * el ancho. En desktop respeta el ancho del contenedor. */
 .mapview {
   position: relative;
+  /* Aísla el contexto de apilamiento: los panes de Leaflet llegan a z-index
+   * 700 y, sin esto, se colaban por encima del FAB Lista|Mapa (z-index 95).
+   * Con `isolation: isolate` los z-index internos del mapa se quedan dentro
+   * de este elemento. */
+  isolation: isolate;
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
@@ -55,7 +60,7 @@
 }
 
 .mapview .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--map-attribution-bg);
   color: var(--ink-muted);
   font-size: 0.625rem;
   padding: 1px 6px;
@@ -73,9 +78,24 @@
 
 /* ───────── Burbujas de precio ───────── */
 
+/* El wrapper del divIcon: 84×44 (hit area táctil HIG-compliant). El pill
+ * visible se centra dentro y el resto del wrapper es transparente pero
+ * sigue capturando el tap. Sin esto, la pill original de 62×26 era
+ * difícil de acertar con el dedo. */
 .map-price {
   background: transparent !important;
   border: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* Fuerza que el wrapper completo capture el evento de tap, incluyendo
+   * la zona transparente alrededor del pill. */
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  /* En iOS Safari, sin esto, las divIcons pueden perderse taps si el
+   * navegador interpreta el gesto como pan. */
+  touch-action: manipulation;
 }
 
 .map-price__bubble {
@@ -90,19 +110,12 @@
   border-radius: 999px; /* pill, no caja con cola */
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-md-strong);
   letter-spacing: -0.02em;
   line-height: 1.1;
-  /* Asegura que el evento click llegue al divIcon en mobile, sin que el
-   * navegador lo considere un "tap simulado" sobre fondo. */
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-/* El wrapper del divIcon también debe ser interactivo para que el tap
- * caiga en el centro del precio sin "huecos" que tragen el evento. */
-.map-price {
-  cursor: pointer;
+  /* No interactivo: que el click llegue al wrapper .map-price, donde
+   * Leaflet ha enganchado el listener del marker. */
+  pointer-events: none;
 }
 
 .map-price--cheapest .map-price__bubble {
@@ -120,7 +133,7 @@
   color: var(--ink-muted);
   background: var(--bg-2);
   border-color: var(--line-strong);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   opacity: 0.85;
 }
 
@@ -140,7 +153,7 @@
   background: #1d68ff;
   border-radius: 50%;
   border: 3px solid var(--bg);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   display: block;
 }
 
@@ -179,12 +192,10 @@
   justify-content: center;
   background: var(--bg);
   color: var(--ink);
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: 50%;
   cursor: pointer;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.18),
-    0 4px 10px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-md-strong);
   transition: background-color 150ms ease, transform 150ms ease;
 }
 
@@ -237,16 +248,18 @@
 .peeksheet__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--scrim-soft);
   border: 0;
-  z-index: 110;
+  /* Por encima del FAB Lista|Mapa (800) pero por debajo del FilterBar
+   * sheet (1000) para no taparlo si por algún motivo coexisten. */
+  z-index: 890;
   cursor: pointer;
   animation: peek-fade-in 160ms ease-out both;
 }
 
 .peeksheet {
   position: fixed;
-  z-index: 120;
+  z-index: 900;
   left: 0;
   right: 0;
   bottom: 0;
@@ -255,7 +268,7 @@
   border-radius: 16px 16px 0 0;
   padding: 8px 16px 16px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-sheet);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -327,7 +340,7 @@
 .peeksheet__logo {
   width: 40px;
   height: 40px;
-  background: var(--bg-2);
+  background: var(--logo-bg);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -442,7 +455,7 @@
 }
 
 .peeksheet__btn--primary:hover {
-  background: #1a1a1a;
+  background: var(--ink-2);
 }
 
 .peeksheet__btn--ghost {

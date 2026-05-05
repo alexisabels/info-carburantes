@@ -17,6 +17,30 @@
 
   <meta name="theme-color" content="#ffffff" />
 
+  <script>
+    // Resolución de tema previa al primer paint para evitar el FOUC: leemos
+    // la preferencia persistida y aplicamos data-theme al <html> antes de
+    // que React tenga oportunidad de pintar nada.
+    (function () {
+      try {
+        var pref = localStorage.getItem("theme.preference");
+        if (pref !== "light" && pref !== "dark" && pref !== "system") pref = "system";
+        var theme = pref;
+        if (pref === "system") {
+          theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#0a0a0a" : "#ffffff");
+      } catch (e) {
+        // localStorage o matchMedia no disponibles: caemos al tema claro.
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
+
   <!-- Open Graph (rich link preview en WhatsApp, Telegram, Slack, FB, etc.) -->
   <meta property="og:title" content="Carburantes — Precios de gasolineras en España" />
   <meta property="og:description"

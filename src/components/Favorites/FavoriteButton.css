@@ -50,7 +50,7 @@
 }
 
 .favbtn--active {
-  color: #d97706;
+  color: var(--fav);
 }
 
 .favbtn--active:hover {
