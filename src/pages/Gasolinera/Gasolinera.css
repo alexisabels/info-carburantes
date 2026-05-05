@@ -449,6 +449,11 @@
 
 .mapsec__frame {
   position: relative;
+  /* Aísla los z-index internos de Leaflet (tilePane=200, markerPane=600,
+   * popupPane=700) para que no escapen al body. Sin esto, los markers/
+   * tiles del mini-mapa se ponían encima del sheet de Google/Apple/Waze,
+   * de la sticky-bar inferior y de cualquier overlay con z-index < 700. */
+  isolation: isolate;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -765,7 +770,11 @@
 .mapssheet {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  /* Por encima de la stickybar (80), del rango de panes de Leaflet
+   * (200-700) por si en algún contexto se pierde el isolation, y por
+   * encima del FAB Lista|Mapa (800). Por debajo del FilterBar sheet
+   * (1000) para no taparlo si coexisten. */
+  z-index: 950;
   display: flex;
   align-items: flex-end;
   justify-content: center;
