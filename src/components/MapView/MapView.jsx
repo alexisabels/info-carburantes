@@ -1,7 +1,14 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import { Link, useNavigate } from "react-router-dom";
 import { getLowestPrices } from "../../utils/getLowestPrices";
@@ -33,6 +40,29 @@ const formatPrice = (raw) => {
   if (!Number.isFinite(n) || n <= 0) return null;
   return raw;
 };
+
+// Detecta desktop por media query, reactivo a cambios de tamaño/orientación.
+// Decide qué interacción usamos al pulsar un marker: en desktop, popup
+// anclado al marker (más intuitivo, ratón); en móvil, peeksheet abajo.
+const DESKTOP_QUERY = "(min-width: 720px)";
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(DESKTOP_QUERY).matches;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const mq = window.matchMedia(DESKTOP_QUERY);
+    const handler = (e) => setIsDesktop(e.matches);
+    if (mq.addEventListener) mq.addEventListener("change", handler);
+    else mq.addListener(handler);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", handler);
+      else mq.removeListener(handler);
+    };
+  }, []);
+  return isDesktop;
+}
 
 // Marker custom: pill redondeada con el precio, sin "cola triangular"
 // agresiva. La cheapest tiene anillo verde + halo. Tipografía mono tabular
@@ -136,6 +166,9 @@ const MapView = ({
 }) => {
   const navigate = useNavigate();
   const { resolved: theme } = useTheme();
+  const isDesktop = useIsDesktop();
+  // En móvil usamos el peeksheet abajo. En desktop el contenido va en un
+  // <Popup> anclado al marker, y `selectedId` no se usa.
   const [selectedId, setSelectedId] = useState(null);
 
   const lowestPrices = useMemo(
@@ -260,24 +293,65 @@ const MapView = ({
               : null;
           const titleParts = [rotulo, `${text} €/L`];
           if (distancia) titleParts.push(distancia);
+          // En desktop NO ponemos title nativo (chocaría con el Tooltip de
+          // Leaflet) y no engachamos click → setSelectedId. El Popup se
+          // abre solo al pulsar el marker.
           return (
             <Marker
               key={s.IDEESS}
               position={[s._lat, s._lng]}
               icon={getCachedIcon(text, isCheapest, !!formatted)}
               zIndexOffset={isCheapest ? 1000 : 0}
-              eventHandlers={{
-                click: () => setSelectedId(s.IDEESS),
-              }}
+              eventHandlers={
+                isDesktop
+                  ? undefined
+                  : { click: () => setSelectedId(s.IDEESS) }
+              }
               keyboard
               alt={rotulo}
-              title={titleParts.join(" · ")}
-            />
+              title={isDesktop ? undefined : titleParts.join(" · ")}
+            >
+              {isDesktop && (
+                <>
+                  <Tooltip
+                    direction="top"
+                    offset={[0, -22]}
+                    opacity={1}
+                    className="map-tooltip"
+                  >
+                    <span className="map-tooltip__name">{rotulo}</span>
+                    <span className="map-tooltip__sep" aria-hidden="true">
+                      ·
+                    </span>
+                    <span className="map-tooltip__price">
+                      {formatted ? `${formatted} €/L` : "Sin precio"}
+                    </span>
+                  </Tooltip>
+                  <Popup
+                    offset={[0, -22]}
+                    closeButton={false}
+                    autoPan
+                    autoPanPadding={[40, 40]}
+                    className="map-popup"
+                  >
+                    <MarkerPopup
+                      station={s}
+                      formatted={formatted}
+                      distancia={distancia}
+                      mapsHref={buildHrefForProvider(s._lat, s._lng)}
+                      onOpenDetail={() =>
+                        navigate(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
+                      }
+                    />
+                  </Popup>
+                </>
+              )}
+            </Marker>
           );
         })}
       </MapContainer>
 
-      {selected && (
+      {!isDesktop && selected && (
         <PeekSheet
           station={selected}
           selectedFuel={selectedFuel}
@@ -291,6 +365,62 @@ const MapView = ({
     </div>
   );
 };
+
+// Contenido del Popup en desktop. Layout compacto: logo + rótulo, dirección,
+// distancia (si la tenemos), precio destacado, dos botones.
+function MarkerPopup({ station, formatted, distancia, mapsHref, onOpenDetail }) {
+  return (
+    <div className="map-popup__inner">
+      <div className="map-popup__head">
+        <span className="map-popup__logo">
+          <img
+            src={`/station-icons/${getLogoForGasolinera(station["Rótulo"])}`}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width="32"
+            height="32"
+          />
+        </span>
+        <div className="map-popup__heading">
+          <div className="map-popup__name">{station["Rótulo"]}</div>
+          <div className="map-popup__addr">{station.Dirección}</div>
+        </div>
+      </div>
+      <div className="map-popup__pricerow">
+        {formatted ? (
+          <div className="map-popup__price">
+            <span className="map-popup__num">{formatted}</span>
+            <span className="map-popup__unit">€/L</span>
+          </div>
+        ) : (
+          <div className="map-popup__nodata">Sin precio</div>
+        )}
+        {distancia && (
+          <span className="map-popup__dist">{distancia}</span>
+        )}
+      </div>
+      <div className="map-popup__actions">
+        <button
+          type="button"
+          className="map-popup__btn map-popup__btn--ghost"
+          onClick={onOpenDetail}
+        >
+          Ver detalle
+        </button>
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="map-popup__btn map-popup__btn--primary"
+        >
+          Cómo llegar
+        </a>
+      </div>
+    </div>
+  );
+}
 
 // Peek-sheet: panel inferior compacto con info de la gasolinera al pulsar
 // un marker. Sustituye al "navigate directo": el usuario puede comparar

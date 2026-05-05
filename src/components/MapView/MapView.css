@@ -137,6 +137,220 @@
   opacity: 0.85;
 }
 
+/* ───────── Tooltip al hover (desktop) ─────────
+   Estilo plano y compacto: el chip del precio ya destaca, no hace falta
+   un globo grande con sombra. Hover = peek de identificación rápida. */
+
+.map-tooltip {
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 4px 8px 4px 8px !important;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  box-shadow: var(--shadow-sm);
+  /* Quitamos la flecha por defecto de Leaflet, reduce ruido visual. */
+}
+
+.map-tooltip.leaflet-tooltip-top::before {
+  border-top-color: var(--line-strong);
+  display: none;
+}
+
+.map-tooltip__name {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.map-tooltip__sep {
+  margin: 0 6px;
+  color: var(--ink-faint);
+}
+
+.map-tooltip__price {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+/* ───────── Popup al click (desktop) ─────────
+   Anclado al marker (offset hacia arriba en buildPriceIcon). Reutiliza
+   tokens de la app — nada de la apariencia default de Leaflet. */
+
+.leaflet-popup.map-popup .leaflet-popup-content-wrapper {
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md-strong);
+  padding: 0;
+}
+
+.leaflet-popup.map-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  width: 280px !important;
+  font-family: var(--font-sans);
+  line-height: 1.4;
+}
+
+/* La "cola" del popup: más fina y del color del borde, casi invisible. */
+.leaflet-popup.map-popup .leaflet-popup-tip {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.map-popup__inner {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-popup__head {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.map-popup__logo {
+  width: 36px;
+  height: 36px;
+  background: var(--logo-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.map-popup__logo img {
+  max-width: 78%;
+  max-height: 78%;
+  object-fit: contain;
+}
+
+.map-popup__heading {
+  min-width: 0;
+}
+
+.map-popup__name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+.map-popup__addr {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-popup__pricerow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.map-popup__price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.map-popup__num {
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.map-popup__unit {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-muted);
+}
+
+.map-popup__nodata {
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+.map-popup__dist {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+.map-popup__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.map-popup__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.map-popup__btn--primary {
+  background: var(--ink);
+  color: var(--bg);
+  flex: 1.4;
+}
+
+.map-popup__btn--primary:hover {
+  background: var(--ink-2);
+}
+
+.map-popup__btn--ghost {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.map-popup__btn--ghost:hover {
+  background: var(--bg-3);
+}
+
+.map-popup__btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 /* ───────── Posición del usuario ───────── */
 
 .map-userpos {
