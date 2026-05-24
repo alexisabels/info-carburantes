@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import ThemeToggle from "../ThemeToggle/ThemeToggle";
 import "./Footer.css";
 
@@ -20,7 +22,7 @@ const Footer = () => {
           · actualizados a diario
         </span>
         <nav className="appfoot__links" aria-label="Pie">
-          <Link to="/about">Sobre</Link>
+          <Link href="/about">Sobre</Link>
           <a
             href="https://github.com/alexisabels/info-carburantes"
             target="_blank"

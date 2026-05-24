@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable react/prop-types */
 import { useEffect, useRef } from "react";
 import "./FuelTypeSelector.css";

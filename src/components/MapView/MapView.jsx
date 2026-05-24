@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -10,7 +12,9 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import "leaflet/dist/leaflet.css";
 import { getLowestPrices } from "../../utils/getLowestPrices";
 import { isOpenNow } from "../../utils/formatHorario";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
@@ -175,7 +179,7 @@ const MapView = ({
   onlyOpen = false,
   onRequestLocation,
 }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { resolved: theme } = useTheme();
   const isDesktop = useIsDesktop();
   // En móvil usamos el peeksheet abajo. En desktop el contenido va en un
@@ -354,7 +358,7 @@ const MapView = ({
                       selectedFuel={selectedFuel}
                       mapsHref={buildHrefForProvider(s._lat, s._lng)}
                       onOpenDetail={() =>
-                        navigate(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
+                        router.push(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
                       }
                     />
                   </Popup>
@@ -371,7 +375,7 @@ const MapView = ({
           selectedFuel={selectedFuel}
           onClose={() => setSelectedId(null)}
           onOpenDetail={() =>
-            navigate(`/gasolinera/${selected.IDMunicipio}/${selected.IDEESS}`)
+            router.push(`/gasolinera/${selected.IDMunicipio}/${selected.IDEESS}`)
           }
           mapsHref={buildHrefForProvider(selected._lat, selected._lng)}
         />
@@ -544,7 +548,7 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
         {/* Link nativo accesible (alternativa para teclado) */}
         <Link
           className="peeksheet__deeplink"
-          to={`/gasolinera/${station.IDMunicipio}/${station.IDEESS}`}
+          href={`/gasolinera/${station.IDMunicipio}/${station.IDEESS}`}
           aria-hidden="true"
           tabIndex={-1}
         >

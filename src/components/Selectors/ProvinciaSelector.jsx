@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable react/prop-types */
 import { useMemo } from "react";
 import Select from "react-select";
@@ -71,7 +73,7 @@ const ProvinciaSelector = ({ provincias, onSelect }) => {
           loadingMessage={() => "Cargando…"}
           getOptionValue={(option) => `${option.id}-${option.value}`}
           filterOption={filterOption}
-          menuPortalTarget={document.body}
+          menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
           styles={menuPortalStyles}
         />
       ) : (

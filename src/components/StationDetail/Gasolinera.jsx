@@ -1,29 +1,37 @@
-import { useParams, useNavigate } from "react-router-dom";
+"use client";
+
+/* eslint-disable react/prop-types */
+import { useRouter } from "next/navigation";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { fetchGasolineraPorID } from "../../utils/api";
 import { formatHorario, isOpenNow } from "../../utils/formatHorario";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
-import L from "leaflet";
 import "./Gasolinera.css";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
-import FavoriteButton from "../../components/Favorites/FavoriteButton";
+import FavoriteButton from "../Favorites/FavoriteButton";
 import { useTheme } from "../../hooks/useTheme";
 
 // Lazy: recharts pesa ~75KB gzip y dispara 7 fetches secuenciales al montar.
-// No queremos eso en la primera pintura de la ficha. Solo se carga cuando el
-// usuario pulsa "Ver histórico".
+// Solo se carga cuando el usuario pulsa "Ver histórico".
 const PriceHistoryChart = lazy(
-  () => import("../../components/PriceHistoryChart/PriceHistoryChart")
+  () => import("../PriceHistoryChart/PriceHistoryChart")
 );
 
-// Light: Voyager. Dark: Dark Matter con boost stretching. Ver MapView.jsx.
-const TILE_URL = {
-  light:
-    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-};
-const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// El mapa entra por dynamic-import sin SSR para no romper la pintura inicial
+// de la ficha: Leaflet referencia `window` al cargar el módulo, así que no
+// puede vivir en el bundle de servidor.
+const StationMap = dynamic(
+  () => import("./StationMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="loading" role="status" aria-live="polite">
+        <div className="loading__bar" aria-hidden="true" />
+        <span>Cargando mapa…</span>
+      </div>
+    ),
+  }
+);
 
 const PRECIOS = [
   { etiqueta: "Diésel A", campo: "Precio Gasoleo A" },
@@ -32,9 +40,6 @@ const PRECIOS = [
   { etiqueta: "Gasolina 98", campo: "Precio Gasolina 98 E5" },
 ];
 
-// Productos adicionales que mostramos en la sección "Otros combustibles"
-// SOLO si la estación los tiene. No entran en `principal` para no robarle
-// el sitio al combustible preferido del usuario.
 const EXTRAS = [
   { etiqueta: "AdBlue", campo: "Precio Adblue" },
   { etiqueta: "GLP / Autogas", campo: "Precio Gases licuados del petróleo" },
@@ -95,16 +100,6 @@ const readPreferredFuel = () => {
   }
 };
 
-// Pin custom dibujado por CSS, sin emojis ni recursos externos.
-const stationPin = L.divIcon({
-  className: "map-pin-wrap",
-  html: '<span class="map-pin"><span class="map-pin__dot"></span></span>',
-  iconSize: [28, 36],
-  iconAnchor: [14, 32],
-  popupAnchor: [0, -28],
-});
-
-// Distancia haversine en km (para la pequeña línea de la cabecera).
 const distanciaKm = (a, b) => {
   if (!a || !b) return null;
   const R = 6371;
@@ -126,68 +121,16 @@ const formatKm = (km) => {
   return `${Math.round(km)} km`;
 };
 
-// Pequeño componente: aplica un flyTo al cargar el mapa.
-// eslint-disable-next-line react/prop-types
-function MapFlyTo({ position, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!position) return;
-    map.flyTo(position, zoom, { duration: 0.7 });
-  }, [map, position, zoom]);
-  return null;
-}
-
-// FAB para recentrar el mapa en la gasolinera (cuando el usuario lo ha
-// arrastrado a otra zona). Tamaño de touch >= 44px.
-// eslint-disable-next-line react/prop-types
-function RecenterFAB({ position, zoom }) {
-  const map = useMap();
-  if (!position) return null;
-  return (
-    <button
-      type="button"
-      className="mapsec__recenter"
-      aria-label="Centrar en la gasolinera"
-      onClick={() => map.flyTo(position, zoom, { duration: 0.5 })}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        width="20"
-        height="20"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <circle
-          cx="12"
-          cy="12"
-          r="3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <path
-          d="M12 2v3M12 19v3M2 12h3M19 12h3"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    </button>
-  );
-}
-
-function Gasolinera() {
-  const { idMunicipio, idGasolinera } = useParams();
-  const navigate = useNavigate();
+function Gasolinera({ idMunicipio, idGasolinera, initialStation = null }) {
+  const router = useRouter();
   const { resolved: theme } = useTheme();
-  const [gasolinera, setGasolinera] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [gasolinera, setGasolinera] = useState(initialStation);
+  const [loading, setLoading] = useState(!initialStation);
   const [error, setError] = useState("");
-  // Si MainContent ya tiene un fix GPS reciente (<10 min) lo reusamos en
-  // vez de pedir GPS otra vez al entrar a la ficha. iOS Safari tarda 1-3s
-  // en `getCurrentPosition` y a veces dispara prompt si el último fix
-  // expiró: no nos hace falta para mostrar "a X km".
+  // En cliente intentamos rehidratar el último fix de GPS del snapshot de la
+  // home. En servidor no hay sessionStorage: arrancamos sin posición.
   const [userPos, setUserPos] = useState(() => {
+    if (typeof sessionStorage === "undefined") return null;
     try {
       const raw = sessionStorage.getItem("main.snapshot");
       if (!raw) return null;
@@ -206,8 +149,6 @@ function Gasolinera() {
   const [preferredMaps, setPreferredMaps] = useState(() => readPreferredMaps());
   const [toastMsg, setToastMsg] = useState("");
   const [sharing, setSharing] = useState(false);
-  // Histórico bajo demanda: recharts + 7 fetches solo cuando el usuario lo
-  // pide. En móvil esto era el principal motivo de "ficha lenta".
   const [showHistory, setShowHistory] = useState(false);
   const isMobile = useMemo(() => isMobileLikely(), []);
   const sheetRef = useRef(null);
@@ -216,9 +157,9 @@ function Gasolinera() {
 
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length <= 1) {
-      navigate("/");
+      router.push("/");
     } else {
-      navigate(-1);
+      router.back();
     }
   };
 
@@ -239,11 +180,14 @@ function Gasolinera() {
     setMapsSheetOpen(true);
   };
 
+  // Si llegamos con initialStation (SSR), no refetcheamos: la API del MITECO
+  // es lenta y los datos ya han sido validados por el servidor.
   useEffect(() => {
+    if (initialStation) return undefined;
     if (!idMunicipio || !idGasolinera) {
       setError("Parámetros de gasolinera no válidos");
       setLoading(false);
-      return;
+      return undefined;
     }
 
     let cancelled = false;
@@ -265,15 +209,13 @@ function Gasolinera() {
     return () => {
       cancelled = true;
     };
-  }, [idMunicipio, idGasolinera]);
+  }, [idMunicipio, idGasolinera, initialStation]);
 
-  // Geolocalización ligera y silenciosa para mostrar km en la cabecera.
-  // Solo pedimos GPS si no rehidratamos posición del snapshot: evita prompt
-  // / wait extra al venir desde "Cerca de mí" (donde MainContent ya tenía
-  // la coord) o entre fichas.
   useEffect(() => {
     if (userPos) return undefined;
-    if (!("geolocation" in navigator)) return undefined;
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      return undefined;
+    }
     let cancelled = false;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -289,14 +231,11 @@ function Gasolinera() {
     return () => {
       cancelled = true;
     };
-    // Solo en el primer montaje: si después userPos cambia, no queremos
-    // re-disparar GPS.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const preferredFuel = useMemo(() => readPreferredFuel(), []);
 
-  // Cierre del sheet con Escape.
   useEffect(() => {
     if (!mapsSheetOpen) return;
     const onKey = (e) => {
@@ -306,20 +245,14 @@ function Gasolinera() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mapsSheetOpen]);
 
-  // Focus management del sheet: al abrir, foco al primer botón;
-  // al cerrar, devolver el foco al disparador.
   useEffect(() => {
     if (mapsSheetOpen) {
-      // Pequeño defer para esperar al render del panel.
       const t = setTimeout(() => {
-        const first = sheetRef.current?.querySelector(
-          ".mapssheet__option"
-        );
+        const first = sheetRef.current?.querySelector(".mapssheet__option");
         if (first) first.focus();
       }, 0);
       return () => clearTimeout(t);
     }
-    // Al cerrar, devolver el foco si tenemos referencia y sigue en el DOM.
     const trigger = triggerRef.current;
     if (trigger && typeof trigger.focus === "function") {
       try {
@@ -366,7 +299,7 @@ function Gasolinera() {
         </button>
         <div className="errorbox" role="alert">
           <p>{error || "No hemos encontrado esta gasolinera."}</p>
-          <button type="button" onClick={() => navigate("/")}>
+          <button type="button" onClick={() => router.push("/")}>
             Ir al inicio
           </button>
         </div>
@@ -391,27 +324,20 @@ function Gasolinera() {
   const cp = (gasolinera["C.P."] || "").trim();
   const localidad = gasolinera.Localidad || "";
   const provincia = gasolinera.Provincia || "";
-  // Si la localidad coincide con la provincia (caso típico de capitales),
-  // evitamos duplicar y mostramos solo una.
   const localProvSame =
     !!localidad &&
     !!provincia &&
     localidad.trim().toLowerCase() === provincia.trim().toLowerCase();
-  // Convención española: "calle, 28013 Madrid, Madrid". El CP precede a la
-  // localidad, no se separa con coma de ella.
   const localidadConCp = cp && localidad ? `${cp} ${localidad}` : localidad || cp;
   const direccionLine = localProvSame
     ? [direccion, localidadConCp].filter(Boolean).join(", ")
     : [direccion, localidadConCp, provincia].filter(Boolean).join(", ");
 
-  // Estado abierto/cerrado en este momento.
   const openStatus = isOpenNow(gasolinera.Horario);
 
-  // Tipo de venta: "R" = restringido (cooperativas, flotas).
   const tipoVenta = gasolinera["Tipo Venta"];
   const ventaRestringida = tipoVenta === "R";
 
-  // Productos extra (AdBlue, GLP, H2, E10) que la estación tenga disponibles.
   const extras = EXTRAS.map(({ etiqueta, campo }) => ({
     etiqueta,
     campo,
@@ -422,7 +348,6 @@ function Gasolinera() {
     (e) => e.campo === "Precio Gases licuados del petróleo"
   );
 
-  // Margen de la vía: "D" derecho, "I" izquierdo. Útil para autovías.
   const margen = gasolinera["Margen"];
   const margenLabel =
     margen === "D"
@@ -437,9 +362,6 @@ function Gasolinera() {
     valor: formatearPrecio(gasolinera[campo]),
   }));
 
-  // Precio principal: el que el usuario haya elegido como preferido si está
-  // disponible. Si solo hay 1 precio en total, ese pasa a ser principal aunque
-  // no coincida con la preferencia (no tiene sentido relegarlo a "otros").
   const preciosConValor = precios.filter((p) => p.valor);
   let principal =
     (preferredFuel &&
@@ -451,9 +373,6 @@ function Gasolinera() {
 
   const otros = precios.filter((p) => p !== principal);
 
-  // Lista de combustibles disponibles en el histórico: solo los que tienen
-  // precio actual (los que la API histórica también devolverá). El primero
-  // es el "principal" para que arranque con la preferencia del usuario.
   const chartFuels = preciosConValor.map(({ etiqueta, campo }) => ({
     etiqueta,
     campo,
@@ -506,7 +425,7 @@ function Gasolinera() {
 
   const handleDirectionsClick = (e) => {
     if (!hasCoords) return;
-    if (!isMobile) return; // desktop: deja que el <a> abra en nueva pestaña
+    if (!isMobile) return;
     e.preventDefault();
     if (preferredMaps) {
       openProvider(preferredMaps);
@@ -566,15 +485,11 @@ function Gasolinera() {
     setSharing(true);
     const url = window.location.href;
 
-    // Cabecera en dos líneas: "Ahora mismo en {rotulo}" + dirección.
-    // Evitamos separadores tipo · que hacen que el mensaje suene a plantilla.
     const ubicacion = [direccion, localidad].filter(Boolean).join(", ");
     const cabecera = ubicacion
       ? `Ahora mismo en ${rotulo}\n${ubicacion}`
       : `Ahora mismo en ${rotulo}`;
 
-    // Tres precios "famosos" en el orden de PRECIOS (Diésel A, 95, 98).
-    // Saltamos los no disponibles para no ensuciar el mensaje.
     const CAMPOS_FAMOSOS = new Set([
       "Precio Gasoleo A",
       "Precio Gasolina 95 E5",
@@ -607,7 +522,6 @@ function Gasolinera() {
       }
     }
 
-    // Sin Web Share: copiamos texto + URL para que se peguen juntos.
     const copiaCompleta = `${texto}\n${url}`;
     if (navigator.clipboard?.writeText) {
       try {
@@ -624,7 +538,6 @@ function Gasolinera() {
     setSharing(false);
   };
 
-  // Detección simple desktop vs móvil para tweaks del mapa (no SSR).
   const isDesktop =
     typeof window !== "undefined" &&
     window.matchMedia &&
@@ -655,7 +568,6 @@ function Gasolinera() {
         <span className="station__back-label">Volver</span>
       </button>
 
-      {/* 1. Cabecera */}
       <header className="station__head">
         <div className="station__logo">
           <img
@@ -722,7 +634,6 @@ function Gasolinera() {
         />
       </header>
 
-      {/* 2. Precio principal en GRANDE */}
       {principal && principal.valor && (
         <section className="bigprice" aria-label="Precio principal">
           <div className="bigprice__label">{principal.etiqueta}</div>
@@ -733,7 +644,6 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 3. Acciones primarias arriba (también persiste el sticky abajo en móvil). */}
       {hasCoords && (
         <section className="actions" aria-label="Acciones">
           <div className="actions__primary-wrap">
@@ -779,7 +689,6 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 4. Precios (todos si no hay preferido; o los demás si sí) */}
       {(otros.length > 0 || extras.length > 0) && (
         <section className="otherprices" aria-label="Precios">
           <h2 className="section-title">
@@ -798,7 +707,6 @@ function Gasolinera() {
                 )}
               </li>
             ))}
-            {/* Productos extra: solo aparecen si la estación los tiene. */}
             {extras.map(({ etiqueta, valor }) => (
               <li key={etiqueta} className="otherprices__item">
                 <span className="otherprices__label">{etiqueta}</span>
@@ -811,7 +719,6 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 5. Horario */}
       <section className="schedule" aria-label="Horario">
         <h2 className="section-title">Horario</h2>
         <div className="schedule__content">
@@ -819,7 +726,6 @@ function Gasolinera() {
         </div>
       </section>
 
-      {/* 6. Mapa */}
       {hasCoords && (
         <section className="mapsec" aria-label="Ubicación">
           <h2 className="section-title">Ubicación</h2>
@@ -827,27 +733,13 @@ function Gasolinera() {
             className="mapsec__frame"
             aria-label="Mapa con la ubicación de la gasolinera"
           >
-            <MapContainer
-              center={[lat, lng]}
-              zoom={15}
+            <StationMap
+              lat={lat}
+              lng={lng}
+              rotulo={rotulo}
+              theme={theme}
               scrollWheelZoom={isDesktop}
-              touchZoom={true}
-              dragging={true}
-              className="mapsec__map"
-            >
-              <TileLayer
-                key={theme}
-                attribution={TILE_ATTRIBUTION}
-                url={TILE_URL[theme] || TILE_URL.light}
-                subdomains={["a", "b", "c", "d"]}
-                maxZoom={19}
-              />
-              <MapFlyTo position={[lat, lng]} zoom={16} />
-              <Marker position={[lat, lng]} icon={stationPin}>
-                <Popup>{rotulo}</Popup>
-              </Marker>
-              <RecenterFAB position={[lat, lng]} zoom={16} />
-            </MapContainer>
+            />
 
             {mapsViewHref && (
               <a
@@ -863,9 +755,6 @@ function Gasolinera() {
         </section>
       )}
 
-      {/* 7. Histórico de precios — bajo demanda. Cargar el chart de inicio
-          significaba 7 fetches y la librería recharts (~75KB) en cada
-          ficha; en móvil eso hacía la página visiblemente lenta. */}
       {chartFuels.length > 0 && gasolinera.IDMunicipio && gasolinera.IDEESS && (
         showHistory ? (
           <Suspense
@@ -912,7 +801,6 @@ function Gasolinera() {
         )
       )}
 
-      {/* 8. Última actualización + atribución */}
       <footer className="station__foot">
         {gasolinera["Toma de datos"] && (
           <p>Última actualización: {gasolinera["Toma de datos"]}</p>
@@ -920,9 +808,6 @@ function Gasolinera() {
         <p>Datos: Ministerio para la Transición Ecológica (MITECO).</p>
       </footer>
 
-      {/* Sticky inferior en móvil (en desktop se vuelve normal).
-          Si no hay coords, no hay nada accionable: ocultamos el sticky
-          completo en lugar de dejar el botón Compartir solo. */}
       {hasCoords && (
         <div className="stickybar">
           <button
@@ -966,14 +851,12 @@ function Gasolinera() {
         </div>
       )}
 
-      {/* Toast inline no bloqueante */}
       {toastMsg && (
         <div className="toast" role="status" aria-live="polite">
           {toastMsg}
         </div>
       )}
 
-      {/* Bottom sheet de selección de app de mapas (sólo móvil) */}
       {mapsSheetOpen && hasCoords && (
         <div
           className="mapssheet"

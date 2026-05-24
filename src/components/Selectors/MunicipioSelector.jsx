@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
@@ -89,7 +91,7 @@ const MunicipioSelector = ({ municipios, onSelect }) => {
           noOptionsMessage={() => "Sin resultados"}
           loadingMessage={() => "Cargando…"}
           getOptionValue={(option) => `${option.id}-${option.value}`}
-          menuPortalTarget={document.body}
+          menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
           styles={menuPortalStyles}
         />
       ) : (

@@ -61,7 +61,10 @@
   --overlay-on-ink: rgba(255, 255, 255, 0.16);
   --overlay-on-ink-strong: rgba(255, 255, 255, 0.18);
 
-  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Geist se carga vía next/font/google y se expone como --font-geist (ver
+   * RootLayout). Caemos al stack del sistema si la fuente no termina de
+   * cargar para evitar FOIT en redes lentas. */
+  --font-sans: var(--font-geist), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
   --maxw: 720px;
