@@ -44,7 +44,9 @@ const withPWA = withPWAInit({
 const nextConfig = {
   reactStrictMode: true,
   // Cabeceras de seguridad y caché estática. Las páginas SSR las cachea Next
-  // según `revalidate`; aquí solo tuneamos defaults para activos estáticos.
+  // según `revalidate`; aquí solo tuneamos defaults para activos estáticos
+  // y para las OG dinámicas (Vercel ya las cachea pero ser explícito ayuda
+  // con CDNs intermedios como los de Twitter/WhatsApp).
   async headers() {
     return [
       {
@@ -53,6 +55,16 @@ const nextConfig = {
           {
             key: "Cache-Control",
             value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/(.*opengraph-image)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              "public, max-age=3600, s-maxage=86400, stale-while-revalidate=2592000",
           },
         ],
       },

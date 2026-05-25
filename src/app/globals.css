@@ -1517,3 +1517,446 @@ a:focus-visible,
   height: 200px;
   border-radius: var(--r);
 }
+
+/* -----------------------------------------------------------------
+ * Brands index (/marcas) + brand detail (/marca/[brand])
+ * --------------------------------------------------------------- */
+
+.brands {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 32px;
+}
+
+.brands__head {
+  margin: 8px 0 20px;
+}
+
+.brands__title {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+
+.brands__sub {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.brands__grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.brands__item {
+  margin: 0;
+}
+
+.brands__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 110px;
+  padding: 16px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
+  font-weight: 500;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.brands__link:hover {
+  background: var(--bg-2);
+  border-color: var(--line-strong);
+}
+
+.brands__link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.brands__logo {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--logo-bg);
+}
+
+.brands__logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+/* --- /marca/[brand] --- */
+
+.brand {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 32px;
+}
+
+.brand__head {
+  margin: 8px 0 20px;
+}
+
+.brand__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.brand__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.brand__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.brand__title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.brand__logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--logo-bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.brand__logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.brand__title {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.brand__sub {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.brand__empty {
+  color: var(--ink-muted);
+  padding: 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.brand__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brand__group {
+  margin: 0;
+}
+
+.brand__group-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand__group-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand__group-title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.brand__group-count {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  font-weight: 400;
+  flex: 0 0 auto;
+}
+
+.brand__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brand__item {
+  margin: 0;
+}
+
+.brand__link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.brand__link:hover {
+  background: var(--bg-2);
+  border-color: var(--line);
+}
+
+.brand__link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.brand__addr {
+  font-weight: 500;
+}
+
+.brand__muni {
+  color: var(--ink-muted);
+}
+
+/* -----------------------------------------------------------------
+ * FAQ (/preguntas-frecuentes)
+ * --------------------------------------------------------------- */
+
+.faq {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px var(--gutter) 32px;
+}
+
+.faq__head {
+  margin: 8px 0 24px;
+}
+
+.faq__title {
+  font-size: clamp(1.6rem, 4.5vw, 2.1rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+
+.faq__lede {
+  color: var(--ink-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.faq__item {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+
+.faq__item:last-child {
+  border-bottom: 0;
+}
+
+.faq__q {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+
+.faq__a {
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.faq__foot {
+  margin-top: 32px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.faq__foot a {
+  color: var(--ink-2);
+}
+
+/* -----------------------------------------------------------------
+ * Mapa del sitio (/mapa-del-sitio)
+ * --------------------------------------------------------------- */
+
+.sitemap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 32px;
+}
+
+.sitemap__head {
+  margin: 8px 0 24px;
+}
+
+.sitemap__title {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.sitemap__sub {
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.sitemap__sec {
+  margin-bottom: 32px;
+}
+
+.sitemap__sec-title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.sitemap__pages,
+.sitemap__brands,
+.sitemap__provincias {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+}
+
+.sitemap__pages li a,
+.sitemap__brands li a,
+.sitemap__provincias li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 0;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sitemap__pages li a:hover,
+.sitemap__brands li a:hover,
+.sitemap__provincias li a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* -----------------------------------------------------------------
+ * Nearby municipios (cross-linking en /municipio/[id]/[slug])
+ * --------------------------------------------------------------- */
+
+.nearby {
+  max-width: var(--maxw);
+  margin: 32px auto 0;
+  padding: 0 var(--gutter);
+}
+
+.nearby__title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.nearby__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nearby__item {
+  margin: 0;
+}
+
+.nearby__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.nearby__link:hover {
+  background: var(--bg);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.nearby__more {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.nearby__more a {
+  color: var(--ink-2);
+}

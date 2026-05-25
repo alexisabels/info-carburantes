@@ -108,6 +108,14 @@ export default function RootLayout({ children }) {
           rel="dns-prefetch"
           href="https://sedeaplicaciones.minetur.gob.es"
         />
+        {/* OpenSearch: el navegador ofrece "Buscar Carburantes" desde la
+            barra de direcciones tras la primera visita. */}
+        <link
+          rel="search"
+          type="application/opensearchdescription+xml"
+          title="Carburantes"
+          href="/opensearch.xml"
+        />
         {/* JSON-LD del sitio: WebSite con SearchAction + Organization.
             Ayudan a construir el knowledge graph + sitelink-search en
             resultados de marca ("carburantes"). */}
