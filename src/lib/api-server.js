@@ -7,6 +7,8 @@
 // navegador (Cerca de mí, históricos, etc.); aquí solo cubrimos lo que
 // necesita renderizarse en servidor.
 
+import { cache } from "react";
+
 const BASE_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
 
@@ -79,23 +81,63 @@ export async function fetchGasolineraServer(idMunicipio, ideess) {
   return { estacion, fecha: data?.Fecha || null };
 }
 
-// Listado nacional completo (~12 000 estaciones / 5-8 MB). Lo cacheamos a
-// 1 hora porque MITECO actualiza ~3 veces/día y la página de marca lo
-// reusa muchas veces durante la ventana. Timeout largo: peticiones de 5+ s
-// son normales en el endpoint del Ministerio.
-export async function fetchTodasLasEstacionesServer() {
-  try {
-    const data = await fetchJson(`${BASE_URL}/EstacionesTerrestres/`, {
-      revalidate: 3600,
-      tag: "todas-estaciones",
-    });
-    return data && typeof data === "object"
-      ? data
-      : { Fecha: "", ListaEESSPrecio: [] };
-  } catch {
-    return { Fecha: "", ListaEESSPrecio: [] };
+// Listado nacional completo. MITECO devuelve ~16 MB y Next.js solo cachea
+// fetches de hasta 2 MB ("Failed to set Next.js data cache, items over 2MB"),
+// así que la persistencia entre invocaciones se nos cae. Tampoco podemos
+// pre-renderizar las 22 marcas en build (×30 s cada fetch = >10 min).
+//
+// Solución: bypass del data cache de Next (`cache: 'no-store'`) + memoización
+// manual a nivel de módulo. En cada instancia/contenedor de Vercel el primer
+// fetch tarda ~5-30 s; los siguientes durante la ventana TTL son instantáneos
+// y reutilizan el objeto en memoria.
+//
+// También envolvemos en `React.cache()` para que dentro de UN MISMO render
+// (página + JSON-LD + componentes hijos que pidan estaciones) solo se
+// resuelva una vez aunque ya haya cache de módulo: evita andar tocando el
+// Map a varias funciones en paralelo.
+
+const ALL_STATIONS_TTL_MS = 60 * 60 * 1000;
+let allStationsMemo = null;
+let allStationsMemoAt = 0;
+let allStationsInflight = null;
+
+async function fetchTodasLasEstacionesUncached() {
+  const now = Date.now();
+  if (allStationsMemo && now - allStationsMemoAt < ALL_STATIONS_TTL_MS) {
+    return allStationsMemo;
   }
+  if (allStationsInflight) return allStationsInflight;
+
+  allStationsInflight = (async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/EstacionesTerrestres/`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`MITECO ${res.status}`);
+      const data = await res.json();
+      const result =
+        data && typeof data === "object"
+          ? data
+          : { Fecha: "", ListaEESSPrecio: [] };
+      allStationsMemo = result;
+      allStationsMemoAt = Date.now();
+      return result;
+    } catch {
+      return { Fecha: "", ListaEESSPrecio: [] };
+    } finally {
+      allStationsInflight = null;
+    }
+  })();
+
+  return allStationsInflight;
 }
+
+// React.cache añade request-level memoization además del memo de módulo:
+// dentro del mismo render, varias llamadas comparten promesa.
+export const fetchTodasLasEstacionesServer = cache(
+  fetchTodasLasEstacionesUncached
+);
 
 // Helper: precio numérico parseado o null.
 export function parsePrecioSrv(raw) {

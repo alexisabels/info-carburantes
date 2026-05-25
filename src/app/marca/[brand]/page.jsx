@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchTodasLasEstacionesServer } from "../../../lib/api-server";
-import { getBrand, KNOWN_BRANDS, stationBrand } from "../../../lib/brands";
+import { getBrand, stationBrand } from "../../../lib/brands";
 import {
   buildMetadata,
   jsonLdBreadcrumb,
@@ -10,15 +10,16 @@ import {
 import { slugify } from "../../../utils/slug";
 import { absoluteUrl } from "../../../lib/site";
 
-export const dynamicParams = false;
+// ISR puro: dynamicParams=true (default) y NO `generateStaticParams`. El
+// listado nacional pesa ~16 MB y Next no lo puede persistir en su data
+// cache (>2 MB); pre-generar 22 marcas en build hace ×22 fetches de 5-30s
+// y revienta el timeout de 60s por página. En su lugar:
+//   - 1ª visita a /marca/repsol: hit a MITECO + filtra + renderiza
+//     (5-30s, oculto detrás del loading.jsx skeleton vía Suspense).
+//   - Visitas siguientes: edge cache durante 1h (revalidate=3600).
+//   - El memo de módulo en api-server.js comparte la respuesta de MITECO
+//     entre /marca/cepsa, /marca/bp, etc. dentro de la misma instancia.
 export const revalidate = 3600;
-
-// Pre-renderiza las 22 marcas al build: 22 páginas cacheadas en edge sin
-// tocar MITECO en el primer click. dynamicParams=false bloquea slugs que
-// no estén en la lista (404 nativo en lugar de 5 MB de JSON para nada).
-export function generateStaticParams() {
-  return KNOWN_BRANDS.map((b) => ({ brand: b.id }));
-}
 
 const collator = new Intl.Collator("es", { sensitivity: "base" });
 
