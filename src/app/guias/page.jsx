@@ -124,14 +124,14 @@ export default function GuiasIndexPage() {
       })}
 
       <aside className="guides__cta-bottom" aria-label="Usar la app">
-        <h2>¿Necesitas precios reales?</h2>
-        <p>
+        <p className="guides__cta-title">¿Necesitas precios reales?</p>
+        <p className="guides__cta-body">
           Las guías te ayudan a tomar decisiones; los precios actualizados
           los ves en cada estación de servicio. Carburantes lee la
           información oficial del Ministerio cada media hora.
         </p>
         <Link href="/" className="guides__cta-btn">
-          Buscar gasolineras →
+          Buscar gasolineras <span aria-hidden="true">→</span>
         </Link>
       </aside>
     </main>

@@ -1989,14 +1989,19 @@ a:focus-visible,
   color: var(--ink-2);
 }
 
+
 /* -----------------------------------------------------------------
  * Guías (/guias y /guias/[slug])
  *
- * Tipografía pensada para lectura larga: max-width contenido, ritmo
- * vertical generoso, contraste alto en el tema oscuro. Los bloques
- * "answer", "tldr" y "callout" tienen estilo distintivo para que un
- * lector que escanea pille las claves sin leer todo, y los selectores
- * que usa el JSON-LD speakable apunten a contenido visible.
+ * Tono editorial sobrio, alineado con el resto de la app: hairlines
+ * en lugar de bordes coloreados, tipografía generosa, ausencia de
+ * píldoras y labels gritones. La jerarquía la pone el tamaño y el
+ * peso, no el color.
+ *
+ * Los selectores `.guide__answer` y `.guide__tldr` se conservan
+ * porque el JSON-LD `speakable` apunta a ellos para que voice
+ * assistants y LLMs lean exactamente esos bloques. La semántica vive
+ * en el HTML; el estilo solo decide cómo se muestra.
  * --------------------------------------------------------------- */
 
 .guides {
@@ -2006,13 +2011,13 @@ a:focus-visible,
 }
 
 .guides__head {
-  margin: 8px 0 32px;
+  margin: 8px 0 40px;
 }
 
 .guides__crumbs {
   font-size: 0.85rem;
   color: var(--ink-muted);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .guides__crumbs a {
   color: var(--ink-2);
@@ -2020,13 +2025,14 @@ a:focus-visible,
 }
 .guides__crumbs a:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .guides__title {
   font-size: clamp(1.7rem, 5vw, 2.4rem);
   letter-spacing: -0.025em;
   line-height: 1.1;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
 }
 
 .guides__lede {
@@ -2034,16 +2040,20 @@ a:focus-visible,
   font-size: 1.05rem;
   line-height: 1.55;
   margin: 0;
+  max-width: 60ch;
 }
 
+/* Cabecera de cada categoría en el hub. Mantenemos el "small caps"
+   gris del resto de la app (mismo treatment que .sitemap__sec-title)
+   para que la página se sienta parte de la familia. */
 .guides__cat {
-  margin-top: 40px;
+  margin-top: 48px;
 }
 
 .guides__cat-title {
-  font-size: 1rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--ink-muted);
   margin: 0 0 4px;
   font-weight: 600;
@@ -2052,109 +2062,100 @@ a:focus-visible,
 .guides__cat-desc {
   color: var(--ink-muted);
   font-size: 0.95rem;
-  margin: 0 0 18px;
+  margin: 0 0 20px;
+  max-width: 60ch;
 }
 
+/* Cards en lista. En lugar de grid 2-col coloreado, lista limpia con
+   hairlines entre items — más editorial, menos "blog template". */
 .guides__grid {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-
-@media (min-width: 720px) {
-  .guides__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  border-top: 1px solid var(--line);
 }
 
 .guides__card {
   margin: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .guides__card-link {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 18px;
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
+  display: block;
+  padding: 18px 0;
   text-decoration: none;
   color: inherit;
-  transition: background 120ms ease, border-color 120ms ease,
-    transform 120ms ease;
-  height: 100%;
 }
 
-.guides__card-link:hover {
-  background: var(--bg);
-  border-color: var(--line-strong);
-  transform: translateY(-1px);
+.guides__card-link:hover .guides__card-title {
+  color: var(--ink-muted);
 }
 
 .guides__card-title {
   font-size: 1.05rem;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   line-height: 1.3;
-  margin: 0;
+  margin: 0 0 4px;
   color: var(--ink);
+  font-weight: 600;
+  transition: color 120ms ease;
 }
 
 .guides__card-desc {
-  font-size: 0.9rem;
+  font-size: 0.93rem;
   color: var(--ink-muted);
-  line-height: 1.45;
-  margin: 0;
+  line-height: 1.5;
+  margin: 0 0 6px;
 }
 
 .guides__card-meta {
-  font-size: 0.8rem;
-  color: var(--accent);
-  font-weight: 600;
-  margin-top: auto;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
+/* CTA al final del hub. Panel discreto sobre superficie ligera; el
+   enlace es texto subrayado, no botón pill. */
 .guides__cta-bottom {
   margin-top: 56px;
-  padding: 24px;
-  background: var(--accent-bg);
-  border: 1px solid var(--accent);
+  padding: 28px 24px;
+  background: var(--bg-2);
   border-radius: var(--r);
-  text-align: center;
+  text-align: left;
 }
 
-.guides__cta-bottom h2 {
+.guides__cta-title {
   margin: 0 0 8px;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   color: var(--ink);
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.guides__cta-bottom p {
+.guides__cta-body {
   margin: 0 0 14px;
   color: var(--ink-2);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.55;
+  max-width: 60ch;
 }
 
 .guides__cta-btn {
   display: inline-flex;
   align-items: center;
-  background: var(--accent);
-  color: #ffffff;
-  padding: 10px 22px;
-  border-radius: 999px;
+  gap: 6px;
+  color: var(--ink);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: background 120ms ease;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1px;
+  transition: opacity 120ms ease;
 }
 
 .guides__cta-btn:hover {
-  background: var(--accent-strong);
+  opacity: 0.7;
 }
 
 /* -----------------------------------------------------------------
@@ -2162,9 +2163,9 @@ a:focus-visible,
  * --------------------------------------------------------------- */
 
 .guide {
-  max-width: 720px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 16px var(--gutter) 48px;
+  padding: 16px var(--gutter) 56px;
 }
 
 .guide__article {
@@ -2172,7 +2173,7 @@ a:focus-visible,
 }
 
 .guide__head {
-  margin-bottom: 32px;
+  margin-bottom: 36px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--line);
 }
@@ -2180,7 +2181,7 @@ a:focus-visible,
 .guide__crumbs {
   font-size: 0.85rem;
   color: var(--ink-muted);
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 .guide__crumbs a {
   color: var(--ink-2);
@@ -2188,22 +2189,26 @@ a:focus-visible,
 }
 .guide__crumbs a:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .guide__title {
-  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-size: clamp(1.7rem, 5vw, 2.3rem);
   letter-spacing: -0.025em;
-  line-height: 1.1;
+  line-height: 1.12;
   margin: 0 0 14px;
 }
 
 .guide__lede {
   color: var(--ink-2);
-  font-size: 1.1rem;
+  font-size: 1.08rem;
   line-height: 1.55;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
+  max-width: 60ch;
 }
 
+/* Meta line: categoría · tiempo · fecha. Texto plano en gris muted,
+   separado por puntos. Sin píldoras. */
 .guide__meta {
   display: flex;
   align-items: center;
@@ -2213,24 +2218,9 @@ a:focus-visible,
   color: var(--ink-muted);
 }
 
-.guide__cat-pill {
-  display: inline-flex;
-  align-items: center;
-  background: var(--accent-bg);
-  color: var(--accent-strong);
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.guide__meta-sep {
-  color: var(--ink-faint);
-}
-
-/* Cuerpo del artículo: tipografía optimizada para lectura larga. */
+/* Cuerpo del artículo: tipografía optimizada para lectura larga.
+   Tamaño base un punto mayor que el normal de la app, line-height
+   amplio, contraste alto. */
 .guide__body {
   font-size: 1.02rem;
   line-height: 1.7;
@@ -2238,21 +2228,23 @@ a:focus-visible,
 }
 
 .guide__body h2 {
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  margin: 40px 0 14px;
+  margin: 44px 0 14px;
   color: var(--ink);
   scroll-margin-top: 16px;
+  font-weight: 600;
 }
 
 .guide__body h3 {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   letter-spacing: -0.01em;
-  line-height: 1.25;
-  margin: 28px 0 10px;
+  line-height: 1.3;
+  margin: 28px 0 8px;
   color: var(--ink);
   scroll-margin-top: 16px;
+  font-weight: 600;
 }
 
 .guide__body p {
@@ -2267,7 +2259,7 @@ a:focus-visible,
 
 .guide__body li {
   margin: 0 0 8px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 .guide__body li > ul,
@@ -2285,119 +2277,104 @@ a:focus-visible,
 }
 
 .guide__body a {
-  color: var(--accent-strong);
+  color: var(--ink-2);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
 }
 
 .guide__body a:hover {
-  color: var(--accent);
-  text-decoration-thickness: 2px;
-}
-
-/* --- Bloques destacados --- */
-
-/* Answer: el "respuesta corta" que abre la guía. Selector usado por
-   speakable del JSON-LD. */
-.guide__answer {
-  background: var(--bg-2);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--r-sm);
-  padding: 18px 20px;
-  margin: 0 0 24px;
-}
-
-.guide__answer-label {
-  display: block;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-strong);
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.guide__answer-body {
-  margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.6;
   color: var(--ink);
+  text-decoration-color: var(--ink);
 }
 
-/* TL;DR. Usa el mismo selector de speakable. */
-.guide__tldr {
-  background: var(--info-bg);
-  border: 1px solid var(--info-border);
-  border-radius: var(--r-sm);
-  padding: 16px 20px;
+/* --- Bloques semánticos --- */
+
+/* Answer: párrafo de respuesta corta al inicio. Era una caja verde;
+   ahora es solo un párrafo con tipografía algo más generosa. Sigue
+   siendo el target del speakable JSON-LD por el className. */
+.guide__answer {
+  font-size: 1.13rem;
+  line-height: 1.55;
+  color: var(--ink);
   margin: 0 0 28px;
+  letter-spacing: -0.005em;
 }
 
-.guide__tldr-label {
-  display: block;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--info-fg);
-  font-weight: 700;
-  margin-bottom: 6px;
+.guide__answer strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
-.guide__tldr ul {
-  margin: 0;
-  padding-left: 20px;
+/* TL;DR: lista de puntos clave. Hairlines arriba y abajo, sin fondo
+   ni label uppercase. La posición y la brevedad la identifican. */
+.guide__tldr {
+  list-style: none;
+  margin: 0 0 36px;
+  padding: 16px 0 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.97rem;
+  line-height: 1.55;
+  color: var(--ink-2);
 }
 
 .guide__tldr li {
-  margin: 0 0 4px;
-  color: var(--ink-2);
+  margin: 0 0 6px;
+  padding-left: 18px;
+  position: relative;
 }
 
-/* Callouts: info / warn / note */
+.guide__tldr li:last-child {
+  margin-bottom: 0;
+}
+
+.guide__tldr li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 8px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+
+/* Callouts: superficie neutra, sin border de color. La jerarquía la
+   pone el title en negrita. Conservamos las 3 variantes en el DOM
+   pero las renderizamos igual visualmente. */
 .guide__callout {
-  border-radius: var(--r-sm);
-  padding: 14px 18px;
-  margin: 20px 0;
-  font-size: 0.97rem;
-  line-height: 1.55;
-}
-
-.guide__callout--info {
-  background: var(--accent-bg);
-  border: 1px solid var(--accent);
-  color: var(--ink-2);
-}
-
-.guide__callout--warn {
-  background: var(--warn-bg);
-  border: 1px solid var(--warn);
-  color: var(--ink-2);
-}
-
-.guide__callout--note {
   background: var(--bg-2);
-  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 16px 18px;
+  margin: 24px 0;
+  font-size: 0.97rem;
+  line-height: 1.6;
   color: var(--ink-2);
 }
 
 .guide__callout-title {
   display: block;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  font-size: 0.97rem;
 }
 
-.guide__callout-body p:last-child {
-  margin-bottom: 0;
+.guide__callout-body p {
+  margin: 0;
 }
 
-/* Tablas comparativas: scroll horizontal en móvil. */
+.guide__callout-body p + p {
+  margin-top: 8px;
+}
+
+/* Tablas comparativas. Hairline-only, sin alternancia de filas, sin
+   fondo del header. Lo que destaca es el peso de la primera fila. */
 .guide__table-wrap {
   overflow-x: auto;
-  margin: 20px 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
+  margin: 24px 0;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -2411,22 +2388,26 @@ a:focus-visible,
 .guide__table-caption {
   caption-side: top;
   text-align: left;
-  padding: 12px 14px 6px;
+  padding: 0 0 8px;
   font-size: 0.85rem;
   color: var(--ink-muted);
-  font-style: italic;
 }
 
 .guide__table th,
 .guide__table td {
-  padding: 10px 14px;
+  padding: 10px 14px 10px 0;
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: top;
 }
 
-.guide__table th {
-  background: var(--bg-2);
+.guide__table th:last-child,
+.guide__table td:last-child {
+  padding-right: 0;
+}
+
+.guide__table thead th {
+  border-bottom: 1px solid var(--line-strong);
   font-weight: 600;
   color: var(--ink);
   font-size: 0.85rem;
@@ -2437,72 +2418,61 @@ a:focus-visible,
   border-bottom: 0;
 }
 
-.guide__table tbody tr:nth-child(even) td {
-  background: rgba(0, 0, 0, 0.015);
-}
-
-[data-theme="dark"] .guide__table tbody tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.025);
-}
-
-/* CTA dentro del cuerpo de la guía */
+/* CTA dentro del cuerpo. Panel sobre superficie ligera, sin botón
+   pill verde. El enlace es texto con underline. */
 .guide__cta {
-  background: var(--accent-bg);
-  border: 1px solid var(--accent);
+  background: var(--bg-2);
   border-radius: var(--r);
-  padding: 18px 20px;
-  margin: 32px 0;
-  text-align: center;
+  padding: 22px 22px;
+  margin: 36px 0;
 }
 
 .guide__cta-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   margin: 0 0 8px;
   color: var(--ink);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 .guide__cta-body {
   margin: 0 0 14px;
   color: var(--ink-2);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .guide__cta-btn {
   display: inline-flex;
   align-items: center;
-  background: var(--accent);
-  color: #ffffff;
-  padding: 10px 22px;
-  border-radius: 999px;
+  gap: 6px;
+  color: var(--ink);
   text-decoration: none !important;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: background 120ms ease;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1px;
+  transition: opacity 120ms ease;
 }
 
 .guide__cta-btn:hover {
-  background: var(--accent-strong);
-  color: #ffffff;
+  opacity: 0.7;
 }
 
-/* Bloque "páginas relacionadas" (enlaces internos a marcas) */
+/* Enlaces internos relacionados (a marcas, otras secciones). Antes
+   eran píldoras; ahora lista en línea separada por puntos. */
 .guide__related {
   margin: 32px 0;
-  padding: 16px 18px;
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
 }
 
 .guide__related-title {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--ink-muted);
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-weight: 600;
 }
 
@@ -2512,7 +2482,8 @@ a:focus-visible,
   margin: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 6px 14px;
+  font-size: 0.95rem;
 }
 
 .guide__related-list li {
@@ -2520,42 +2491,32 @@ a:focus-visible,
 }
 
 .guide__related-list a {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 999px;
   color: var(--ink-2);
-  text-decoration: none;
-  font-size: 0.85rem;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
 }
 
 .guide__related-list a:hover {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent-strong);
+  color: var(--ink);
+  text-decoration-color: var(--ink);
 }
 
-/* Mini FAQ con <details> dentro del cuerpo */
+/* MiniFAQ con <details>. Hairline divider, sin fondo. */
 .guide__minifaq {
   margin: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border-top: 1px solid var(--line);
 }
 
 .guide__minifaq-item {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 0;
-  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
 }
 
 .guide__minifaq-item summary {
   cursor: pointer;
-  padding: 12px 16px;
+  padding: 14px 0;
   font-weight: 600;
   color: var(--ink);
   list-style: none;
@@ -2578,23 +2539,25 @@ a:focus-visible,
 
 .guide__minifaq-item p {
   margin: 0;
-  padding: 0 16px 14px;
+  padding: 0 0 14px;
   color: var(--ink-2);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
-/* FAQ al final del artículo */
+/* FAQ al final del artículo. Mantiene el tono del FAQ existente del
+   sitio: hairlines entre preguntas, sin caja ni color. */
 .guide__faq {
-  margin: 56px 0 32px;
-  padding-top: 32px;
+  margin: 56px 0 24px;
+  padding-top: 36px;
   border-top: 1px solid var(--line);
 }
 
 .guide__faq-title {
-  font-size: 1.45rem;
+  font-size: 1.4rem;
   letter-spacing: -0.02em;
   margin: 0 0 20px;
   color: var(--ink);
+  font-weight: 600;
 }
 
 .guide__faq-list {
@@ -2619,77 +2582,74 @@ a:focus-visible,
   margin: 0 0 8px;
   color: var(--ink);
   line-height: 1.3;
+  font-weight: 600;
 }
 
 .guide__faq-a {
   margin: 0;
   color: var(--ink-2);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
-/* Más guías al final */
+/* "Otras guías": lista hairline-divided, mismo lenguaje que el hub. */
 .guide__more {
-  margin: 48px 0 32px;
-  padding-top: 32px;
+  margin: 48px 0 24px;
+  padding-top: 36px;
   border-top: 1px solid var(--line);
 }
 
 .guide__more-title {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   letter-spacing: -0.01em;
   margin: 0 0 16px;
   color: var(--ink);
+  font-weight: 600;
 }
 
 .guide__more-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  border-top: 1px solid var(--line);
 }
 
 .guide__more-list li {
   margin: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .guide__more-link {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
+  display: block;
+  padding: 14px 0;
   text-decoration: none;
   color: inherit;
-  background: var(--bg-2);
-  transition: background 120ms ease, border-color 120ms ease;
 }
 
-.guide__more-link:hover {
-  background: var(--bg);
-  border-color: var(--line-strong);
+.guide__more-link:hover .guide__more-link-title {
+  color: var(--ink-muted);
 }
 
 .guide__more-link-title {
+  display: block;
   font-weight: 600;
   color: var(--ink);
-  font-size: 0.97rem;
+  font-size: 0.98rem;
   line-height: 1.3;
+  margin-bottom: 2px;
+  transition: color 120ms ease;
 }
 
 .guide__more-link-desc {
-  font-size: 0.85rem;
+  display: block;
+  font-size: 0.88rem;
   color: var(--ink-muted);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .guide__foot {
   margin-top: 32px;
   color: var(--ink-muted);
   font-size: 0.9rem;
-  text-align: center;
 }
 
 .guide__foot a {

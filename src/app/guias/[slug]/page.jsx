@@ -132,16 +132,10 @@ export default async function GuidePage({ params }) {
           <p className="guide__lede">{guide.description}</p>
 
           <div className="guide__meta" aria-label="Metadatos del artículo">
-            <span className="guide__cat-pill">
-              {categoryName(guide.category)}
-            </span>
-            <span className="guide__meta-sep" aria-hidden="true">
-              ·
-            </span>
+            <span>{categoryName(guide.category)}</span>
+            <span aria-hidden="true">·</span>
             <span>{guide.readingMinutes} min de lectura</span>
-            <span className="guide__meta-sep" aria-hidden="true">
-              ·
-            </span>
+            <span aria-hidden="true">·</span>
             <time dateTime={guide.dateModified || guide.datePublished}>
               Actualizada{" "}
               {new Date(

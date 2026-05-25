@@ -1,49 +1,54 @@
 import Link from "next/link";
 
-// Bloque de "Respuesta corta" que abre cada guía. Es el patrón AEO clásico
-// (answer engine optimization): un párrafo que cierra la query directamente,
-// con un selector CSS predecible que se referencia en el speakable de
-// JSON-LD. Los motores generativos (ChatGPT, Perplexity, Google SGE) tienden
-// a citar este bloque palabra por palabra cuando la query encaja.
+// Diseño consciente: las guías son contenido editorial, no landing
+// pages de marketing. Imitamos el tono de la app — hairlines, tipografía
+// generosa, gris en lugar de color, sin píldoras ni labels uppercase.
+//
+// Los className `.guide__answer` y `.guide__tldr` se conservan porque
+// el JSON-LD `speakable` apunta a ellos: queremos que voice assistants
+// y LLMs lean exactamente esos bloques. Lo visible cambia, la semántica
+// no.
+
+// "Answer" — el párrafo de respuesta directa al inicio. Era una caja
+// verde con label "RESPUESTA CORTA"; ahora es simplemente un párrafo
+// con tipografía un poco más generosa. Sin caja, sin label.
 export function Answer({ children }) {
-  return (
-    <aside className="guide__answer" aria-label="Respuesta corta">
-      <span className="guide__answer-label">Respuesta corta</span>
-      <p className="guide__answer-body">{children}</p>
-    </aside>
-  );
+  return <p className="guide__answer">{children}</p>;
 }
 
-// TL;DR opcional al inicio. Más telegráfico que Answer, ideal cuando hay
-// varios puntos clave. También está incluido en el speakable selector.
+// TL;DR — lista de puntos clave. Era una caja azul con label uppercase
+// "EN RESUMEN"; ahora es una lista delimitada por hairlines arriba y
+// abajo, sin label. El lector entiende por posición y tono lo que es.
 export function Tldr({ items }) {
   if (!Array.isArray(items) || !items.length) return null;
   return (
-    <aside className="guide__tldr" aria-label="Resumen">
-      <span className="guide__tldr-label">En resumen</span>
-      <ul>
-        {items.map((it, i) => (
-          <li key={i}>{it}</li>
-        ))}
-      </ul>
-    </aside>
+    <ul className="guide__tldr" aria-label="Puntos clave">
+      {items.map((it, i) => (
+        <li key={i}>{it}</li>
+      ))}
+    </ul>
   );
 }
 
-// Callout informativo / aviso. Tipo: "info" (verde) | "warn" (rojo) |
-// "note" (gris). Sirve para destacar matices que un LLM pueda extraer
-// como "dato verificado" y reduce la sensación de muro de texto.
+// Callout: nota lateral. Era tres variantes coloreadas (info verde,
+// warn rojo, note gris); ahora todas se renderizan igual — superficie
+// neutra muy ligera, sin borde de color. La jerarquía la pone el
+// título en negrita y el cuerpo en texto normal.
+//
+// Conservamos la prop `type` por compatibilidad con las llamadas
+// existentes, pero solo se usa como atributo data- para que el lector
+// pueda inferirlo si lee el HTML (no hay diferencia visual).
 export function Callout({ type = "info", title, children }) {
   return (
-    <aside className={`guide__callout guide__callout--${type}`} role="note">
+    <aside className="guide__callout" data-callout-type={type} role="note">
       {title && <strong className="guide__callout-title">{title}</strong>}
       <div className="guide__callout-body">{children}</div>
     </aside>
   );
 }
 
-// Tabla comparativa. La envolvemos en un wrapper que activa scroll horizontal
-// en móvil sin romper la accesibilidad de la tabla nativa.
+// Tabla comparativa. Sin cambios funcionales: el wrapper permite scroll
+// horizontal en móvil. El estilo visual se quita en la CSS.
 export function CompareTable({ headers, rows, caption }) {
   return (
     <div className="guide__table-wrap">
@@ -72,9 +77,9 @@ export function CompareTable({ headers, rows, caption }) {
   );
 }
 
-// CTA a la propia app — convierte tráfico de SEO en uso real. Sustituye al
-// "anuncio" que normalmente aparece en un blog: aquí señalamos la utilidad
-// pública del sitio (buscar precios reales).
+// CTA a la app. Era un bloque verde centrado con botón pill verde;
+// ahora es un panel discreto sobre fondo gris muy ligero, con el
+// enlace como texto subrayado al estilo NYT/FT — sobrio y monocromo.
 export function AppCta({
   title = "Compara precios reales ahora",
   body = "Carburantes lee los datos del Ministerio cada media hora. Busca por municipio o pulsa «Cerca de mí» para ver las gasolineras más baratas de tu zona.",
@@ -83,25 +88,25 @@ export function AppCta({
 }) {
   return (
     <aside className="guide__cta" aria-label="Usar la app">
-      <h3 className="guide__cta-title">{title}</h3>
+      <p className="guide__cta-title">{title}</p>
       <p className="guide__cta-body">{body}</p>
       <Link href={href} className="guide__cta-btn">
-        {linkLabel} →
+        {linkLabel} <span aria-hidden="true">→</span>
       </Link>
     </aside>
   );
 }
 
-// Lista de enlaces internos a marcas/provincias. Distribuye PageRank a las
-// landing pages comerciales y le da contexto al lector ("aquí están las
-// estaciones de esta marca en tu zona").
+// Enlaces internos a marcas/provincias. Antes eran píldoras
+// redondeadas; ahora son enlaces de texto subrayado en una sola línea
+// con separadores «·». Distribuye PageRank sin parecer un tag cloud.
 export function InternalLinks({ title, links }) {
   if (!Array.isArray(links) || !links.length) return null;
   return (
     <section className="guide__related" aria-labelledby="related-internal">
-      <h3 id="related-internal" className="guide__related-title">
+      <p id="related-internal" className="guide__related-title">
         {title || "Páginas relacionadas"}
-      </h3>
+      </p>
       <ul className="guide__related-list">
         {links.map((l, i) => (
           <li key={i}>
@@ -113,8 +118,8 @@ export function InternalLinks({ title, links }) {
   );
 }
 
-// Sub-bloque FAQ dentro del cuerpo de una guía. La FAQ principal de la guía
-// se renderiza fuera (al final), esto es para FAQs intermedias temáticas.
+// Mini FAQ con <details>. Sin estilo de marca, solo hairlines y
+// tipografía. Se mantiene la interacción colapsable nativa.
 export function MiniFaq({ items }) {
   if (!Array.isArray(items) || !items.length) return null;
   return (

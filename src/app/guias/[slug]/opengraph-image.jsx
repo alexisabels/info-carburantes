@@ -5,21 +5,19 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Guía · Carburantes";
 
-// OG dinámica por guía: cada artículo tiene su preview con título grande y
-// categoría destacada. Esto multiplica el CTR en redes sociales y WhatsApp
-// vs un OG genérico compartido.
+// OG por guía. Diseño sobrio sin badges ni acentos de color: blanco,
+// tipografía limpia, hairline divisor abajo. Mismo idioma visual que
+// una portada de NYT / Stratechery, no una landing de SaaS.
 export default async function Image({ params }) {
   const { slug } = await params;
   const guide = getGuide(slug);
   const title = guide?.title || "Guía";
-  const cat = guide ? categoryName(guide.category) : "Carburantes";
+  const cat = guide ? categoryName(guide.category) : null;
   const minutes = guide?.readingMinutes;
 
-  // Recortes para que el título no rompa la maquetación. Si supera ~80
-  // chars, cortamos y añadimos ellipsis — mejor que dejar overflow
-  // invisible.
+  // Recorte conservador. A ~80 chars el título se ve cómodo a 60-64 px.
   const safeTitle =
-    title.length > 90 ? `${title.slice(0, 87).trimEnd()}…` : title;
+    title.length > 92 ? `${title.slice(0, 89).trimEnd()}…` : title;
 
   return new ImageResponse(
     (
@@ -29,8 +27,7 @@ export default async function Image({ params }) {
           width: "100%",
           height: "100%",
           flexDirection: "column",
-          background:
-            "linear-gradient(150deg, #ffffff 0%, #f4f4f3 50%, #e6f4ec 100%)",
+          background: "#ffffff",
           color: "#0a0a0a",
           fontFamily: "system-ui, -apple-system, sans-serif",
           padding: "72px 80px",
@@ -40,74 +37,33 @@ export default async function Image({ params }) {
         <div
           style={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
-            fontSize: 26,
+            alignItems: "center",
+            fontSize: 22,
           }}
         >
-          <div
-            style={{ display: "flex", alignItems: "center", gap: 14 }}
-          >
-            <div
-              style={{
-                display: "flex",
-                width: 52,
-                height: 52,
-                background: "#0d7a3a",
-                color: "#ffffff",
-                borderRadius: 13,
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 30,
-                fontWeight: 700,
-              }}
-            >
-              €
-            </div>
-            <div style={{ display: "flex", fontWeight: 600 }}>Carburantes</div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              background: "#0d7a3a",
-              color: "#ffffff",
-              padding: "10px 18px",
-              borderRadius: 999,
-              fontSize: 22,
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              textTransform: "uppercase",
-            }}
-          >
-            Guía
-          </div>
+          <span style={{ display: "flex", fontWeight: 600, color: "#0a0a0a" }}>
+            Carburantes
+          </span>
+          {cat && (
+            <span style={{ display: "flex", color: "#737373" }}>
+              Guía · {cat}
+            </span>
+          )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 26,
-              color: "#0d7a3a",
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              textTransform: "uppercase",
-            }}
-          >
-            {cat}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 64,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              color: "#0a0a0a",
-            }}
-          >
-            {safeTitle}
-          </div>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 66,
+            fontWeight: 700,
+            letterSpacing: "-0.028em",
+            lineHeight: 1.06,
+            color: "#0a0a0a",
+            maxWidth: 1040,
+          }}
+        >
+          {safeTitle}
         </div>
 
         <div
@@ -115,12 +71,18 @@ export default async function Image({ params }) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 22,
-            color: "#6b6b6b",
+            fontSize: 20,
+            color: "#737373",
+            borderTop: "1px solid #e2e2e0",
+            paddingTop: 24,
           }}
         >
-          <span>carburantes.alexisabel.com/guias</span>
-          {minutes ? <span>{minutes} min de lectura</span> : <span />}
+          <span style={{ display: "flex" }}>carburantes.alexisabel.com</span>
+          {minutes ? (
+            <span style={{ display: "flex" }}>{minutes} min de lectura</span>
+          ) : (
+            <span style={{ display: "flex" }} />
+          )}
         </div>
       </div>
     ),
