@@ -3,6 +3,7 @@ import { fetchProvinciasServer } from "../../lib/api-server";
 import { KNOWN_BRANDS } from "../../lib/brands";
 import { buildMetadata, jsonLdBreadcrumb } from "../../lib/seo";
 import { slugify } from "../../utils/slug";
+import { GUIDES, GUIDE_CATEGORIES, getGuidesByCategory } from "../../content/guides";
 
 // Mapa del sitio HTML (no es el sitemap.xml para crawlers — es para
 // usuarios y crawlers que prefieren navegar siguiendo enlaces). Sirve como
@@ -54,9 +55,32 @@ export default async function SiteMapPage() {
           <li><Link href="/municipio">Buscar por municipio</Link></li>
           <li><Link href="/provincias">Provincias</Link></li>
           <li><Link href="/marcas">Marcas</Link></li>
+          <li><Link href="/guias">Guías</Link></li>
           <li><Link href="/preguntas-frecuentes">Preguntas frecuentes</Link></li>
           <li><Link href="/about">Sobre Carburantes</Link></li>
         </ul>
+      </section>
+
+      <section className="sitemap__sec" aria-labelledby="sm-guides">
+        <h2 id="sm-guides" className="sitemap__sec-title">
+          Guías ({GUIDES.length})
+        </h2>
+        {GUIDE_CATEGORIES.map((cat) => {
+          const guides = getGuidesByCategory(cat.id);
+          if (!guides.length) return null;
+          return (
+            <div key={cat.id} className="sitemap__subgroup">
+              <h3 className="sitemap__subgroup-title">{cat.name}</h3>
+              <ul className="sitemap__pages">
+                {guides.map((g) => (
+                  <li key={g.slug}>
+                    <Link href={`/guias/${g.slug}`}>{g.title}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </section>
 
       <section className="sitemap__sec" aria-labelledby="sm-brands">

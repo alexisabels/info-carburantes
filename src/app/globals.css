@@ -1831,6 +1831,22 @@ a:focus-visible,
   color: var(--ink-2);
 }
 
+.faq__more {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+}
+
+.faq__more a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.faq__more a:hover {
+  color: var(--accent);
+}
+
 /* -----------------------------------------------------------------
  * Mapa del sitio (/mapa-del-sitio)
  * --------------------------------------------------------------- */
@@ -1858,6 +1874,18 @@ a:focus-visible,
 
 .sitemap__sec {
   margin-bottom: 32px;
+}
+
+.sitemap__subgroup {
+  margin-top: 18px;
+}
+
+.sitemap__subgroup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
 }
 
 .sitemap__sec-title {
@@ -1958,5 +1986,712 @@ a:focus-visible,
 }
 
 .nearby__more a {
+  color: var(--ink-2);
+}
+
+/* -----------------------------------------------------------------
+ * Guías (/guias y /guias/[slug])
+ *
+ * Tipografía pensada para lectura larga: max-width contenido, ritmo
+ * vertical generoso, contraste alto en el tema oscuro. Los bloques
+ * "answer", "tldr" y "callout" tienen estilo distintivo para que un
+ * lector que escanea pille las claves sin leer todo, y los selectores
+ * que usa el JSON-LD speakable apunten a contenido visible.
+ * --------------------------------------------------------------- */
+
+.guides {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 48px;
+}
+
+.guides__head {
+  margin: 8px 0 32px;
+}
+
+.guides__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+.guides__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.guides__crumbs a:hover {
+  text-decoration: underline;
+}
+
+.guides__title {
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.guides__lede {
+  color: var(--ink-2);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.guides__cat {
+  margin-top: 40px;
+}
+
+.guides__cat-title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.guides__cat-desc {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0 0 18px;
+}
+
+.guides__grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 720px) {
+  .guides__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.guides__card {
+  margin: 0;
+}
+
+.guides__card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  text-decoration: none;
+  color: inherit;
+  transition: background 120ms ease, border-color 120ms ease,
+    transform 120ms ease;
+  height: 100%;
+}
+
+.guides__card-link:hover {
+  background: var(--bg);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.guides__card-title {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 0;
+  color: var(--ink);
+}
+
+.guides__card-desc {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.guides__card-meta {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: auto;
+}
+
+.guides__cta-bottom {
+  margin-top: 56px;
+  padding: 24px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  text-align: center;
+}
+
+.guides__cta-bottom h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.guides__cta-bottom p {
+  margin: 0 0 14px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.guides__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 120ms ease;
+}
+
+.guides__cta-btn:hover {
+  background: var(--accent-strong);
+}
+
+/* -----------------------------------------------------------------
+ * Guía individual (/guias/[slug])
+ * --------------------------------------------------------------- */
+
+.guide {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px var(--gutter) 48px;
+}
+
+.guide__article {
+  display: block;
+}
+
+.guide__head {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.guide__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.guide__crumbs a:hover {
+  text-decoration: underline;
+}
+
+.guide__title {
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+
+.guide__lede {
+  color: var(--ink-2);
+  font-size: 1.1rem;
+  line-height: 1.55;
+  margin: 0 0 20px;
+}
+
+.guide__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.guide__cat-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent-bg);
+  color: var(--accent-strong);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.guide__meta-sep {
+  color: var(--ink-faint);
+}
+
+/* Cuerpo del artículo: tipografía optimizada para lectura larga. */
+.guide__body {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.guide__body h2 {
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 40px 0 14px;
+  color: var(--ink);
+  scroll-margin-top: 16px;
+}
+
+.guide__body h3 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin: 28px 0 10px;
+  color: var(--ink);
+  scroll-margin-top: 16px;
+}
+
+.guide__body p {
+  margin: 0 0 16px;
+}
+
+.guide__body ul,
+.guide__body ol {
+  margin: 0 0 20px;
+  padding-left: 22px;
+}
+
+.guide__body li {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.guide__body li > ul,
+.guide__body li > ol {
+  margin: 6px 0 8px;
+}
+
+.guide__body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide__body em {
+  font-style: italic;
+}
+
+.guide__body a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.guide__body a:hover {
+  color: var(--accent);
+  text-decoration-thickness: 2px;
+}
+
+/* --- Bloques destacados --- */
+
+/* Answer: el "respuesta corta" que abre la guía. Selector usado por
+   speakable del JSON-LD. */
+.guide__answer {
+  background: var(--bg-2);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r-sm);
+  padding: 18px 20px;
+  margin: 0 0 24px;
+}
+
+.guide__answer-label {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.guide__answer-body {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* TL;DR. Usa el mismo selector de speakable. */
+.guide__tldr {
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  border-radius: var(--r-sm);
+  padding: 16px 20px;
+  margin: 0 0 28px;
+}
+
+.guide__tldr-label {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--info-fg);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.guide__tldr ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.guide__tldr li {
+  margin: 0 0 4px;
+  color: var(--ink-2);
+}
+
+/* Callouts: info / warn / note */
+.guide__callout {
+  border-radius: var(--r-sm);
+  padding: 14px 18px;
+  margin: 20px 0;
+  font-size: 0.97rem;
+  line-height: 1.55;
+}
+
+.guide__callout--info {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  color: var(--ink-2);
+}
+
+.guide__callout--warn {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  color: var(--ink-2);
+}
+
+.guide__callout--note {
+  background: var(--bg-2);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+
+.guide__callout-title {
+  display: block;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.guide__callout-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tablas comparativas: scroll horizontal en móvil. */
+.guide__table-wrap {
+  overflow-x: auto;
+  margin: 20px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  -webkit-overflow-scrolling: touch;
+}
+
+.guide__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 480px;
+}
+
+.guide__table-caption {
+  caption-side: top;
+  text-align: left;
+  padding: 12px 14px 6px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.guide__table th,
+.guide__table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.guide__table th {
+  background: var(--bg-2);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.guide__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.guide__table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+[data-theme="dark"] .guide__table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* CTA dentro del cuerpo de la guía */
+.guide__cta {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin: 32px 0;
+  text-align: center;
+}
+
+.guide__cta-title {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.guide__cta-body {
+  margin: 0 0 14px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.guide__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 999px;
+  text-decoration: none !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 120ms ease;
+}
+
+.guide__cta-btn:hover {
+  background: var(--accent-strong);
+  color: #ffffff;
+}
+
+/* Bloque "páginas relacionadas" (enlaces internos a marcas) */
+.guide__related {
+  margin: 32px 0;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.guide__related-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.guide__related-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.guide__related-list li {
+  margin: 0;
+}
+
+.guide__related-list a {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.guide__related-list a:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+/* Mini FAQ con <details> dentro del cuerpo */
+.guide__minifaq {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide__minifaq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0;
+  background: var(--bg-2);
+}
+
+.guide__minifaq-item summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--ink);
+  list-style: none;
+}
+
+.guide__minifaq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.guide__minifaq-item summary::after {
+  content: "+";
+  float: right;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.guide__minifaq-item[open] summary::after {
+  content: "−";
+}
+
+.guide__minifaq-item p {
+  margin: 0;
+  padding: 0 16px 14px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+/* FAQ al final del artículo */
+.guide__faq {
+  margin: 56px 0 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.guide__faq-title {
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  color: var(--ink);
+}
+
+.guide__faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.guide__faq-item {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__faq-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.guide__faq-q {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.guide__faq-a {
+  margin: 0;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* Más guías al final */
+.guide__more {
+  margin: 48px 0 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.guide__more-title {
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+
+.guide__more-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide__more-list li {
+  margin: 0;
+}
+
+.guide__more-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  color: inherit;
+  background: var(--bg-2);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.guide__more-link:hover {
+  background: var(--bg);
+  border-color: var(--line-strong);
+}
+
+.guide__more-link-title {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.97rem;
+  line-height: 1.3;
+}
+
+.guide__more-link-desc {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.guide__foot {
+  margin-top: 32px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.guide__foot a {
   color: var(--ink-2);
 }
