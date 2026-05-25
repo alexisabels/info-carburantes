@@ -4,6 +4,18 @@ const SITE_NAME = "Carburantes";
 const DEFAULT_DESC =
   "Consulta precios actualizados de gasolina y diésel en estaciones de servicio de España. Encuentra la gasolinera más barata cerca de ti en tiempo real.";
 
+// Recorta una descripción a ~155 caracteres respetando palabras. Google y
+// WhatsApp truncan más allá de ese tamaño; pasarlo de largo no ayuda y a
+// veces degrada el preview a la variante "pequeña".
+export function trimDescription(text, max = 155) {
+  if (!text) return "";
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max + 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const safeEnd = lastSpace > 80 ? lastSpace : max;
+  return text.slice(0, safeEnd).trimEnd().replace(/[.,;:·]+$/, "") + "…";
+}
+
 // Construye un objeto Metadata compatible con generateMetadata. Las imágenes
 // OG/Twitter se gestionan por convención de fichero (`opengraph-image.jsx`)
 // en cada ruta: Next.js las inyecta automáticamente en
@@ -17,18 +29,19 @@ export function buildMetadata({
 } = {}) {
   const url = absoluteUrl(path);
   const titleAbs = title ? title : `${SITE_NAME} — Precios de gasolineras en España`;
+  const desc = trimDescription(description);
 
   return {
     metadataBase: new URL(getSiteUrl()),
     title: titleAbs,
-    description,
+    description: desc,
     alternates: { canonical: url },
     robots: noindex
       ? { index: false, follow: false }
       : { index: true, follow: true, googleBot: { index: true, follow: true } },
     openGraph: {
       title: titleAbs,
-      description,
+      description: desc,
       url,
       siteName: SITE_NAME,
       locale: "es_ES",
@@ -37,7 +50,7 @@ export function buildMetadata({
     twitter: {
       card: "summary_large_image",
       title: titleAbs,
-      description,
+      description: desc,
     },
   };
 }
@@ -246,6 +259,56 @@ export function jsonLdItemListProvincia(municipios, { provincia, url } = {}) {
     name: `Municipios de ${provincia || ""}`.trim(),
     url,
     numberOfItems: municipios?.length || 0,
+    itemListElement: items,
+  };
+}
+
+// FAQPage para /preguntas-frecuentes. Google muestra estos items expandibles
+// en la SERP como rich snippet — buena ganancia de CTR sin pelear ranking.
+// `items` es [{ q, a }, ...]; las respuestas se sirven como texto plano
+// para evitar choques con el sanitizador de Google.
+export function jsonLdFAQ(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: (items || []).map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: it.a,
+      },
+    })),
+  };
+}
+
+// ItemList genérico para páginas de marca y similares: cada item apunta a
+// la ficha de una gasolinera concreta. Limitado a 50 entries por SEO/peso.
+export function jsonLdItemListGenerico(estaciones, { name, url, max = 50 } = {}) {
+  const items = (estaciones || []).slice(0, max).map((e, idx) => ({
+    "@type": "ListItem",
+    position: idx + 1,
+    item: {
+      "@type": "GasStation",
+      name: e["Rótulo"] || "Gasolinera",
+      url: `${getSiteUrl()}/gasolinera/${encodeURIComponent(e.IDMunicipio)}/${encodeURIComponent(
+        e.IDEESS
+      )}`,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: e.Dirección || undefined,
+        addressLocality: e.Municipio || undefined,
+        addressRegion: e.Provincia || undefined,
+        addressCountry: "ES",
+      },
+    },
+  }));
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    url,
+    numberOfItems: estaciones?.length || 0,
     itemListElement: items,
   };
 }

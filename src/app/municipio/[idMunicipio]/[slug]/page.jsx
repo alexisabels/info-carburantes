@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   fetchMunicipioCompletoServer,
+  fetchProvinciasServer,
   minPrecio,
 } from "../../../../lib/api-server";
 import {
@@ -12,6 +13,102 @@ import {
 import { slugify } from "../../../../utils/slug";
 import { absoluteUrl } from "../../../../lib/site";
 import MainContent from "../../../../components/MainContent";
+import NearbyMunicipios from "../../../../components/NearbyMunicipios/NearbyMunicipios";
+
+// Pre-renderiza al build las capitales/ciudades más buscadas. El resto se
+// generan on-demand vía ISR (dynamicParams=true). MITECO no documenta los
+// IDMunicipio; los resolvemos por nombre haciendo cross-reference con la
+// API en build time.
+const TOP_CITIES = new Set(
+  [
+    "Madrid",
+    "Barcelona",
+    "Valencia",
+    "Sevilla",
+    "Zaragoza",
+    "Málaga",
+    "Murcia",
+    "Palma",
+    "Las Palmas de Gran Canaria",
+    "Bilbao",
+    "Alicante (Alacant)",
+    "Córdoba",
+    "Valladolid",
+    "Vigo",
+    "Gijón",
+    "L'Hospitalet de Llobregat",
+    "Vitoria-Gasteiz",
+    "Coruña (A)",
+    "Granada",
+    "Elche (Elx)",
+    "Oviedo",
+    "Santa Cruz de Tenerife",
+    "Badalona",
+    "Cartagena",
+    "Terrassa",
+    "Jerez de la Frontera",
+    "Sabadell",
+    "Móstoles",
+    "Alcalá de Henares",
+    "Pamplona/Iruña",
+    "Fuenlabrada",
+    "Almería",
+    "Donostia/San Sebastián",
+    "Leganés",
+    "Burgos",
+    "Albacete",
+    "Salamanca",
+    "Getafe",
+    "Castellón de la Plana/Castelló de la Plana",
+    "Logroño",
+    "Badajoz",
+    "Huelva",
+    "Marbella",
+    "Lleida",
+    "Tarragona",
+    "Cádiz",
+    "León",
+    "Dos Hermanas",
+    "Mataró",
+    "Santa Coloma de Gramenet",
+  ].map((n) => slugifyForCompare(n))
+);
+
+function slugifyForCompare(name) {
+  return slugify(String(name || ""));
+}
+
+export async function generateStaticParams() {
+  try {
+    const provincias = await fetchProvinciasServer();
+    if (!provincias.length) return [];
+    const { fetchMunicipiosPorProvinciaServer } = await import(
+      "../../../../lib/api-server"
+    );
+    const params = [];
+    const BATCH = 8;
+    for (let i = 0; i < provincias.length; i += BATCH) {
+      const batch = provincias.slice(i, i + BATCH);
+      const results = await Promise.all(
+        batch.map((p) => fetchMunicipiosPorProvinciaServer(p.IDPovincia))
+      );
+      for (const lista of results) {
+        for (const m of lista || []) {
+          if (!m?.IDMunicipio || !m?.Municipio) continue;
+          if (TOP_CITIES.has(slugifyForCompare(m.Municipio))) {
+            params.push({
+              idMunicipio: String(m.IDMunicipio),
+              slug: slugify(m.Municipio),
+            });
+          }
+        }
+      }
+    }
+    return params;
+  } catch {
+    return [];
+  }
+}
 
 // ISR: revalidate cada 30 min (cota natural de MITECO). dynamicParams=true
 // permite que llegue cualquier idMunicipio (no hace falta pregenerar todos).
@@ -52,22 +149,22 @@ export async function generateMetadata({ params }) {
   const total = ctx.lista.length;
   const minDiesel = minPrecio(ctx.lista, "Precio Gasoleo A");
   const min95 = minPrecio(ctx.lista, "Precio Gasolina 95 E5");
-  const min98 = minPrecio(ctx.lista, "Precio Gasolina 98 E5");
 
   const titulo = ctx.provincia
     ? `Precios de gasolineras en ${ctx.nombre} (${ctx.provincia}) — Carburantes`
     : `Precios de gasolineras en ${ctx.nombre} — Carburantes`;
 
+  // Descripción corta (<155 chars) — WhatsApp y Google truncan textos largos
+  // y a veces degradan el preview al variant pequeño. Dejamos solo los
+  // mínimos de diésel y 95 (más relevantes); fecha y 98 se ven en la página.
   const partes = [];
   if (total > 0) {
     partes.push(`${total} ${total === 1 ? "gasolinera" : "gasolineras"}`);
   }
   if (minDiesel) partes.push(`diésel desde ${minDiesel.texto} €/L`);
   if (min95) partes.push(`gasolina 95 desde ${min95.texto} €/L`);
-  if (min98) partes.push(`gasolina 98 desde ${min98.texto} €/L`);
-  if (ctx.fecha) partes.push(`actualizado ${ctx.fecha}`);
   const descripcion = partes.length
-    ? `Compara precios de carburantes en ${ctx.nombre}: ${partes.join(" · ")}.`
+    ? `${partes.join(" · ")}. Compara precios en ${ctx.nombre}.`
     : `Compara precios de carburantes en ${ctx.nombre}.`;
 
   return buildMetadata({
@@ -152,6 +249,13 @@ export default async function MunicipioListadoPage({ params }) {
         />
       )}
       <MainContent initialData={initialData} mode="manual" />
+      {ctx.idProvincia && ctx.provincia && (
+        <NearbyMunicipios
+          idProvincia={ctx.idProvincia}
+          provincia={ctx.provincia}
+          currentIdMunicipio={idMunicipio}
+        />
+      )}
     </>
   );
 }

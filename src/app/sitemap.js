@@ -4,6 +4,7 @@ import {
 } from "../lib/api-server";
 import { slugify } from "../utils/slug";
 import { getSiteUrl } from "../lib/site";
+import { KNOWN_BRANDS } from "../lib/brands";
 
 // Sitemap dinámico: enumera home, índices y todas las provincias + todos los
 // municipios canónicos. Las gasolineras individuales NO se incluyen (>12 000
@@ -32,10 +33,28 @@ export default async function sitemap() {
       priority: 0.8,
     },
     {
+      url: `${base}/marcas`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${base}/preguntas-frecuentes`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
       url: `${base}/municipio`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.6,
+    },
+    {
+      url: `${base}/mapa-del-sitio`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.4,
     },
     {
       url: `${base}/about`,
@@ -44,6 +63,16 @@ export default async function sitemap() {
       priority: 0.4,
     },
   ];
+
+  // Páginas de marca (22 entradas: una por cada marca conocida).
+  for (const b of KNOWN_BRANDS) {
+    entries.push({
+      url: `${base}/marca/${b.id}`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.7,
+    });
+  }
 
   let provincias = [];
   try {

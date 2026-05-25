@@ -23,7 +23,12 @@ const Footer = () => {
         </span>
         <nav className="appfoot__links" aria-label="Pie">
           <Link href="/provincias">Provincias</Link>
+          <Link href="/marcas">Marcas</Link>
+          <Link href="/preguntas-frecuentes">FAQ</Link>
           <Link href="/about">Sobre</Link>
+          <Link href="/mapa-del-sitio" aria-label="Mapa del sitio">
+            Mapa
+          </Link>
           <a
             href="https://github.com/alexisabels/info-carburantes"
             target="_blank"

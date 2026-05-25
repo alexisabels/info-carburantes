@@ -51,6 +51,15 @@ export default function manifest() {
           { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
         ],
       },
+      {
+        name: "Marcas",
+        short_name: "Marcas",
+        description: "Repsol, Cepsa, BP, Galp y otras marcas en España.",
+        url: "/marcas",
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        ],
+      },
     ],
   };
 }

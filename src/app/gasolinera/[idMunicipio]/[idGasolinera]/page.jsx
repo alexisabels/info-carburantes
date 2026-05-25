@@ -73,20 +73,19 @@ export async function generateMetadata({ params }) {
 
   const titulo = ubicacion ? `${rotulo} — ${ubicacion}` : rotulo;
 
+  // Descripción corta: tres precios principales + sellos. Sin "Ministerio:
+  // fecha" (era ruido y empujaba la longitud por encima de 155 chars).
   const partesDescripcion = [];
   if (precios.length) {
     partesDescripcion.push(
-      precios.map((p) => `${p.label}: ${p.value} €/L`).join(" · ")
+      precios.map((p) => `${p.label} ${p.value} €/L`).join(" · ")
     );
   }
   if (sellos.length) {
     partesDescripcion.push(sellos.join(" · "));
   }
-  if (fecha) {
-    partesDescripcion.push(`Ministerio: ${fecha}`);
-  }
   const descripcion = partesDescripcion.length
-    ? partesDescripcion.join(" — ")
+    ? `${rotulo}${ubicacion ? `, ${localidad || provincia}` : ""}. ${partesDescripcion.join(" · ")}.`
     : "Consulta precios actualizados de gasolina y diésel en esta estación.";
 
   return buildMetadata({

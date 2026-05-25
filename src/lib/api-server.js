@@ -79,6 +79,24 @@ export async function fetchGasolineraServer(idMunicipio, ideess) {
   return { estacion, fecha: data?.Fecha || null };
 }
 
+// Listado nacional completo (~12 000 estaciones / 5-8 MB). Lo cacheamos a
+// 1 hora porque MITECO actualiza ~3 veces/día y la página de marca lo
+// reusa muchas veces durante la ventana. Timeout largo: peticiones de 5+ s
+// son normales en el endpoint del Ministerio.
+export async function fetchTodasLasEstacionesServer() {
+  try {
+    const data = await fetchJson(`${BASE_URL}/EstacionesTerrestres/`, {
+      revalidate: 3600,
+      tag: "todas-estaciones",
+    });
+    return data && typeof data === "object"
+      ? data
+      : { Fecha: "", ListaEESSPrecio: [] };
+  } catch {
+    return { Fecha: "", ListaEESSPrecio: [] };
+  }
+}
+
 // Helper: precio numérico parseado o null.
 export function parsePrecioSrv(raw) {
   if (raw === undefined || raw === null) return null;
