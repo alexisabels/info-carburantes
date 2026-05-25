@@ -116,16 +116,30 @@ export default async function GasolineraPage({ params }) {
     ? `/municipio/${idMunicipio}/${muniSlug}`
     : `/municipio/${idMunicipio}`;
 
+  const provincia = estacion.Provincia || "";
+  const idProvincia = estacion.IDProvincia || "";
+  const provSlug = provincia ? slugify(provincia) : "";
+
   const stationJsonLd = jsonLdGasStation(estacion, {
     url,
     fechaToma: fecha || undefined,
   });
-  const breadcrumbJsonLd = jsonLdBreadcrumb([
-    { name: "Inicio", url: "/" },
-    { name: "Municipios", url: "/municipio" },
-    { name: municipioNombre || "Municipio", url: muniPath },
-    { name: estacion["Rótulo"] || "Gasolinera", url: path },
-  ]);
+  const breadcrumbItems = [{ name: "Inicio", url: "/" }];
+  if (provincia && idProvincia && provSlug) {
+    breadcrumbItems.push({ name: "Provincias", url: "/provincias" });
+    breadcrumbItems.push({
+      name: provincia,
+      url: `/provincia/${idProvincia}/${provSlug}`,
+    });
+  } else {
+    breadcrumbItems.push({ name: "Municipios", url: "/municipio" });
+  }
+  breadcrumbItems.push({ name: municipioNombre || "Municipio", url: muniPath });
+  breadcrumbItems.push({
+    name: estacion["Rótulo"] || "Gasolinera",
+    url: path,
+  });
+  const breadcrumbJsonLd = jsonLdBreadcrumb(breadcrumbItems);
 
   return (
     <>

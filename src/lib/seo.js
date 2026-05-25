@@ -3,22 +3,20 @@ import { absoluteUrl, getSiteUrl } from "./site";
 const SITE_NAME = "Carburantes";
 const DEFAULT_DESC =
   "Consulta precios actualizados de gasolina y diésel en estaciones de servicio de España. Encuentra la gasolinera más barata cerca de ti en tiempo real.";
-const DEFAULT_OG_IMAGE = "/pwa-512x512.png";
 
-// Construye un objeto Metadata compatible con generateMetadata. Pensado para
-// devolver lo justo: title, description, OG, Twitter y canonical. Cualquier
-// helper que añada JSON-LD lo hace ya inline en el page.tsx como <script>.
+// Construye un objeto Metadata compatible con generateMetadata. Las imágenes
+// OG/Twitter se gestionan por convención de fichero (`opengraph-image.jsx`)
+// en cada ruta: Next.js las inyecta automáticamente en
+// openGraph.images/twitter.images y conmuta twitter.card al variante
+// `summary_large_image`. No hace falta repetirlas aquí.
 export function buildMetadata({
   title,
   description = DEFAULT_DESC,
   path = "/",
-  image = DEFAULT_OG_IMAGE,
-  imageAlt = SITE_NAME,
   noindex = false,
 } = {}) {
   const url = absoluteUrl(path);
   const titleAbs = title ? title : `${SITE_NAME} — Precios de gasolineras en España`;
-  const imageUrl = image.startsWith("http") ? image : absoluteUrl(image);
 
   return {
     metadataBase: new URL(getSiteUrl()),
@@ -35,21 +33,11 @@ export function buildMetadata({
       siteName: SITE_NAME,
       locale: "es_ES",
       type: "website",
-      images: [
-        {
-          url: imageUrl,
-          width: 512,
-          height: 512,
-          alt: imageAlt,
-          type: "image/png",
-        },
-      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: titleAbs,
       description,
-      images: [imageUrl],
     },
   };
 }
@@ -159,6 +147,106 @@ export function jsonLdGasStation(estacion, { url, fechaToma } = {}) {
       : undefined,
     openingHours: estacion.Horario || undefined,
     makesOffer: offers.length ? offers : undefined,
+  };
+}
+
+// Organization global del sitio. Una sola pieza de JSON-LD que ayuda a los
+// motores a construir el "knowledge graph" de la marca Carburantes (logo,
+// autor, redes sociales si las hubiera).
+export function jsonLdOrganization() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Carburantes",
+    url: getSiteUrl(),
+    logo: absoluteUrl("/pwa-512x512.png"),
+    description:
+      "Buscador de precios de gasolineras en España con datos oficiales del Ministerio para la Transición Ecológica.",
+    sameAs: ["https://github.com/alexisabels/info-carburantes"],
+    founder: {
+      "@type": "Person",
+      name: "alexisabel",
+      url: "https://alexisabel.com",
+    },
+  };
+}
+
+// `Place` para una ciudad/municipio. Lo usamos en /municipio/[id]/[slug] para
+// que Google entienda que la página representa una entidad geográfica
+// concreta y no un listado abstracto.
+export function jsonLdPlaceMunicipio({
+  nombre,
+  provincia,
+  url,
+  numStations,
+} = {}) {
+  if (!nombre) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: nombre,
+    url,
+    containedInPlace: provincia
+      ? {
+          "@type": "AdministrativeArea",
+          name: provincia,
+        }
+      : undefined,
+    additionalProperty: Number.isFinite(numStations)
+      ? {
+          "@type": "PropertyValue",
+          name: "Gasolineras",
+          value: numStations,
+        }
+      : undefined,
+  };
+}
+
+// `AdministrativeArea` para una provincia. Mismo razonamiento que Place pero
+// a un nivel más amplio; útil para /provincia/[id]/[slug].
+export function jsonLdAdministrativeArea({
+  nombre,
+  url,
+  numMunicipios,
+} = {}) {
+  if (!nombre) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "AdministrativeArea",
+    name: nombre,
+    url,
+    additionalProperty: Number.isFinite(numMunicipios)
+      ? {
+          "@type": "PropertyValue",
+          name: "Municipios",
+          value: numMunicipios,
+        }
+      : undefined,
+  };
+}
+
+// ItemList de municipios de una provincia (links a las páginas de cada
+// municipio). El typo de PropertyValue queda como auditoría visible para el
+// crawler de la estructura de la provincia.
+export function jsonLdItemListProvincia(municipios, { provincia, url } = {}) {
+  const items = (municipios || []).slice(0, 100).map((m, idx) => ({
+    "@type": "ListItem",
+    position: idx + 1,
+    item: {
+      "@type": "Place",
+      name: m?.Municipio || "Municipio",
+      url: `${getSiteUrl()}/municipio/${encodeURIComponent(
+        m?.IDMunicipio || ""
+      )}`,
+    },
+  }));
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Municipios de ${provincia || ""}`.trim(),
+    url,
+    numberOfItems: municipios?.length || 0,
+    itemListElement: items,
   };
 }
 

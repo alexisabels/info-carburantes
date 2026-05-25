@@ -7,6 +7,7 @@ import {
   buildMetadata,
   jsonLdBreadcrumb,
   jsonLdItemListMunicipio,
+  jsonLdPlaceMunicipio,
 } from "../../../../lib/seo";
 import { slugify } from "../../../../utils/slug";
 import { absoluteUrl } from "../../../../lib/site";
@@ -89,14 +90,29 @@ export default async function MunicipioListadoPage({ params }) {
   const path = `/municipio/${idMunicipio}/${ctx.canonicalSlug || slug}`;
   const url = absoluteUrl(path);
 
-  const breadcrumbJsonLd = jsonLdBreadcrumb([
-    { name: "Inicio", url: "/" },
-    { name: "Municipios", url: "/municipio" },
-    {
-      name: ctx.nombre || idMunicipio,
-      url: path,
-    },
-  ]);
+  // Si tenemos provincia, la encadenamos en el breadcrumb (Inicio → Provincias
+  // → Madrid → Madrid municipio). Si no la conocemos, caemos al breadcrumb
+  // de 2 niveles para no inventar enlaces rotos.
+  const provinciaSlug = ctx.provincia ? slugify(ctx.provincia) : "";
+  const breadcrumbItems = [{ name: "Inicio", url: "/" }];
+  if (ctx.idProvincia && ctx.provincia && provinciaSlug) {
+    breadcrumbItems.push({ name: "Provincias", url: "/provincias" });
+    breadcrumbItems.push({
+      name: ctx.provincia,
+      url: `/provincia/${ctx.idProvincia}/${provinciaSlug}`,
+    });
+  } else {
+    breadcrumbItems.push({ name: "Municipios", url: "/municipio" });
+  }
+  breadcrumbItems.push({ name: ctx.nombre || idMunicipio, url: path });
+  const breadcrumbJsonLd = jsonLdBreadcrumb(breadcrumbItems);
+
+  const placeJsonLd = jsonLdPlaceMunicipio({
+    nombre: ctx.nombre,
+    provincia: ctx.provincia,
+    url,
+    numStations: ctx.lista.length,
+  });
 
   const itemListJsonLd =
     ctx.lista.length > 0
@@ -123,6 +139,12 @@ export default async function MunicipioListadoPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {placeJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(placeJsonLd) }}
+        />
+      )}
       {itemListJsonLd && (
         <script
           type="application/ld+json"

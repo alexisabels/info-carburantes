@@ -22,6 +22,7 @@ const Footer = () => {
           · actualizados a diario
         </span>
         <nav className="appfoot__links" aria-label="Pie">
+          <Link href="/provincias">Provincias</Link>
           <Link href="/about">Sobre</Link>
           <a
             href="https://github.com/alexisabels/info-carburantes"

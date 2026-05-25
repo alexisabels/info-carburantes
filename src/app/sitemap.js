@@ -5,13 +5,13 @@ import {
 import { slugify } from "../utils/slug";
 import { getSiteUrl } from "../lib/site";
 
-// Sitemap dinámico: enumera home, about y todos los municipios de España con
-// su slug canónico. El detalle por gasolinera no se incluye explícitamente
-// (>10 000 entradas inflarían el XML); confiamos en que los crawlers
-// descubran las fichas siguiendo los enlaces internos desde cada municipio.
+// Sitemap dinámico: enumera home, índices y todas las provincias + todos los
+// municipios canónicos. Las gasolineras individuales NO se incluyen (>12 000
+// entradas) — los crawlers las descubren siguiendo enlaces internos desde
+// cada municipio. Se regenera cada 24h.
 //
-// Se regenera cada 24h (vía revalidate de la API). Tamaño esperado: ~8000
-// municipios → bien dentro del límite de 50 000 entradas por sitemap.
+// Tamaño esperado: ~52 provincias + ~8000 municipios + 4 estáticas =
+// ~8060 entradas → dentro del límite de 50 000 por sitemap.
 
 export const revalidate = 86400;
 
@@ -24,6 +24,12 @@ export default async function sitemap() {
       lastModified: now,
       changeFrequency: "hourly",
       priority: 1.0,
+    },
+    {
+      url: `${base}/provincias`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
       url: `${base}/municipio`,
@@ -43,14 +49,26 @@ export default async function sitemap() {
   try {
     provincias = await fetchProvinciasServer();
   } catch {
-    // Sin provincias caemos a un sitemap mínimo con las páginas estáticas.
     return entries;
   }
 
-  // Lanzamos las 52 peticiones de municipios en paralelo, pero con un cap
-  // de concurrencia razonable para no saturar el endpoint del MITECO.
+  // Páginas canónicas de provincia.
+  for (const p of provincias) {
+    if (!p?.IDPovincia || !p?.Provincia) continue;
+    const id = String(p.IDPovincia);
+    const slug = slugify(p.Provincia);
+    if (!slug) continue;
+    entries.push({
+      url: `${base}/provincia/${encodeURIComponent(id)}/${slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    });
+  }
+
+  // Páginas canónicas de municipio.
   const CONCURRENCY = 8;
-  const seen = new Set();
+  const seenMunicipios = new Set();
   const municipioEntries = [];
 
   const provinciaIds = provincias
@@ -66,15 +84,15 @@ export default async function sitemap() {
       for (const m of lista || []) {
         if (!m?.IDMunicipio || !m?.Municipio) continue;
         const id = String(m.IDMunicipio);
-        if (seen.has(id)) continue;
-        seen.add(id);
+        if (seenMunicipios.has(id)) continue;
+        seenMunicipios.add(id);
         const slug = slugify(m.Municipio);
         if (!slug) continue;
         municipioEntries.push({
           url: `${base}/municipio/${encodeURIComponent(id)}/${slug}`,
           lastModified: now,
           changeFrequency: "daily",
-          priority: 0.7,
+          priority: 0.65,
         });
       }
     }

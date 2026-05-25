@@ -1234,3 +1234,286 @@ a:focus-visible,
     transform: none !important;
   }
 }
+
+/* -----------------------------------------------------------------
+ * Province pages
+ * Listados de provincia/municipios sin la complejidad del mapa+filtros;
+ * objetivo: hierarchy clara, density alta, escaneo rápido en móvil.
+ * --------------------------------------------------------------- */
+
+.province,
+.provinces {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 32px;
+}
+
+.province__head,
+.provinces__head {
+  margin: 8px 0 20px;
+}
+
+.province__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.province__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.province__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.province__title,
+.provinces__title {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+
+.province__sub,
+.provinces__sub {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.province__empty {
+  color: var(--ink-muted);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 16px;
+}
+
+.province__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.province__item {
+  margin: 0;
+}
+
+.province__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.province__link:hover {
+  background: var(--bg-2);
+  border-color: var(--line-strong);
+}
+
+.province__link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.province__muni {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.province__chev {
+  color: var(--ink-muted);
+  font-size: 1.4em;
+  line-height: 1;
+}
+
+.provinces__grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.provinces__item {
+  margin: 0;
+}
+
+.provinces__link {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.provinces__link:hover {
+  background: var(--bg-2);
+  border-color: var(--line-strong);
+}
+
+.provinces__link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------
+ * Skeletons usados por loading.jsx en rutas con SSR pesado (MITECO
+ * tarda 3-8 s a veces). Streaming + skeleton evita el "TTFB ciego".
+ * --------------------------------------------------------------- */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 0%,
+    var(--bg-3) 50%,
+    var(--bg-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--r-sm);
+  display: block;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
+.skeleton-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-card {
+  display: grid;
+  grid-template-columns: 56px 1fr 90px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  min-height: 78px;
+}
+
+.skeleton-card__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.skeleton-card__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-card__line-1 {
+  height: 14px;
+  width: 60%;
+}
+
+.skeleton-card__line-2 {
+  height: 12px;
+  width: 85%;
+}
+
+.skeleton-card__price {
+  height: 34px;
+  width: 80px;
+  justify-self: end;
+}
+
+.skeleton-detail {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton-detail__head {
+  display: grid;
+  grid-template-columns: 56px 1fr 44px;
+  gap: 12px;
+  align-items: center;
+}
+
+.skeleton-detail__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.skeleton-detail__title {
+  height: 28px;
+  width: 70%;
+}
+
+.skeleton-detail__sub {
+  height: 14px;
+  width: 90%;
+  margin-top: 8px;
+}
+
+.skeleton-detail__fav {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.skeleton-detail__bigprice {
+  height: 100px;
+  border-radius: var(--r);
+}
+
+.skeleton-detail__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.skeleton-detail__btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--r);
+}
+
+.skeleton-detail__block {
+  height: 200px;
+  border-radius: var(--r);
+}

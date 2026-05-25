@@ -1,9 +1,11 @@
 import { Geist } from "next/font/google";
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer/Footer";
-import { buildMetadata } from "../lib/seo";
-import { jsonLdWebSite } from "../lib/seo";
-import { getSiteUrl } from "../lib/site";
+import {
+  buildMetadata,
+  jsonLdOrganization,
+  jsonLdWebSite,
+} from "../lib/seo";
 import "./globals.css";
 
 const geist = Geist({
@@ -14,8 +16,10 @@ const geist = Geist({
 });
 
 // Script inline para resolver el tema ANTES del primer paint y evitar FOUC.
-// Lee la preferencia persistida, calcula el tema resuelto y aplica
-// data-theme en <html>. El hook useTheme se sincroniza después.
+// Si la preferencia es "system" deja que ganen las dos <meta name=theme-color
+// media="..."> que pone el viewport (cada una con su media query). Si el
+// usuario eligió explícitamente claro/oscuro, sustituye AMBAS por una sola
+// meta sin media query (evita que el SO sobreescriba la elección manual).
 const THEME_BOOTSTRAP = `
 (function () {
   try {
@@ -28,8 +32,14 @@ const THEME_BOOTSTRAP = `
         : "light";
     }
     document.documentElement.setAttribute("data-theme", theme);
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#0a0a0a" : "#ffffff");
+    if (pref !== "system") {
+      var metas = document.querySelectorAll('meta[name="theme-color"]');
+      metas.forEach(function (m) { m.parentNode && m.parentNode.removeChild(m); });
+      var override = document.createElement("meta");
+      override.setAttribute("name", "theme-color");
+      override.setAttribute("content", theme === "dark" ? "#0a0a0a" : "#ffffff");
+      document.head.appendChild(override);
+    }
   } catch (e) {
     document.documentElement.setAttribute("data-theme", "light");
   }
@@ -79,17 +89,35 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   const websiteJsonLd = jsonLdWebSite();
+  const orgJsonLd = jsonLdOrganization();
   return (
     <html lang="es" className={geist.variable}>
       <head>
         {/* Pre-paint theme switch — debe ir antes del primer render del DOM. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         <link rel="mask-icon" href="/gas.svg" color="#0a0a0a" />
-        {/* JSON-LD del sitio: ayuda a Google a entender el sitebox y el
-            potencial enlace de sitelink-search. */}
+        {/* MITECO se llama desde el cliente para "Cerca de mí" y el histórico:
+            preconnect resuelve DNS + TLS antes del primer fetch real y baja
+            cientos de ms en redes móviles. */}
+        <link
+          rel="preconnect"
+          href="https://sedeaplicaciones.minetur.gob.es"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="dns-prefetch"
+          href="https://sedeaplicaciones.minetur.gob.es"
+        />
+        {/* JSON-LD del sitio: WebSite con SearchAction + Organization.
+            Ayudan a construir el knowledge graph + sitelink-search en
+            resultados de marca ("carburantes"). */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
       </head>
       <body>

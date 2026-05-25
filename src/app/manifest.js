@@ -11,6 +11,7 @@ export default function manifest() {
     orientation: "portrait",
     background_color: "#ffffff",
     theme_color: "#0a0a0a",
+    categories: ["travel", "navigation", "utilities"],
     icons: [
       { src: "/pwa-64x64.png", sizes: "64x64", type: "image/png" },
       { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
@@ -28,6 +29,24 @@ export default function manifest() {
         short_name: "Cerca",
         description: "Encuentra gasolineras cercanas a tu ubicación actual.",
         url: "/cerca",
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        ],
+      },
+      {
+        name: "Buscar por municipio",
+        short_name: "Municipio",
+        description: "Elige una provincia y un municipio en España.",
+        url: "/municipio",
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        ],
+      },
+      {
+        name: "Provincias",
+        short_name: "Provincias",
+        description: "Listado de provincias españolas con gasolineras.",
+        url: "/provincias",
         icons: [
           { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
         ],
