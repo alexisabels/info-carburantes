@@ -64,6 +64,19 @@ const MapIcon = () => (
   </svg>
 );
 
+const RouteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="6" cy="6" r="2.5" stroke="currentColor" strokeWidth="2" />
+    <circle cx="18" cy="18" r="2.5" stroke="currentColor" strokeWidth="2" />
+    <path
+      d="M6 8.5v3a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const ArrowRightIcon = () => (
   <svg
     viewBox="0 0 24 24"
@@ -930,6 +943,20 @@ const MainContent = ({ initialData = null, mode = null }) => {
                 <ArrowRightIcon />
               </span>
             </button>
+            <Link href="/ruta" className="bigbtn bigbtn--ghost">
+              <span className="bigbtn__icon">
+                <RouteIcon />
+              </span>
+              <span className="bigbtn__text">
+                <span className="bigbtn__title">Planificar ruta</span>
+                <span className="bigbtn__sub">
+                  Gasolineras baratas de camino
+                </span>
+              </span>
+              <span className="bigbtn__chev" aria-hidden="true">
+                <ArrowRightIcon />
+              </span>
+            </Link>
             <p className="home__fuelnote">
               Mostrando precios de{" "}
               <strong>{FUEL_LABEL[effectiveFuel]}</strong>.{" "}

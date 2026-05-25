@@ -10,6 +10,7 @@ const Header = () => {
   // Una guía activa puede ser /guias o /guias/<slug>. Mantener el highlight
   // mientras el usuario navega entre artículos hace el cluster más legible.
   const guidesActive = pathname === "/guias" || pathname.startsWith("/guias/");
+  const rutaActive = pathname === "/ruta";
   return (
     <header className="appbar">
       <div className="appbar__inner">
@@ -18,6 +19,16 @@ const Header = () => {
           <span>Carburantes</span>
         </Link>
         <nav className="appbar__navs" aria-label="Principal">
+          <Link
+            href="/ruta"
+            className={
+              rutaActive
+                ? "appbar__nav appbar__nav--active"
+                : "appbar__nav"
+            }
+          >
+            Ruta
+          </Link>
           <Link
             href="/guias"
             className={

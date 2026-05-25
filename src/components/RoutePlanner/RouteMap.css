@@ -1,0 +1,58 @@
+/* RouteMap se monta sobre las clases `.mapview` + `.mapview__map` de
+   MapView.css (filtros de tile en dark, attribution, ocultar zoom
+   control, popup, peeksheet, etc.). Aquí solo añadimos:
+     - override: en /ruta no hay FAB Lista|Mapa solapando, así que
+       quitamos el margin-bottom: 80px que MapView usa para dejarle hueco.
+     - endpoint markers "A" / "B" (origen / destino).
+ */
+
+.routemap {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 720px) {
+  .routemap {
+    margin-bottom: 0;
+  }
+}
+
+/* Marker de inicio/fin: círculo sólido con letra. Mismo lenguaje visual
+   que los chips de los inputs de origen/destino para que el usuario
+   relacione A=verde=origen, B=rojo=destino. */
+.route-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.route-endpoint__inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+}
+
+.route-endpoint--origin .route-endpoint__inner {
+  background: #16a34a;
+}
+
+.route-endpoint--dest .route-endpoint__inner {
+  background: #dc2626;
+}
+
+[data-theme="dark"] .route-endpoint__inner {
+  border-color: #0a0a0a;
+}
