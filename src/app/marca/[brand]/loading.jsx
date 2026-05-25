@@ -1,6 +1,8 @@
-// Skeleton para /marca/[brand]. La carga del listado nacional puede tardar
-// 5-8 s en frío (5+ MB de MITECO); mientras tanto pintamos el shell + 6
-// secciones simuladas para que el usuario sepa qué está esperando.
+// Skeleton para /marca/[brand]. Con prerender en build + `unstable_cache`
+// por marca esto solo aparece en el caso límite de una marca nueva añadida
+// post-build (ISR on-demand) o tras una revalidación con cache miss del
+// subset; mientras tanto pintamos el shell + 4 secciones simuladas para que
+// el usuario sepa qué está esperando.
 
 export default function Loading() {
   return (

@@ -1,17 +1,25 @@
 import { ImageResponse } from "next/og";
-import { fetchTodasLasEstacionesServer } from "../../../lib/api-server";
-import { getBrand, stationBrand } from "../../../lib/brands";
+import { getBrand, KNOWN_BRANDS } from "../../../lib/brands";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Gasolineras de la marca · Carburantes";
 
+// Pre-renderizamos las OG de las 22 marcas en build. Como el dato variable
+// (recuento de estaciones) se ha eliminado del diseño, el render es 100%
+// estático y NO necesita tocar MITECO. Antes, generar esta imagen disparaba
+// una descarga de 16 MB en su propia función serverless (cold start de 5-30 s
+// por cada compartir en Twitter/WhatsApp) para mostrar un único número que
+// de todos modos quedaba obsoleto entre regeneraciones.
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return KNOWN_BRANDS.map((b) => ({ brand: b.id }));
+}
+
 export default async function Image({ params }) {
   const { brand } = await params;
   const def = getBrand(brand);
-  const data = await fetchTodasLasEstacionesServer();
-  const lista = Array.isArray(data?.ListaEESSPrecio) ? data.ListaEESSPrecio : [];
-  const total = def ? lista.filter((e) => stationBrand(e) === def.id).length : 0;
 
   return new ImageResponse(
     (
@@ -84,18 +92,19 @@ export default async function Image({ params }) {
           }}
         >
           <div style={{ display: "flex", fontSize: 22, opacity: 0.7 }}>
-            Estaciones
+            Precios actualizados
           </div>
           <div
             style={{
               display: "flex",
-              fontSize: 64,
+              fontSize: 44,
               fontWeight: 800,
               letterSpacing: "-0.03em",
-              lineHeight: 1,
+              lineHeight: 1.05,
+              marginTop: 4,
             }}
           >
-            {String(total)}
+            Diésel y gasolina
           </div>
         </div>
       </div>
