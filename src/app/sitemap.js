@@ -58,6 +58,12 @@ export default async function sitemap() {
       priority: 0.6,
     },
     {
+      url: `${base}/ruta`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${base}/mapa-del-sitio`,
       lastModified: now,
       changeFrequency: "weekly",

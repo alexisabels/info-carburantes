@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import {
   MapContainer,
   Marker,
+  Polyline,
   Popup,
   TileLayer,
   Tooltip,
@@ -16,21 +17,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "leaflet/dist/leaflet.css";
 import { getLowestPrices } from "../../utils/getLowestPrices";
-import { isOpenNow } from "../../utils/formatHorario";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import { noPriceLabel } from "../../utils/fuelLabels";
 import { useTheme } from "../../hooks/useTheme";
-import { buildDirectionsHref } from "../../utils/mapsLinks";
-import "./MapView.css";
+import { findClosestIndex } from "../../utils/routing";
+// Reutilizamos los estilos del MapView (.map-price, .map-tooltip,
+// .map-popup, .peeksheet, filtros dark de los tiles) — son el lenguaje
+// visual compartido para representar gasolineras sobre Leaflet.
+import "../MapView/MapView.css";
+import "./RouteMap.css";
 
-// Light: CARTO Voyager. Dark: CARTO Dark Matter con un filtro CSS
-// derivado del análisis estadístico de los tiles raw — la banda de
-// luminancia de Dark Matter está agrupada entre L=9 (fondo) y L=45
-// (calles), gap de solo 36 puntos. Contrast > 1 sobre esa banda
-// agrupada CLAMPA todo a negro (lo que pasaba antes). El filtro
-// principled para mapearla al target Apple Maps (bg~30, calles~120,
-// gap~90) es brightness ALTO con contrast LIGERAMENTE < 1 — desplaza
-// la banda hacia arriba sin aplastarla. Ver MapView.css.
 const TILE_URL = {
   light:
     "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
@@ -46,9 +42,6 @@ const formatPrice = (raw) => {
   return raw;
 };
 
-// Detecta desktop por media query, reactivo a cambios de tamaño/orientación.
-// Decide qué interacción usamos al pulsar un marker: en desktop, popup
-// anclado al marker (más intuitivo, ratón); en móvil, peeksheet abajo.
 const DESKTOP_QUERY = "(min-width: 720px)";
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -69,16 +62,16 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-// Marker custom: pill redondeada con el precio, sin "cola triangular"
-// agresiva. La cheapest tiene anillo verde + halo. Tipografía mono tabular
-// asegura que precios distintos no descuadren al ojo.
-//
-// Hit area 84×44 (Apple HIG mínimo 44pt en táctil). El pill visible es más
-// pequeño y se centra en el wrapper; CSS hace que la zona transparente de
-// alrededor también capture el tap.
-const buildPriceIcon = (priceText, isCheapest, hasPrice) => {
+// Pill de precio idéntico al de MapView para mantener la lectura visual
+// coherente entre vistas. Variantes:
+//   - default: chip blanco/oscuro con borde sutil
+//   - cheapest: anillo verde + halo
+//   - selected: anillo ámbar grueso + ligero scale para indicar que ES
+//     la parada elegida
+const buildPriceIcon = (priceText, isCheapest, hasPrice, isSelected) => {
   const classes = ["map-price"];
-  if (isCheapest) classes.push("map-price--cheapest");
+  if (isSelected) classes.push("map-price--selected");
+  else if (isCheapest) classes.push("map-price--cheapest");
   if (!hasPrice) classes.push("map-price--na");
   return L.divIcon({
     className: classes.join(" "),
@@ -89,172 +82,136 @@ const buildPriceIcon = (priceText, isCheapest, hasPrice) => {
   });
 };
 
-const userIcon = L.divIcon({
-  className: "map-userpos",
-  html: '<span class="map-userpos__pulse"></span><span class="map-userpos__dot"></span>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-});
+const buildEndpointIcon = (letter, variant) =>
+  L.divIcon({
+    className: `route-endpoint route-endpoint--${variant}`,
+    html: `<span class="route-endpoint__inner">${letter}</span>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -15],
+  });
 
-function FitBounds({ points }) {
+const ORIGIN_ICON = buildEndpointIcon("A", "origin");
+const DEST_ICON = buildEndpointIcon("B", "dest");
+
+function FitToRoute({ geometry, fitKey }) {
   const map = useMap();
   useEffect(() => {
-    if (!points || points.length === 0) return;
-    if (points.length === 1) {
-      map.setView(points[0], 14, { animate: true });
-      return;
-    }
-    map.fitBounds(points, { padding: [60, 60], maxZoom: 15 });
-  }, [map, points]);
+    if (!geometry || geometry.length < 2) return;
+    const bounds = L.latLngBounds(geometry);
+    map.fitBounds(bounds, { padding: [50, 50] });
+    // fitKey nos permite forzar un re-fit cuando el padre cambia
+    // (geometría base ↔ geometría con parada). Sin él, el effect solo
+    // dispara con la referencia de geometry, que cambia siempre que
+    // hay nueva polyline pero también re-encuadra cada vez que el
+    // padre re-renderiza.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, fitKey]);
   return null;
 }
 
-// Icono GPS reutilizado por ambos FABs (centrar y solicitar ubicación).
-const GpsIcon = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-    <circle cx="12" cy="12" r="2.5" fill="currentColor" />
-    <circle
-      cx="12"
-      cy="12"
-      r="7"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    />
-    <path
-      d="M12 2v3M12 19v3M2 12h3M19 12h3"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-function RecenterButton({ userPos, onRequestLocation }) {
-  const map = useMap();
-  // Si no hay userPos pero el padre nos pasa un callback para pedirla, mostramos
-  // un FAB "Ubicarme". Si no hay callback, nos comportamos como antes.
-  if (!userPos) {
-    if (typeof onRequestLocation !== "function") return null;
-    return (
-      <button
-        type="button"
-        className="mapview__fab mapview__fab--locate"
-        aria-label="Pedir mi ubicación"
-        onClick={onRequestLocation}
-      >
-        <GpsIcon />
-        <span>Ubicarme</span>
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className="mapview__fab mapview__fab--recenter"
-      aria-label="Centrar en mi ubicación"
-      onClick={() =>
-        map.setView([userPos.lat, userPos.lng], 14, { animate: true })
-      }
-    >
-      <GpsIcon />
-    </button>
-  );
-}
-
-const MapView = ({
-  listadoPrecios,
+const RouteMap = ({
+  geometry,
+  origin,
+  destination,
+  stations,
   selectedFuel,
-  userPos,
-  onlyOpen = false,
-  onRequestLocation,
+  selectedWaypointId,
+  selectedWaypointCoords,
+  onSelectWaypoint,
 }) => {
   const router = useRouter();
   const { resolved: theme } = useTheme();
   const isDesktop = useIsDesktop();
-  // En móvil usamos el peeksheet abajo. En desktop el contenido va en un
-  // <Popup> anclado al marker, y `selectedId` no se usa.
   const [selectedId, setSelectedId] = useState(null);
 
   const lowestPrices = useMemo(
-    () => getLowestPrices(listadoPrecios || []),
-    [listadoPrecios]
+    () => getLowestPrices(stations || []),
+    [stations]
   );
 
-  const stations = useMemo(() => {
-    return (listadoPrecios || [])
+  const decorated = useMemo(() => {
+    return (stations || [])
       .map((s) => {
         const lat = parseFloat(String(s.Latitud).replace(",", "."));
         const lng = parseFloat(String(s["Longitud (WGS84)"]).replace(",", "."));
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
         return { ...s, _lat: lat, _lng: lng };
       })
-      .filter(Boolean)
-      .filter((s) => {
-        if (!onlyOpen) return true;
-        return isOpenNow(s.Horario) !== false;
-      });
-  }, [listadoPrecios, onlyOpen]);
-
-  const points = useMemo(() => {
-    const ps = stations.map((s) => [s._lat, s._lng]);
-    if (userPos) ps.push([userPos.lat, userPos.lng]);
-    return ps;
-  }, [stations, userPos]);
+      .filter(Boolean);
+  }, [stations]);
 
   const iconCacheRef = useRef(new Map());
-  const getCachedIcon = (priceText, isCheapest, hasPrice) => {
-    const key = `${priceText}|${isCheapest ? "1" : "0"}|${hasPrice ? "1" : "0"}`;
+  const getCachedIcon = (priceText, isCheapest, hasPrice, isSelected) => {
+    const key = `${priceText}|${isCheapest ? "1" : "0"}|${hasPrice ? "1" : "0"}|${isSelected ? "1" : "0"}`;
     const cache = iconCacheRef.current;
     let icon = cache.get(key);
     if (!icon) {
-      icon = buildPriceIcon(priceText, isCheapest, hasPrice);
+      icon = buildPriceIcon(priceText, isCheapest, hasPrice, isSelected);
       cache.set(key, icon);
     }
     return icon;
   };
 
-  const selected = useMemo(
-    () => stations.find((s) => s.IDEESS === selectedId) || null,
-    [stations, selectedId]
+  const peekStation = useMemo(
+    () => decorated.find((s) => s.IDEESS === selectedId) || null,
+    [decorated, selectedId]
   );
 
-  // Cierre del peek con Escape.
   useEffect(() => {
-    if (!selected) return;
+    if (!peekStation) return;
     const onKey = (e) => {
       if (e.key === "Escape") setSelectedId(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected]);
+  }, [peekStation]);
 
-  if (stations.length === 0) {
-    return (
-      <div className="empty">
-        <div className="empty__title">Nada que mostrar en el mapa</div>
-        {onlyOpen && (
-          <div className="empty__hint">
-            Desactiva el filtro <em>Abierto ahora</em> y vuelve a probar.
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (!geometry || geometry.length < 2) return null;
 
-  const initialCenter = userPos
-    ? [userPos.lat, userPos.lng]
-    : [stations[0]._lat, stations[0]._lng];
+  const initialCenter = geometry[Math.floor(geometry.length / 2)];
+  const routeColor = theme === "dark" ? "#2db567" : "#0d7a3a";
+  const outlineColor = theme === "dark" ? "#000" : "#fff";
 
-  // Datos derivados para el peek-sheet (helper extraído a utils/mapsLinks.js
-  // para reusarlo entre /cerca, /municipio y /ruta).
-  const buildHrefForProvider = (lat, lng) => buildDirectionsHref(lat, lng);
+  // Re-fit ÚNICAMENTE cuando cambian los extremos o cuando se añade /
+  // quita parada (el polyline rebota a través de un nuevo punto). No
+  // cuando se cambia un filtro que solo añade/quita markers.
+  const fitKey = `${origin?.lat},${origin?.lng}|${destination?.lat},${destination?.lng}|${selectedWaypointId || ""}`;
+
+  // Si hay parada elegida Y nos llega la geometría con parada, partimos
+  // el polyline en dos tramos en el vértice más cercano al waypoint.
+  // Renderizamos:
+  //   - leg1 (origen→parada): trazo sólido (la ruta "ya recorrida hasta
+  //     la decisión")
+  //   - leg2 (parada→destino): trazo discontinuo (la ruta "que sigue
+  //     después de la parada")
+  // Es la convención usual en navegadores tipo Google Maps cuando hay
+  // un waypoint intermedio: distingue visualmente los dos tramos sin
+  // necesidad de leyenda. Sin parada (o sin geometría con parada
+  // todavía cargada) renderizamos un único polyline sólido.
+  const splitIndex = selectedWaypointCoords
+    ? findClosestIndex(geometry, selectedWaypointCoords)
+    : null;
+  const hasSplit =
+    splitIndex !== null && splitIndex > 0 && splitIndex < geometry.length - 1;
+  const leg1 = hasSplit ? geometry.slice(0, splitIndex + 1) : null;
+  const leg2 = hasSplit ? geometry.slice(splitIndex) : null;
+
+  const handleStationClick = (s) => {
+    if (typeof onSelectWaypoint === "function") {
+      onSelectWaypoint(s.IDEESS);
+    }
+    setSelectedId(null);
+  };
 
   return (
-    <div className="mapview" aria-label="Mapa de gasolineras">
+    <div
+      className="mapview routemap"
+      aria-label="Mapa con la ruta y gasolineras cercanas"
+    >
       <MapContainer
         center={initialCenter}
-        zoom={13}
+        zoom={8}
         scrollWheelZoom
         zoomControl={false}
         className="mapview__map"
@@ -266,38 +223,116 @@ const MapView = ({
           subdomains={["a", "b", "c", "d"]}
           maxZoom={19}
         />
-        <FitBounds points={points} />
-        <RecenterButton
-          userPos={userPos}
-          onRequestLocation={onRequestLocation}
-        />
-        {userPos && (
-          <Marker position={[userPos.lat, userPos.lng]} icon={userIcon} />
+        <FitToRoute geometry={geometry} fitKey={fitKey} />
+        {/* Doble polyline: capa exterior más ancha (blanco/negro según
+            tema) para contraste sobre carreteras claras/amarillas de
+            Voyager; capa interior en color de marca. Cuando hay parada
+            partimos los dos legs con su propio par outline + color, y
+            el leg2 lleva dashArray para diferenciar visualmente. */}
+        {hasSplit ? (
+          <>
+            <Polyline
+              positions={leg1}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.65,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={leg1}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.95,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={leg2}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.55,
+                lineCap: "round",
+                lineJoin: "round",
+                dashArray: "10 8",
+              }}
+            />
+            <Polyline
+              positions={leg2}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.9,
+                lineCap: "round",
+                lineJoin: "round",
+                dashArray: "10 8",
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Polyline
+              positions={geometry}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.65,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={geometry}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.95,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+          </>
         )}
-        {stations.map((s) => {
+        {origin && (
+          <Marker position={[origin.lat, origin.lng]} icon={ORIGIN_ICON}>
+            {origin.label && <Tooltip direction="top">{origin.label}</Tooltip>}
+          </Marker>
+        )}
+        {destination && (
+          <Marker position={[destination.lat, destination.lng]} icon={DEST_ICON}>
+            {destination.label && (
+              <Tooltip direction="top">{destination.label}</Tooltip>
+            )}
+          </Marker>
+        )}
+
+        {decorated.map((s) => {
           const formatted = formatPrice(s[selectedFuel]);
           const numeric = formatted
             ? parseFloat(formatted.replace(",", "."))
             : null;
           const isCheapest =
             numeric !== null && numeric === lowestPrices[selectedFuel];
+          const isSelected = s.IDEESS === selectedWaypointId;
           const text = formatted || "—";
           const rotulo = s["Rótulo"];
-          const distancia =
-            typeof s.distance === "number" && Number.isFinite(s.distance)
-              ? `${s.distance.toFixed(1).replace(".", ",")} km`
+          const detourTxt =
+            typeof s.detour === "number" && Number.isFinite(s.detour)
+              ? `${s.detour.toFixed(1).replace(".", ",")} km desvío`
               : null;
           const titleParts = [rotulo, `${text} €/L`];
-          if (distancia) titleParts.push(distancia);
-          // En desktop NO ponemos title nativo (chocaría con el Tooltip de
-          // Leaflet) y no engachamos click → setSelectedId. El Popup se
-          // abre solo al pulsar el marker.
+          if (detourTxt) titleParts.push(detourTxt);
           return (
             <Marker
               key={s.IDEESS}
               position={[s._lat, s._lng]}
-              icon={getCachedIcon(text, isCheapest, !!formatted)}
-              zIndexOffset={isCheapest ? 1000 : 0}
+              icon={getCachedIcon(text, isCheapest, !!formatted, isSelected)}
+              zIndexOffset={isSelected ? 2000 : isCheapest ? 1000 : 0}
               eventHandlers={
                 isDesktop
                   ? undefined
@@ -335,9 +370,10 @@ const MapView = ({
                     <MarkerPopup
                       station={s}
                       formatted={formatted}
-                      distancia={distancia}
+                      detour={s.detour}
                       selectedFuel={selectedFuel}
-                      mapsHref={buildHrefForProvider(s._lat, s._lng)}
+                      isSelected={isSelected}
+                      onSelectWaypoint={() => handleStationClick(s)}
                       onOpenDetail={() =>
                         router.push(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
                       }
@@ -350,31 +386,37 @@ const MapView = ({
         })}
       </MapContainer>
 
-      {!isDesktop && selected && (
+      {!isDesktop && peekStation && (
         <PeekSheet
-          station={selected}
+          station={peekStation}
           selectedFuel={selectedFuel}
+          isSelected={peekStation.IDEESS === selectedWaypointId}
           onClose={() => setSelectedId(null)}
           onOpenDetail={() =>
-            router.push(`/gasolinera/${selected.IDMunicipio}/${selected.IDEESS}`)
+            router.push(
+              `/gasolinera/${peekStation.IDMunicipio}/${peekStation.IDEESS}`
+            )
           }
-          mapsHref={buildHrefForProvider(selected._lat, selected._lng)}
+          onSelectWaypoint={() => handleStationClick(peekStation)}
         />
       )}
     </div>
   );
 };
 
-// Contenido del Popup en desktop. Layout compacto: logo + rótulo, dirección,
-// distancia (si la tenemos), precio destacado, dos botones.
 function MarkerPopup({
   station,
   formatted,
-  distancia,
+  detour,
   selectedFuel,
-  mapsHref,
+  isSelected,
+  onSelectWaypoint,
   onOpenDetail,
 }) {
+  const detourTxt =
+    typeof detour === "number" && Number.isFinite(detour)
+      ? `${detour.toFixed(1).replace(".", ",")} km desvío`
+      : null;
   return (
     <div className="map-popup__inner">
       <div className="map-popup__head">
@@ -403,9 +445,7 @@ function MarkerPopup({
         ) : (
           <div className="map-popup__nodata">{noPriceLabel(selectedFuel)}</div>
         )}
-        {distancia && (
-          <span className="map-popup__dist">{distancia}</span>
-        )}
+        {detourTxt && <span className="map-popup__dist">{detourTxt}</span>}
       </div>
       <div className="map-popup__actions">
         <button
@@ -415,36 +455,32 @@ function MarkerPopup({
         >
           Ver detalle
         </button>
-        <a
-          href={mapsHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="map-popup__btn map-popup__btn--primary"
+        <button
+          type="button"
+          className={`map-popup__btn map-popup__btn--primary${isSelected ? " map-popup__btn--active" : ""}`}
+          onClick={onSelectWaypoint}
         >
-          Cómo llegar
-        </a>
+          {isSelected ? "Parando aquí · quitar" : "Parar aquí"}
+        </button>
       </div>
     </div>
   );
 }
 
-// Peek-sheet: panel inferior compacto con info de la gasolinera al pulsar
-// un marker. Sustituye al "navigate directo": el usuario puede comparar
-// varios pulsos sin salir del mapa, y elige cuándo entrar al detalle o ir
-// directo a "Cómo llegar".
-function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
+function PeekSheet({
+  station,
+  selectedFuel,
+  isSelected,
+  onClose,
+  onOpenDetail,
+  onSelectWaypoint,
+}) {
   const formatted = formatPrice(station[selectedFuel]);
-  const distancia =
-    typeof station.distance === "number" && Number.isFinite(station.distance)
-      ? `${station.distance.toFixed(1).replace(".", ",")} km`
+  const detourTxt =
+    typeof station.detour === "number" && Number.isFinite(station.detour)
+      ? `${station.detour.toFixed(1).replace(".", ",")} km desvío`
       : null;
 
-  // Defensa contra el "ghost click" de iOS: cuando el usuario toca un marker
-  // del mapa, iOS dispara un click sintético ~300ms después en las
-  // coordenadas del touch. Si el peek se abre justo encima de esas coords,
-  // el backdrop captura el click sintético y se cierra al instante. Por eso
-  // ignoramos cualquier click al backdrop que llegue antes de 350ms desde
-  // que se montó el peek.
   const mountedAtRef = useRef(Date.now());
   useEffect(() => {
     mountedAtRef.current = Date.now();
@@ -455,10 +491,6 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
     onClose();
   };
 
-  // Portalizamos el sheet a <body>: si lo dejamos dentro de .mapview, que
-  // tiene `isolation: isolate`, su z-index queda confinado y el FAB
-  // Lista|Mapa (z-index 800 en body) lo tapa visualmente. Así escapa al
-  // contexto global y puede subir por encima del FAB sin tocar el mapa.
   return createPortal(
     <>
       <button
@@ -489,11 +521,13 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
           <div className="peeksheet__main">
             <div className="peeksheet__name">{station["Rótulo"]}</div>
             <div className="peeksheet__sub">
-              {distancia && (
-                <strong className="peeksheet__dist">{distancia}</strong>
+              {detourTxt && (
+                <strong className="peeksheet__dist">{detourTxt}</strong>
               )}
-              {distancia && (
-                <span className="peeksheet__dot" aria-hidden="true">·</span>
+              {detourTxt && (
+                <span className="peeksheet__dot" aria-hidden="true">
+                  ·
+                </span>
               )}
               {station.Dirección}
             </div>
@@ -505,7 +539,9 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
                 <span className="peeksheet__unit">€/L</span>
               </>
             ) : (
-              <span className="peeksheet__nodata">{noPriceLabel(selectedFuel)}</span>
+              <span className="peeksheet__nodata">
+                {noPriceLabel(selectedFuel)}
+              </span>
             )}
           </div>
         </div>
@@ -517,16 +553,14 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
           >
             Ver detalle
           </button>
-          <a
-            className="peeksheet__btn peeksheet__btn--primary"
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            className={`peeksheet__btn peeksheet__btn--primary${isSelected ? " peeksheet__btn--active" : ""}`}
+            onClick={onSelectWaypoint}
           >
-            Cómo llegar
-          </a>
+            {isSelected ? "Parando aquí · quitar" : "Parar aquí"}
+          </button>
         </div>
-        {/* Link nativo accesible (alternativa para teclado) */}
         <Link
           className="peeksheet__deeplink"
           href={`/gasolinera/${station.IDMunicipio}/${station.IDEESS}`}
@@ -541,4 +575,4 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
   );
 }
 
-export default MapView;
+export default RouteMap;

@@ -102,6 +102,30 @@ export const getUserLocation = (options = {}) => {
   });
 };
 
+// Variante robusta a un quirk conocido de iOS Safari: cuando el usuario
+// concede el permiso por PRIMERA vez, la llamada activa a
+// `getCurrentPosition` que disparó el prompt suele expirar antes de que
+// la concesión propague — el caller cree que "ha fallado" y pide al
+// usuario que vuelva a pulsar. Aquí detectamos ese caso (la permission
+// queda como "granted" tras el fallo) y reintentamos una vez con
+// maximumAge:0 para forzar fix nuevo. Si el usuario denegó, propagamos
+// el error sin retry.
+export const getUserLocationRobust = async (options = {}) => {
+  try {
+    return await getUserLocation(options);
+  } catch (err) {
+    const code = err && err.code;
+    if (code === GEO_ERROR_CODES.PERMISSION_DENIED) {
+      throw err;
+    }
+    const state = await getGeolocationPermission();
+    if (state !== "granted") {
+      throw err;
+    }
+    return await getUserLocation({ ...options, maximumAge: 0 });
+  }
+};
+
 // Haversine. Radio medio de la Tierra (IUGG): 6371.0088 km. Usamos 6371 (la
 // diferencia es <0.001 % y es el valor estándar). Para distancias muy cortas
 // (<1 m) Haversine puede perder precisión por cancelación catastrófica al

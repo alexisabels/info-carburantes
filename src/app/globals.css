@@ -480,6 +480,10 @@ a:focus-visible,
   font-size: 1.0625rem;
   font-weight: 600;
   cursor: pointer;
+  /* Reset cuando .bigbtn renderiza como <a> (next/link): el browser
+     subraya por defecto el texto del anchor y se "comen" las jerarquías
+     visuales internas (.bigbtn__title / .bigbtn__sub). */
+  text-decoration: none;
   transition: background-color 120ms linear, transform 80ms linear,
     box-shadow 120ms linear;
 }
@@ -702,6 +706,138 @@ a:focus-visible,
 @media (pointer: coarse) {
   .segmented button {
     min-height: 44px;
+  }
+}
+
+/* ---------- Segmented "Lista | Mapa" + FAB móvil ----------
+ * Patrón compartido entre /municipio, /cerca y /ruta para alternar
+ * vista lista ↔ mapa. El segmented vive en el toolbar en desktop; en
+ * móvil se sustituye por un FAB inferior. */
+
+.toolbar__viewseg {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg-2);
+  padding: 4px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-bottom: 8px;
+}
+
+.toolbar__viewseg button {
+  background: transparent;
+  border: 0;
+  padding: 8px 16px;
+  min-height: 36px;
+  min-width: 72px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 120ms linear, color 120ms linear;
+}
+
+.toolbar__viewseg button:hover:not([aria-pressed="true"]) {
+  color: var(--ink);
+}
+
+.toolbar__viewseg button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.toolbar__viewseg button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.viewfab {
+  position: fixed;
+  /* Por encima del rango de panes de Leaflet (markerPane=600, popupPane=700)
+   * por si algún ancestro pierde el `isolation: isolate`. */
+  z-index: 800;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px 12px 18px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: var(--shadow-fab);
+  transition:
+    transform 160ms cubic-bezier(0.2, 0, 0.2, 1),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  animation: viewfab-in 220ms cubic-bezier(0.2, 0, 0.2, 1) both;
+}
+
+@keyframes viewfab-in {
+  from {
+    transform: translate(-50%, 24px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.viewfab:hover {
+  background: var(--ink-2);
+  box-shadow: var(--shadow-fab-hover);
+}
+
+.viewfab:active {
+  transform: translate(-50%, 1px);
+}
+
+.viewfab:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.viewfab__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.viewfab__label {
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewfab {
+    animation: none;
+    transition: none;
+  }
+  .toolbar__viewseg button {
+    transition: none;
+  }
+}
+
+/* En desktop el FAB se oculta: usamos el segmented del toolbar. */
+@media (min-width: 900px) {
+  .viewfab {
+    display: none;
   }
 }
 

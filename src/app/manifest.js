@@ -34,6 +34,16 @@ export default function manifest() {
         ],
       },
       {
+        name: "Planificar ruta",
+        short_name: "Ruta",
+        description:
+          "Planifica una ruta y descubre las gasolineras más baratas de camino.",
+        url: "/ruta",
+        icons: [
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        ],
+      },
+      {
         name: "Buscar por municipio",
         short_name: "Municipio",
         description: "Elige una provincia y un municipio en España.",

@@ -1,0 +1,97 @@
+/* RouteMap se monta sobre las clases `.mapview` + `.mapview__map` de
+   MapView.css (filtros de tile en dark, attribution, ocultar zoom
+   control, popup, peeksheet, etc.). Aquí solo añadimos:
+     - override: en /ruta no hay FAB Lista|Mapa solapando, así que
+       quitamos el margin-bottom: 80px que MapView usa para dejarle hueco.
+     - endpoint markers "A" / "B" (origen / destino).
+ */
+
+.routemap {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 720px) {
+  .routemap {
+    margin-bottom: 0;
+  }
+}
+
+/* Marker de la gasolinera ELEGIDA como parada. Anillo ámbar para
+   distinguirla del verde de "más barata" — la jerarquía visual es:
+   ámbar (parada activa) > verde (cheapest) > default. Z-index del
+   marker en RouteMap.jsx asegura que la parada se renderiza encima. */
+.map-price--selected .map-price__bubble {
+  background: #f59e0b;
+  color: #1a1a1a;
+  border-color: #b45309;
+  box-shadow:
+    0 0 0 4px rgba(245, 158, 11, 0.28),
+    0 4px 12px rgba(245, 158, 11, 0.4);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .map-price--selected .map-price__bubble {
+  background: #fbbf24;
+  color: #1a1a1a;
+  border-color: #d97706;
+  box-shadow:
+    0 0 0 3px rgba(251, 191, 36, 0.28),
+    0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+/* Estado activo del botón "Parar aquí" cuando ESTA estación ya es la
+   parada. El usuario ve que está marcada y que ese mismo botón ahora
+   la quita. */
+.map-popup__btn--primary.map-popup__btn--active,
+.peeksheet__btn--primary.peeksheet__btn--active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.map-popup__btn--primary.map-popup__btn--active:hover,
+.peeksheet__btn--primary.peeksheet__btn--active:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+/* Marker de inicio/fin: círculo sólido con letra. Mismo lenguaje visual
+   que los chips de los inputs de origen/destino para que el usuario
+   relacione A=verde=origen, B=rojo=destino. */
+.route-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.route-endpoint__inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-sans);
+}
+
+.route-endpoint--origin .route-endpoint__inner {
+  background: #16a34a;
+}
+
+.route-endpoint--dest .route-endpoint__inner {
+  background: #dc2626;
+}
+
+[data-theme="dark"] .route-endpoint__inner {
+  border-color: #0a0a0a;
+}
