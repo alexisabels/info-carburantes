@@ -1,0 +1,283 @@
+import { absoluteUrl, getSiteUrl } from "./site";
+
+const SITE_NAME = "Carburantes";
+const DEFAULT_DESC =
+  "Consulta precios actualizados de gasolina y diésel en estaciones de servicio de España. Encuentra la gasolinera más barata cerca de ti en tiempo real.";
+
+// Construye un objeto Metadata compatible con generateMetadata. Las imágenes
+// OG/Twitter se gestionan por convención de fichero (`opengraph-image.jsx`)
+// en cada ruta: Next.js las inyecta automáticamente en
+// openGraph.images/twitter.images y conmuta twitter.card al variante
+// `summary_large_image`. No hace falta repetirlas aquí.
+export function buildMetadata({
+  title,
+  description = DEFAULT_DESC,
+  path = "/",
+  noindex = false,
+} = {}) {
+  const url = absoluteUrl(path);
+  const titleAbs = title ? title : `${SITE_NAME} — Precios de gasolineras en España`;
+
+  return {
+    metadataBase: new URL(getSiteUrl()),
+    title: titleAbs,
+    description,
+    alternates: { canonical: url },
+    robots: noindex
+      ? { index: false, follow: false }
+      : { index: true, follow: true, googleBot: { index: true, follow: true } },
+    openGraph: {
+      title: titleAbs,
+      description,
+      url,
+      siteName: SITE_NAME,
+      locale: "es_ES",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titleAbs,
+      description,
+    },
+  };
+}
+
+// ---------- JSON-LD builders ----------
+
+export function jsonLdWebSite() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: getSiteUrl(),
+    inLanguage: "es-ES",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${getSiteUrl()}/municipio?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+export function jsonLdBreadcrumb(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      name: it.name,
+      item: it.url ? absoluteUrl(it.url) : undefined,
+    })),
+  };
+}
+
+// Schema.org/GasStation. La API del MITECO no es muy estructurada; mapeamos
+// lo que tenemos: dirección postal, geo, horario textual y ofertas (precios
+// de cada combustible disponible).
+const PRECIO_KEYS = [
+  { campo: "Precio Gasoleo A", label: "Diésel A" },
+  { campo: "Precio Gasoleo Premium", label: "Diésel Premium" },
+  { campo: "Precio Gasolina 95 E5", label: "Gasolina 95" },
+  { campo: "Precio Gasolina 98 E5", label: "Gasolina 98" },
+  { campo: "Precio Adblue", label: "AdBlue" },
+  { campo: "Precio Gases licuados del petróleo", label: "GLP" },
+  { campo: "Precio Hidrogeno", label: "Hidrógeno" },
+];
+
+function priceFor(raw) {
+  if (raw === undefined || raw === null) return null;
+  const s = String(raw).trim();
+  if (!s || s === "-") return null;
+  const n = parseFloat(s.replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseLatLng(estacion) {
+  const lat = parseFloat(String(estacion?.Latitud ?? "").replace(",", "."));
+  const lng = parseFloat(
+    String(estacion?.["Longitud (WGS84)"] ?? "").replace(",", ".")
+  );
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+export function jsonLdGasStation(estacion, { url, fechaToma } = {}) {
+  if (!estacion) return null;
+  const rotulo = estacion["Rótulo"] || "Gasolinera";
+  const geo = parseLatLng(estacion);
+  const offers = PRECIO_KEYS.map(({ campo, label }) => {
+    const price = priceFor(estacion[campo]);
+    if (price === null) return null;
+    return {
+      "@type": "Offer",
+      itemOffered: { "@type": "Product", name: label },
+      price: price.toFixed(3),
+      priceCurrency: "EUR",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: price.toFixed(3),
+        priceCurrency: "EUR",
+        unitCode: "LTR",
+        unitText: "€/L",
+      },
+      availability: "https://schema.org/InStock",
+      validFrom: fechaToma || undefined,
+    };
+  }).filter(Boolean);
+
+  const address = {
+    "@type": "PostalAddress",
+    streetAddress: estacion.Dirección || undefined,
+    postalCode: (estacion["C.P."] || "").trim() || undefined,
+    addressLocality: estacion.Localidad || undefined,
+    addressRegion: estacion.Provincia || undefined,
+    addressCountry: "ES",
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "GasStation",
+    "@id": url,
+    name: rotulo,
+    url,
+    address,
+    geo: geo
+      ? { "@type": "GeoCoordinates", latitude: geo.lat, longitude: geo.lng }
+      : undefined,
+    openingHours: estacion.Horario || undefined,
+    makesOffer: offers.length ? offers : undefined,
+  };
+}
+
+// Organization global del sitio. Una sola pieza de JSON-LD que ayuda a los
+// motores a construir el "knowledge graph" de la marca Carburantes (logo,
+// autor, redes sociales si las hubiera).
+export function jsonLdOrganization() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Carburantes",
+    url: getSiteUrl(),
+    logo: absoluteUrl("/pwa-512x512.png"),
+    description:
+      "Buscador de precios de gasolineras en España con datos oficiales del Ministerio para la Transición Ecológica.",
+    sameAs: ["https://github.com/alexisabels/info-carburantes"],
+    founder: {
+      "@type": "Person",
+      name: "alexisabel",
+      url: "https://alexisabel.com",
+    },
+  };
+}
+
+// `Place` para una ciudad/municipio. Lo usamos en /municipio/[id]/[slug] para
+// que Google entienda que la página representa una entidad geográfica
+// concreta y no un listado abstracto.
+export function jsonLdPlaceMunicipio({
+  nombre,
+  provincia,
+  url,
+  numStations,
+} = {}) {
+  if (!nombre) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: nombre,
+    url,
+    containedInPlace: provincia
+      ? {
+          "@type": "AdministrativeArea",
+          name: provincia,
+        }
+      : undefined,
+    additionalProperty: Number.isFinite(numStations)
+      ? {
+          "@type": "PropertyValue",
+          name: "Gasolineras",
+          value: numStations,
+        }
+      : undefined,
+  };
+}
+
+// `AdministrativeArea` para una provincia. Mismo razonamiento que Place pero
+// a un nivel más amplio; útil para /provincia/[id]/[slug].
+export function jsonLdAdministrativeArea({
+  nombre,
+  url,
+  numMunicipios,
+} = {}) {
+  if (!nombre) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "AdministrativeArea",
+    name: nombre,
+    url,
+    additionalProperty: Number.isFinite(numMunicipios)
+      ? {
+          "@type": "PropertyValue",
+          name: "Municipios",
+          value: numMunicipios,
+        }
+      : undefined,
+  };
+}
+
+// ItemList de municipios de una provincia (links a las páginas de cada
+// municipio). El typo de PropertyValue queda como auditoría visible para el
+// crawler de la estructura de la provincia.
+export function jsonLdItemListProvincia(municipios, { provincia, url } = {}) {
+  const items = (municipios || []).slice(0, 100).map((m, idx) => ({
+    "@type": "ListItem",
+    position: idx + 1,
+    item: {
+      "@type": "Place",
+      name: m?.Municipio || "Municipio",
+      url: `${getSiteUrl()}/municipio/${encodeURIComponent(
+        m?.IDMunicipio || ""
+      )}`,
+    },
+  }));
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Municipios de ${provincia || ""}`.trim(),
+    url,
+    numberOfItems: municipios?.length || 0,
+    itemListElement: items,
+  };
+}
+
+// ItemList de gasolineras (para páginas de municipio). Limitamos a las 20
+// primeras para no inflar el HTML; el SEO real lo da el contenido visible.
+export function jsonLdItemListMunicipio(estaciones, { municipio, url } = {}) {
+  const items = (estaciones || []).slice(0, 20).map((e, idx) => ({
+    "@type": "ListItem",
+    position: idx + 1,
+    item: {
+      "@type": "GasStation",
+      name: e["Rótulo"] || "Gasolinera",
+      url: `${getSiteUrl()}/gasolinera/${encodeURIComponent(e.IDMunicipio)}/${encodeURIComponent(
+        e.IDEESS
+      )}`,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: e.Dirección || undefined,
+        postalCode: (e["C.P."] || "").trim() || undefined,
+        addressLocality: e.Localidad || undefined,
+        addressRegion: e.Provincia || undefined,
+        addressCountry: "ES",
+      },
+    },
+  }));
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Gasolineras en ${municipio || ""}`.trim(),
+    url,
+    numberOfItems: estaciones?.length || 0,
+    itemListElement: items,
+  };
+}

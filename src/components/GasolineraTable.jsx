@@ -1,6 +1,8 @@
+"use client";
+
 /* eslint-disable react/prop-types */
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { getLowestPrices } from "../utils/getLowestPrices";
 import { getLogoForGasolinera } from "../utils/logoUtils";
 import { isOpenNow, is24h } from "../utils/formatHorario";
@@ -11,7 +13,6 @@ import FilterBar, {
   FUEL_DEFS,
 } from "./FilterBar/FilterBar";
 import { fuelShortLabel, noPriceLabel } from "../utils/fuelLabels";
-import "../App.css";
 
 const collator = new Intl.Collator("es", { sensitivity: "base" });
 
@@ -283,7 +284,7 @@ const GasolineraTable = ({
 
           return (
             <li key={gasolinera.IDEESS} className="list__item">
-              <Link to={href} className={cardClassName} aria-label={ariaLabel}>
+              <Link href={href} className={cardClassName} aria-label={ariaLabel}>
                 <span className="station-card__logo">
                   <img
                     src={`/station-icons/${getLogoForGasolinera(stationName)}`}
