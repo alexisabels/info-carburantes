@@ -37,6 +37,12 @@
   border-radius: 4px;
 }
 
+.appbar__navs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .appbar__nav {
   font-size: 0.875rem;
   font-weight: 500;

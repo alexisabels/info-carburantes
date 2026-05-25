@@ -5,6 +5,7 @@ import {
 import { slugify } from "../utils/slug";
 import { getSiteUrl } from "../lib/site";
 import { KNOWN_BRANDS } from "../lib/brands";
+import { GUIDES } from "../content/guides";
 
 // Sitemap dinámico: enumera home, índices y todas las provincias + todos los
 // municipios canónicos. Las gasolineras individuales NO se incluyen (>12 000
@@ -45,6 +46,12 @@ export default async function sitemap() {
       priority: 0.6,
     },
     {
+      url: `${base}/guias`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: `${base}/municipio`,
       lastModified: now,
       changeFrequency: "weekly",
@@ -71,6 +78,17 @@ export default async function sitemap() {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.7,
+    });
+  }
+
+  // Guías editoriales. Prioridad alta porque cada una pelea su propio
+  // long-tail y tiende a tener buen CTR si Google la indexa.
+  for (const g of GUIDES) {
+    entries.push({
+      url: `${base}/guias/${g.slug}`,
+      lastModified: new Date(g.dateModified || g.datePublished),
+      changeFrequency: "monthly",
+      priority: 0.75,
     });
   }
 

@@ -313,6 +313,134 @@ export function jsonLdItemListGenerico(estaciones, { name, url, max = 50 } = {})
   };
 }
 
+// ---------- JSON-LD para guías/blog (GEO/AEO) ----------
+
+// `Article` para una guía individual. Schema.org/Article + speakable hint para
+// asistentes de voz / motores generativos (ChatGPT, Perplexity, Google SGE).
+// `author` apunta a la Organization para mantener el knowledge graph cohesivo,
+// y `mentions` enumera entidades que la guía referencia (marcas, combustibles)
+// — ayuda a los LLMs a entender el grafo semántico del artículo.
+export function jsonLdArticle({
+  url,
+  title,
+  description,
+  datePublished,
+  dateModified,
+  imageUrl,
+  category,
+  wordCount,
+  keywords,
+  mentions,
+} = {}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    headline: title,
+    description,
+    inLanguage: "es-ES",
+    datePublished,
+    dateModified: dateModified || datePublished,
+    image: imageUrl ? [imageUrl] : undefined,
+    articleSection: category || undefined,
+    wordCount: Number.isFinite(wordCount) ? wordCount : undefined,
+    keywords: Array.isArray(keywords) && keywords.length ? keywords.join(", ") : undefined,
+    author: {
+      "@type": "Organization",
+      name: "Carburantes",
+      url: getSiteUrl(),
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Carburantes",
+      url: getSiteUrl(),
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/pwa-512x512.png"),
+      },
+    },
+    mentions: Array.isArray(mentions) && mentions.length ? mentions : undefined,
+    // Selectores CSS de fragmentos "habladlos" — bloques que Google Assistant
+    // / Alexa pueden leer en voz alta y que un LLM puede citar como respuesta
+    // directa. Apuntamos al TL;DR + el primer párrafo respuesta.
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: [".guide__answer", ".guide__tldr"],
+    },
+  };
+}
+
+// `HowTo` para guías paso-a-paso. No todas las guías son HowTo — solo las que
+// tienen una secuencia ordenada (ej. "cómo encontrar gasolinera más barata").
+// Google muestra estos como rich cards con los pasos numerados en la SERP.
+export function jsonLdHowTo({
+  url,
+  name,
+  description,
+  totalTime,
+  steps,
+  imageUrl,
+} = {}) {
+  if (!Array.isArray(steps) || !steps.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "@id": `${url}#howto`,
+    name,
+    description,
+    inLanguage: "es-ES",
+    totalTime: totalTime || undefined,
+    image: imageUrl ? [imageUrl] : undefined,
+    step: steps.map((s, idx) => ({
+      "@type": "HowToStep",
+      position: idx + 1,
+      name: s.name,
+      text: s.text,
+      url: s.anchor ? `${url}#${s.anchor}` : undefined,
+    })),
+  };
+}
+
+// `Blog` para el índice /guias. Le da contexto a Google de que la sección es
+// una colección editorial y no un listado comercial.
+export function jsonLdBlog({ url, name, description, posts } = {}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${url}#blog`,
+    name,
+    description,
+    url,
+    inLanguage: "es-ES",
+    publisher: {
+      "@type": "Organization",
+      name: "Carburantes",
+      url: getSiteUrl(),
+    },
+    blogPost: (posts || []).slice(0, 50).map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      description: p.description,
+      datePublished: p.datePublished,
+      dateModified: p.dateModified || p.datePublished,
+      url: absoluteUrl(p.path),
+      author: { "@type": "Organization", name: "Carburantes" },
+    })),
+  };
+}
+
+// `Person` o `Thing` para enumerar entidades mencionadas. Útil dentro de
+// `mentions` del Article para señalar marcas, combustibles, etc.
+export function entityMention({ name, url, sameAs, type = "Thing" } = {}) {
+  return {
+    "@type": type,
+    name,
+    url: url ? absoluteUrl(url) : undefined,
+    sameAs: Array.isArray(sameAs) && sameAs.length ? sameAs : undefined,
+  };
+}
+
 // ItemList de gasolineras (para páginas de municipio). Limitamos a las 20
 // primeras para no inflar el HTML; el SEO real lo da el contenido visible.
 export function jsonLdItemListMunicipio(estaciones, { municipio, url } = {}) {

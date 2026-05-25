@@ -1831,6 +1831,22 @@ a:focus-visible,
   color: var(--ink-2);
 }
 
+.faq__more {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+}
+
+.faq__more a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.faq__more a:hover {
+  color: var(--accent);
+}
+
 /* -----------------------------------------------------------------
  * Mapa del sitio (/mapa-del-sitio)
  * --------------------------------------------------------------- */
@@ -1858,6 +1874,18 @@ a:focus-visible,
 
 .sitemap__sec {
   margin-bottom: 32px;
+}
+
+.sitemap__subgroup {
+  margin-top: 18px;
+}
+
+.sitemap__subgroup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
 }
 
 .sitemap__sec-title {
@@ -1958,5 +1986,672 @@ a:focus-visible,
 }
 
 .nearby__more a {
+  color: var(--ink-2);
+}
+
+
+/* -----------------------------------------------------------------
+ * Guías (/guias y /guias/[slug])
+ *
+ * Tono editorial sobrio, alineado con el resto de la app: hairlines
+ * en lugar de bordes coloreados, tipografía generosa, ausencia de
+ * píldoras y labels gritones. La jerarquía la pone el tamaño y el
+ * peso, no el color.
+ *
+ * Los selectores `.guide__answer` y `.guide__tldr` se conservan
+ * porque el JSON-LD `speakable` apunta a ellos para que voice
+ * assistants y LLMs lean exactamente esos bloques. La semántica vive
+ * en el HTML; el estilo solo decide cómo se muestra.
+ * --------------------------------------------------------------- */
+
+.guides {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 16px var(--gutter) 48px;
+}
+
+.guides__head {
+  margin: 8px 0 40px;
+}
+
+.guides__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+}
+.guides__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.guides__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guides__title {
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+
+.guides__lede {
+  color: var(--ink-2);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* Cabecera de cada categoría en el hub. Mantenemos el "small caps"
+   gris del resto de la app (mismo treatment que .sitemap__sec-title)
+   para que la página se sienta parte de la familia. */
+.guides__cat {
+  margin-top: 48px;
+}
+
+.guides__cat-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.guides__cat-desc {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0 0 20px;
+  max-width: 60ch;
+}
+
+/* Cards en lista. En lugar de grid 2-col coloreado, lista limpia con
+   hairlines entre items — más editorial, menos "blog template". */
+.guides__grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.guides__card {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.guides__card-link {
+  display: block;
+  padding: 18px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.guides__card-link:hover .guides__card-title {
+  color: var(--ink-muted);
+}
+
+.guides__card-title {
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-weight: 600;
+  transition: color 120ms ease;
+}
+
+.guides__card-desc {
+  font-size: 0.93rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+
+.guides__card-meta {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* CTA al final del hub. Panel discreto sobre superficie ligera; el
+   enlace es texto subrayado, no botón pill. */
+.guides__cta-bottom {
+  margin-top: 56px;
+  padding: 28px 24px;
+  background: var(--bg-2);
+  border-radius: var(--r);
+  text-align: left;
+}
+
+.guides__cta-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.guides__cta-body {
+  margin: 0 0 14px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 60ch;
+}
+
+.guides__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1px;
+  transition: opacity 120ms ease;
+}
+
+.guides__cta-btn:hover {
+  opacity: 0.7;
+}
+
+/* -----------------------------------------------------------------
+ * Guía individual (/guias/[slug])
+ * --------------------------------------------------------------- */
+
+.guide {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px var(--gutter) 56px;
+}
+
+.guide__article {
+  display: block;
+}
+
+.guide__head {
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__crumbs {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 18px;
+}
+.guide__crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.guide__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guide__title {
+  font-size: clamp(1.7rem, 5vw, 2.3rem);
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  margin: 0 0 14px;
+}
+
+.guide__lede {
+  color: var(--ink-2);
+  font-size: 1.08rem;
+  line-height: 1.55;
+  margin: 0 0 18px;
+  max-width: 60ch;
+}
+
+/* Meta line: categoría · tiempo · fecha. Texto plano en gris muted,
+   separado por puntos. Sin píldoras. */
+.guide__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+/* Cuerpo del artículo: tipografía optimizada para lectura larga.
+   Tamaño base un punto mayor que el normal de la app, line-height
+   amplio, contraste alto. */
+.guide__body {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.guide__body h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 44px 0 14px;
+  color: var(--ink);
+  scroll-margin-top: 16px;
+  font-weight: 600;
+}
+
+.guide__body h3 {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 28px 0 8px;
+  color: var(--ink);
+  scroll-margin-top: 16px;
+  font-weight: 600;
+}
+
+.guide__body p {
+  margin: 0 0 16px;
+}
+
+.guide__body ul,
+.guide__body ol {
+  margin: 0 0 20px;
+  padding-left: 22px;
+}
+
+.guide__body li {
+  margin: 0 0 8px;
+  line-height: 1.65;
+}
+
+.guide__body li > ul,
+.guide__body li > ol {
+  margin: 6px 0 8px;
+}
+
+.guide__body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide__body em {
+  font-style: italic;
+}
+
+.guide__body a {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
+}
+
+.guide__body a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+/* --- Bloques semánticos --- */
+
+/* Answer: párrafo de respuesta corta al inicio. Era una caja verde;
+   ahora es solo un párrafo con tipografía algo más generosa. Sigue
+   siendo el target del speakable JSON-LD por el className. */
+.guide__answer {
+  font-size: 1.13rem;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 28px;
+  letter-spacing: -0.005em;
+}
+
+.guide__answer strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* TL;DR: lista de puntos clave. Hairlines arriba y abajo, sin fondo
+   ni label uppercase. La posición y la brevedad la identifican. */
+.guide__tldr {
+  list-style: none;
+  margin: 0 0 36px;
+  padding: 16px 0 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.97rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.guide__tldr li {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  position: relative;
+}
+
+.guide__tldr li:last-child {
+  margin-bottom: 0;
+}
+
+.guide__tldr li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 8px;
+  height: 1px;
+  background: var(--ink-faint);
+}
+
+/* Callouts: superficie neutra, sin border de color. La jerarquía la
+   pone el title en negrita. Conservamos las 3 variantes en el DOM
+   pero las renderizamos igual visualmente. */
+.guide__callout {
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  padding: 16px 18px;
+  margin: 24px 0;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.guide__callout-title {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+  font-size: 0.97rem;
+}
+
+.guide__callout-body p {
+  margin: 0;
+}
+
+.guide__callout-body p + p {
+  margin-top: 8px;
+}
+
+/* Tablas comparativas. Hairline-only, sin alternancia de filas, sin
+   fondo del header. Lo que destaca es el peso de la primera fila. */
+.guide__table-wrap {
+  overflow-x: auto;
+  margin: 24px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.guide__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  min-width: 480px;
+}
+
+.guide__table-caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.guide__table th,
+.guide__table td {
+  padding: 10px 14px 10px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.guide__table th:last-child,
+.guide__table td:last-child {
+  padding-right: 0;
+}
+
+.guide__table thead th {
+  border-bottom: 1px solid var(--line-strong);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.guide__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* CTA dentro del cuerpo. Panel sobre superficie ligera, sin botón
+   pill verde. El enlace es texto con underline. */
+.guide__cta {
+  background: var(--bg-2);
+  border-radius: var(--r);
+  padding: 22px 22px;
+  margin: 36px 0;
+}
+
+.guide__cta-title {
+  font-size: 1rem;
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.guide__cta-body {
+  margin: 0 0 14px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.guide__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 1px;
+  transition: opacity 120ms ease;
+}
+
+.guide__cta-btn:hover {
+  opacity: 0.7;
+}
+
+/* Enlaces internos relacionados (a marcas, otras secciones). Antes
+   eran píldoras; ahora lista en línea separada por puntos. */
+.guide__related {
+  margin: 32px 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.guide__related-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.guide__related-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 0.95rem;
+}
+
+.guide__related-list li {
+  margin: 0;
+}
+
+.guide__related-list a {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
+}
+
+.guide__related-list a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+/* MiniFAQ con <details>. Hairline divider, sin fondo. */
+.guide__minifaq {
+  margin: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.guide__minifaq-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__minifaq-item summary {
+  cursor: pointer;
+  padding: 14px 0;
+  font-weight: 600;
+  color: var(--ink);
+  list-style: none;
+}
+
+.guide__minifaq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.guide__minifaq-item summary::after {
+  content: "+";
+  float: right;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.guide__minifaq-item[open] summary::after {
+  content: "−";
+}
+
+.guide__minifaq-item p {
+  margin: 0;
+  padding: 0 0 14px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* FAQ al final del artículo. Mantiene el tono del FAQ existente del
+   sitio: hairlines entre preguntas, sin caja ni color. */
+.guide__faq {
+  margin: 56px 0 24px;
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
+
+.guide__faq-title {
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide__faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.guide__faq-item {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__faq-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.guide__faq-q {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--ink);
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.guide__faq-a {
+  margin: 0;
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+
+/* "Otras guías": lista hairline-divided, mismo lenguaje que el hub. */
+.guide__more {
+  margin: 48px 0 24px;
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
+
+.guide__more-title {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide__more-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.guide__more-list li {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide__more-link {
+  display: block;
+  padding: 14px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.guide__more-link:hover .guide__more-link-title {
+  color: var(--ink-muted);
+}
+
+.guide__more-link-title {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.3;
+  margin-bottom: 2px;
+  transition: color 120ms ease;
+}
+
+.guide__more-link-desc {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.guide__foot {
+  margin-top: 32px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.guide__foot a {
   color: var(--ink-2);
 }

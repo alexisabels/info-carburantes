@@ -24,6 +24,7 @@ const Footer = () => {
         <nav className="appfoot__links" aria-label="Pie">
           <Link href="/provincias">Provincias</Link>
           <Link href="/marcas">Marcas</Link>
+          <Link href="/guias">Guías</Link>
           <Link href="/preguntas-frecuentes">FAQ</Link>
           <Link href="/about">Sobre</Link>
           <Link href="/mapa-del-sitio" aria-label="Mapa del sitio">
