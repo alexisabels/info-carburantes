@@ -375,17 +375,45 @@ const MainContent = ({ initialData = null, mode = null }) => {
 
     if (pathname === "/cerca") {
       if (scope !== "near") setScope("near");
-      // Auto-trigger de GPS solo si el usuario llega "en frío": sin resultados,
-      // sin error y sin búsqueda manual previa (searchOriginLabel). Si ya hay
-      // una posición elegida por dirección no la pisamos.
+      // Auto-trigger solo si el usuario llega "en frío": sin resultados,
+      // sin error y sin posición ya elegida.
       if (
         listadoPrecios.length === 0 &&
         !loadingPrecios &&
         !nearMeError &&
         !userPos
       ) {
+        // Si la URL trae ?lat&lng (compartida o refresh), prefiero la
+        // posición ya codificada — el destinatario debe ver lo mismo que
+        // el remitente, no su propio GPS.
+        let urlPreset = null;
+        if (typeof window !== "undefined") {
+          const qp = new URLSearchParams(window.location.search);
+          const qLat = parseFloat(qp.get("lat"));
+          const qLng = parseFloat(qp.get("lng"));
+          if (
+            Number.isFinite(qLat) &&
+            Number.isFinite(qLng) &&
+            qLat >= -90 &&
+            qLat <= 90 &&
+            qLng >= -180 &&
+            qLng <= 180
+          ) {
+            urlPreset = { lat: qLat, lng: qLng, label: qp.get("q") || null };
+          }
+        }
         const t = setTimeout(() => {
-          if (isMountedRef.current) handleNearMe();
+          if (!isMountedRef.current) return;
+          if (urlPreset) {
+            // syncUrl=false: la URL ya viene con los params, no la pisamos.
+            runNearbySearch({
+              preset: { lat: urlPreset.lat, lng: urlPreset.lng },
+              label: urlPreset.label,
+              syncUrl: false,
+            });
+          } else {
+            handleNearMe();
+          }
         }, 0);
         return () => clearTimeout(t);
       }
@@ -467,12 +495,29 @@ const MainContent = ({ initialData = null, mode = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, params?.idMunicipio, params?.slug]);
 
+  // Codifica una búsqueda "cerca" como URL ?lat&lng&q. La compartimos para
+  // que el destinatario aterrice en EL MISMO punto, no en su GPS. 5 decimales
+  // ≈ 1 m: suficiente sin filtrar metadatos GPS.
+  const buildCercaPath = (point) => {
+    if (!point || !Number.isFinite(point.lat) || !Number.isFinite(point.lng)) {
+      return "/cerca";
+    }
+    const params = new URLSearchParams();
+    params.set("lat", point.lat.toFixed(5));
+    params.set("lng", point.lng.toFixed(5));
+    if (point.label && point.label !== "Mi ubicación") {
+      params.set("q", point.label);
+    }
+    return `/cerca?${params.toString()}`;
+  };
+
   // Resuelve la posición (vía GPS o vía geocoder previo), descarga el
   // listado nacional y filtra las 50 más cercanas. Centralizamos para que
   // "Cerca de mí" (GPS) y "Buscar dirección" (Nominatim) compartan código.
   const runNearbySearch = async ({
     preset = null,
     label = null,
+    syncUrl = true,
   } = {}) => {
     if (loadingPrecios) return;
     const requestId = ++nearMeRequestIdRef.current;
@@ -487,9 +532,18 @@ const MainContent = ({ initialData = null, mode = null }) => {
     setListadoPrecios([]);
     setNearMeError(null);
 
+    // Si arrancamos con una posición concreta (dirección o coords),
+    // sincronizamos la URL para que esa búsqueda sea compartible y
+    // refrescable. Para GPS sin label dejamos /cerca limpia hasta que
+    // tengamos coordenadas (las añade el bloque post-fetch).
+    if (syncUrl && preset && pathname === "/cerca") {
+      const next = buildCercaPath({ ...preset, label });
+      router.replace(next);
+    }
+
     try {
       let location = preset;
-      let resolvedLabel = label;
+      const resolvedLabel = label;
       if (!location) {
         location = await getUserLocation();
         if (
@@ -498,24 +552,27 @@ const MainContent = ({ initialData = null, mode = null }) => {
         ) {
           setNearMePhase("fetch");
         }
-        // Reverse geocoding "best effort": sin él la búsqueda funciona;
-        // solo lo usamos para mostrar "Cerca de Calle X" en lugar de
-        // coordenadas crudas.
-        if (!resolvedLabel) {
-          reverseGeocode(location.lat, location.lng)
-            .then((g) => {
-              if (
-                g &&
-                isMountedRef.current &&
-                requestId === nearMeRequestIdRef.current
-              ) {
-                setSearchOriginLabel(g.label || "Mi ubicación");
-              }
-            })
-            .catch(() => {
-              /* sin label, no es crítico */
-            });
-        }
+      }
+
+      // Reverse geocoding "best effort": sin él la búsqueda funciona, solo
+      // lo usamos para mostrar "Cerca de Calle X" en vez de coords crudas.
+      // Lo disparamos siempre que NO tengamos un label explícito (GPS sin
+      // etiqueta o link compartido `/cerca?lat&lng` sin q).
+      if (!resolvedLabel) {
+        reverseGeocode(location.lat, location.lng)
+          .then((g) => {
+            if (
+              g &&
+              g.label &&
+              isMountedRef.current &&
+              requestId === nearMeRequestIdRef.current
+            ) {
+              setSearchOriginLabel(g.label);
+            }
+          })
+          .catch(() => {
+            /* sin label, no es crítico */
+          });
       }
 
       const allStationsData = await fetchTodasLasEstaciones();
@@ -523,7 +580,19 @@ const MainContent = ({ initialData = null, mode = null }) => {
         return;
       }
       setUserPos({ lat: location.lat, lng: location.lng });
-      setSearchOriginLabel(resolvedLabel || (preset ? null : "Mi ubicación"));
+      const finalLabel = resolvedLabel || (preset ? null : "Mi ubicación");
+      setSearchOriginLabel(finalLabel);
+      // Para búsquedas vía GPS sin preset también sincronizamos la URL una
+      // vez tenemos coords resueltas, para que el botón Compartir genere un
+      // enlace que apunte exactamente a esta zona.
+      if (syncUrl && !preset && pathname === "/cerca") {
+        const next = buildCercaPath({
+          lat: location.lat,
+          lng: location.lng,
+          label: finalLabel,
+        });
+        router.replace(next);
+      }
       const allStations = allStationsData.ListaEESSPrecio || [];
 
       const LAT_DELTA = 0.7;
@@ -627,13 +696,12 @@ const MainContent = ({ initialData = null, mode = null }) => {
   };
 
   // Disparado desde la home cuando el usuario selecciona una dirección en el
-  // LocationSearch. Lanzamos la búsqueda en el acto (que ya pone
-  // `loadingPrecios=true`) y navegamos a /cerca; el effect de pathname ve que
-  // ya hay loadingPrecios en curso y NO dispara el auto-geo.
+  // LocationSearch. Pusheamos directamente a /cerca?lat&lng&q: el effect de
+  // pathname leerá los params y disparará runNearbySearch con preset.
+  // Así, una sola navegación basta y la URL queda lista para compartir.
   const handleLocationFromHome = (point) => {
     if (!point) return;
-    runNearbySearch({ preset: point, label: point.label || null });
-    router.push("/cerca");
+    router.push(buildCercaPath(point));
   };
 
   const handleUseMyLocationFromHome = () => {
@@ -719,7 +787,17 @@ const MainContent = ({ initialData = null, mode = null }) => {
                 : `gasolineras más cercanas`
             } a ${origen}.`
           : `Gasolineras cerca de ${origen}.`;
-      const url = absoluteUrl("/cerca");
+      // Compartimos la URL con la posición codificada, NO solo /cerca:
+      // así quien la abre ve la misma zona, no su propio GPS.
+      const url = userPos
+        ? absoluteUrl(
+            buildCercaPath({
+              lat: userPos.lat,
+              lng: userPos.lng,
+              label: searchOriginLabel,
+            })
+          )
+        : absoluteUrl("/cerca");
       const text = [
         `⛽ ${totalLine}`,
         tieneAlguno
