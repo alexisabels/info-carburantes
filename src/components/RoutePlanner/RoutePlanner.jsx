@@ -3,7 +3,7 @@
 /* eslint-disable react/prop-types */
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import LocationSearch from "../LocationSearch/LocationSearch";
 import FuelTypeSelector from "../Selectors/FuelTypeSelector";
@@ -20,7 +20,11 @@ import { isOpenNow } from "../../utils/formatHorario";
 import { stationBrand, getBrand, KNOWN_BRANDS } from "../../lib/brands";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import { buildRouteWithStopHref } from "../../utils/mapsLinks";
-import { getUserLocationRobust } from "../../utils/locationUtils";
+import {
+  getGeolocationPermission,
+  getUserLocationRobust,
+  GEO_ERROR_CODES,
+} from "../../utils/locationUtils";
 import { noPriceLabel } from "../../utils/fuelLabels";
 import "./RoutePlanner.css";
 
@@ -218,7 +222,10 @@ const RoutePlanner = () => {
 
   const [origin, setOrigin] = useState(() => parsePoint(initialURL.from));
   const [destination, setDestination] = useState(() => parsePoint(initialURL.to));
-  const [geoBusy, setGeoBusy] = useState({ origin: false, destination: false });
+  // geoBusy[side]: null | "fetching" | "asking" — null = inactivo;
+  // "fetching" = GPS pidiendo coords con permiso ya dado; "asking" =
+  // pidiendo el permiso (browser está mostrando o va a mostrar prompt).
+  const [geoBusy, setGeoBusy] = useState({ origin: null, destination: null });
   const [geoError, setGeoError] = useState({
     origin: null,
     destination: null,
@@ -485,24 +492,6 @@ const RoutePlanner = () => {
     [selectedWaypointStation]
   );
 
-  // Auto-scroll al banner de parada cuando se selecciona una. Si el
-  // banner ya está visible (típico en desktop con todo a la vista), no
-  // forzamos nada. `scroll-margin-top` del CSS compensa el toolbar
-  // sticky para que el banner no quede tapado por la cabecera.
-  const waypointBannerRef = useRef(null);
-  useEffect(() => {
-    if (!selectedWaypointId) return;
-    const el = waypointBannerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const viewportH = window.innerHeight || document.documentElement.clientHeight;
-    const toolbarH = 72; // toolbar sticky de la página
-    const fullyVisible = rect.top >= toolbarH && rect.bottom <= viewportH;
-    if (!fullyVisible) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [selectedWaypointId]);
-
   // Marcas disponibles (chips). Solo las que aparecen al menos una vez,
   // ordenadas según KNOWN_BRANDS para mantener un display estable.
   const availableBrands = useMemo(() => {
@@ -618,11 +607,34 @@ const RoutePlanner = () => {
     });
   };
 
-  // Geolocalización para origen y destino, con retry iOS y feedback
-  // visual mientras se resuelve.
+  // Geolocalización con feedback diferenciado: comprobamos primero el
+  // estado del permiso para decir al usuario lo que realmente está
+  // pasando — "Pidiendo permiso…" solo cuando el navegador va a
+  // mostrar el prompt; si ya nos lo concedió, "Buscando tu ubicación…"
+  // (no aparece ningún diálogo). Sin esto, el copy "Pidiendo permiso"
+  // sale aunque el permiso lleve días dado y parecería que se ha
+  // colgado.
   const triggerGeolocationFor = async (which) => {
-    setGeoBusy((s) => ({ ...s, [which]: true }));
     setGeoError((s) => ({ ...s, [which]: null }));
+    // Optimistic: empieza como "fetching" — si más abajo descubrimos
+    // que el permiso aún no está dado, lo subimos a "asking". Con
+    // permiso ya concedido (caso común), no hay flash.
+    setGeoBusy((s) => ({ ...s, [which]: "fetching" }));
+
+    const permission = await getGeolocationPermission();
+    if (permission === "denied") {
+      setGeoError((s) => ({
+        ...s,
+        [which]:
+          "Permiso denegado. Actívalo en los ajustes del navegador (icono del candado en la barra de direcciones).",
+      }));
+      setGeoBusy((s) => ({ ...s, [which]: null }));
+      return;
+    }
+    if (permission === "prompt" || permission === "unknown") {
+      setGeoBusy((s) => ({ ...s, [which]: "asking" }));
+    }
+
     try {
       const pos = await getUserLocationRobust();
       const point = { lat: pos.lat, lng: pos.lng, label: "Mi ubicación" };
@@ -630,12 +642,14 @@ const RoutePlanner = () => {
       else setDestination(point);
     } catch (err) {
       const msg =
-        err && err.code === "GEO_PERMISSION_DENIED"
+        err && err.code === GEO_ERROR_CODES.PERMISSION_DENIED
           ? "Permiso denegado. Actívalo en los ajustes del navegador."
-          : "No hemos podido obtener tu ubicación. Inténtalo de nuevo.";
+          : err && err.code === GEO_ERROR_CODES.TIMEOUT
+            ? "El GPS tardó demasiado en responder. Inténtalo de nuevo."
+            : "No hemos podido obtener tu ubicación. Inténtalo de nuevo.";
       setGeoError((s) => ({ ...s, [which]: msg }));
     } finally {
-      setGeoBusy((s) => ({ ...s, [which]: false }));
+      setGeoBusy((s) => ({ ...s, [which]: null }));
     }
   };
 
@@ -815,7 +829,6 @@ const RoutePlanner = () => {
 
           {selectedWaypointStation && (
             <WaypointBanner
-              ref={waypointBannerRef}
               station={selectedWaypointStation}
               origin={origin}
               destination={destination}
@@ -1095,7 +1108,7 @@ function FormField({
       </span>
       <div className="ruteform__input">
         {busy ? (
-          <GeoLoadingBlock />
+          <GeoLoadingBlock kind={busy} />
         ) : (
           <LocationSearch
             // LocationSearch inicializa su input desde initialValue solo
@@ -1132,7 +1145,14 @@ function FormField({
 // mínima del LocationSearch para que sustituirlo no provoque saltos de
 // layout. Mensaje explícito: el usuario sabe que la app está esperando
 // al browser, no que se ha quedado colgada.
-function GeoLoadingBlock() {
+// kind: "asking" → el browser va a mostrar (o está mostrando) el
+// prompt de permiso. "fetching" → permiso ya dado, solo esperamos al
+// fix del GPS. Distinguirlos importa porque las acciones del usuario
+// son distintas (pulsar Permitir vs solo esperar) — si decimos "pulsa
+// Permitir" cuando ya está concedido, el usuario se confunde y cree
+// que está colgado.
+function GeoLoadingBlock({ kind = "fetching" }) {
+  const isAsking = kind === "asking";
   return (
     <div
       className="ruteform__geoloading"
@@ -1141,10 +1161,19 @@ function GeoLoadingBlock() {
     >
       <span className="ruteform__spinner" aria-hidden="true" />
       <div className="ruteform__geoloading-text">
-        <strong>Pidiendo tu ubicación…</strong>
-        <span>
-          Si te aparece un aviso del navegador, pulsa <em>Permitir</em>.
-        </span>
+        {isAsking ? (
+          <>
+            <strong>Pidiendo permiso de ubicación…</strong>
+            <span>
+              Pulsa <em>Permitir</em> en el aviso del navegador.
+            </span>
+          </>
+        ) : (
+          <>
+            <strong>Buscando tu ubicación…</strong>
+            <span>Activando GPS, un momento.</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1196,13 +1225,17 @@ function CollapsedRoute({ origin, destination, onEdit }) {
 
 // WaypointBanner — banner cuando hay parada elegida. Muestra el coste
 // real del desvío y el botón primario "Abrir en Google Maps con esta
-// parada". Aceptamos ref para que el padre pueda hacer scrollIntoView
-// al activarse (útil cuando el usuario picks una estación desde el
-// mapa y el banner queda fuera de viewport en móvil).
-const WaypointBanner = forwardRef(function WaypointBanner(
-  { station, origin, destination, delta, loading, warning, onClear },
-  ref
-) {
+// parada". Es sticky (top: 72px) para quedar bajo el toolbar al hacer
+// scroll por la lista/mapa, sin mover el scroll del usuario.
+function WaypointBanner({
+  station,
+  origin,
+  destination,
+  delta,
+  loading,
+  warning,
+  onClear,
+}) {
   const coords = stationLatLng(station);
   const mapsHref = coords
     ? buildRouteWithStopHref({
@@ -1232,7 +1265,7 @@ const WaypointBanner = forwardRef(function WaypointBanner(
   }
 
   return (
-    <section ref={ref} className="waypointbar" aria-label="Parada elegida">
+    <section className="waypointbar" aria-label="Parada elegida">
       <div className="waypointbar__main">
         <div className="waypointbar__head">
           <span className="waypointbar__check" aria-hidden="true">
@@ -1273,7 +1306,7 @@ const WaypointBanner = forwardRef(function WaypointBanner(
       </div>
     </section>
   );
-});
+}
 
 function StationList({
   stations,

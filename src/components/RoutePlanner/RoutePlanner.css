@@ -50,8 +50,13 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
   font-family: var(--font-sans);
-  /* Centra verticalmente con el primer renglón del input (que mide ~44px) */
-  margin-top: 8px;
+  /* Alinea el centro vertical del chip con el centro del input. El
+     LocationSearch.__field mide 52px (definido en LocationSearch.css),
+     el chip 28px → margin-top = (52 - 28) / 2 = 12px. Si el input
+     cambia de altura, recalcular aquí. align-self:center NO sirve
+     porque cuando aparece el .ruteform__geoerror debajo, la fila del
+     grid crece y el chip se descentra del input. */
+  margin-top: 12px;
   flex-shrink: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
@@ -462,12 +467,34 @@
   background: var(--bg-2);
   border: 1px solid #16a34a;
   border-radius: 12px;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
-  /* Cuando el padre hace scrollIntoView al activar la parada, el banner
-     queda debajo de la toolbar sticky (~72px de alto). `scroll-margin`
-     compensa ese offset sin necesidad de hacer cálculos manuales. */
-  scroll-margin-top: 84px;
+  box-shadow:
+    0 0 0 2px rgba(22, 163, 74, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  /* Sticky con offset igual a la altura del .toolbar (~72px contando
+     el subtítulo "X km · Y min") para que al hacer scroll el banner
+     se quede pegado JUSTO debajo del toolbar, en lugar de ser tapado
+     por él. z-index 80 < toolbar (90) — sus posiciones top no se
+     solapan (toolbar 0–72, banner 72+), así que el orden de pintado
+     no importa, pero mantenemos jerarquía sana por si en el futuro
+     el toolbar gana sombra que se proyecte sobre el banner.
+
+     NO hacemos scrollIntoView al activar la parada: mover el scroll
+     del usuario sin que él lo pida es agresivo. Confiamos en que el
+     sticky basta — el banner aparece bajo el toolbar y queda visible
+     mientras se desplaza por la lista o el mapa. */
+  position: sticky;
+  top: 72px;
+  z-index: 80;
   animation: waypointbar-in 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@media (max-width: 480px) {
+  /* En móvil la toolbar es algo más compacta (no hay subtítulo en una
+     sola línea... bueno sí, los km caben). Mantenemos 72px de offset:
+     un par de px de hueco extra entre toolbar y banner se ve limpio. */
+  .waypointbar {
+    top: 64px;
+  }
 }
 
 @keyframes waypointbar-in {
