@@ -1,0 +1,273 @@
+/* LocationSearch — input estilo Google Maps con sugerencias inline.
+ * Patrón: input ancho con icono de lupa a la izquierda y aspa de borrar
+ * a la derecha. Sugerencias en una hoja relativa (no portal) — encajamos
+ * dentro del flujo del padre y ganamos auto-stacking en mobile.
+ */
+
+.locsearch {
+  position: relative;
+  width: 100%;
+}
+
+.locsearch__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  min-height: 52px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.locsearch__field:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.locsearch[data-busy] .locsearch__field {
+  opacity: 0.75;
+}
+
+.locsearch__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  display: inline-flex;
+  pointer-events: none;
+}
+
+.locsearch__input {
+  flex: 1;
+  min-width: 0;
+  height: 52px;
+  border: 0;
+  background: transparent;
+  padding: 0 44px 0 44px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.locsearch__input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* iOS añade clear nativo en input[type=search]; lo ocultamos para usar el nuestro. */
+.locsearch__input::-webkit-search-cancel-button,
+.locsearch__input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.locsearch__clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+}
+
+.locsearch__clear:hover {
+  background: var(--bg-3);
+}
+
+.locsearch__clear:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.locsearch__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 95;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: locsearch-in 140ms ease-out;
+}
+
+@keyframes locsearch-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .locsearch__panel {
+    animation: none;
+  }
+}
+
+.locsearch__list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.locsearch__item {
+  margin: 0;
+}
+
+.locsearch__opt {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+  min-height: 52px;
+  color: var(--ink);
+  transition: background-color 90ms linear;
+}
+
+.locsearch__item[data-active] .locsearch__opt,
+.locsearch__opt:hover {
+  background: var(--bg-2);
+}
+
+.locsearch__opt:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.locsearch__opt-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.locsearch__item[data-kind="gps"] .locsearch__opt-icon {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.locsearch__opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.locsearch__opt-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.locsearch__opt-sub {
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.locsearch__item[data-kind="gps"] .locsearch__opt-title {
+  font-weight: 600;
+}
+
+.locsearch__status {
+  padding: 10px 16px 14px;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--line);
+}
+
+.locsearch__status--error {
+  color: var(--warn);
+}
+
+.locsearch__attrib {
+  padding: 8px 16px 10px;
+  border-top: 1px solid var(--line);
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+}
+
+.locsearch__attrib a {
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.locsearch__attrib a:hover {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Variante compacta para el toolbar (no se usa todavía, reservada por si la
+ * queremos meter en /cerca como input fijo). */
+.locsearch--compact .locsearch__field {
+  min-height: 44px;
+  border-radius: 12px;
+}
+
+.locsearch--compact .locsearch__input {
+  height: 44px;
+  font-size: 0.9375rem;
+}
+
+@media (max-width: 380px) {
+  .locsearch__input {
+    font-size: 0.9375rem;
+  }
+  .locsearch__opt {
+    padding: 10px 14px;
+  }
+}

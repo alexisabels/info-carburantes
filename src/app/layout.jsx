@@ -1,4 +1,5 @@
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer/Footer";
 import {
@@ -139,6 +140,10 @@ export default function RootLayout({ children }) {
           </div>
           <Footer />
         </div>
+        {/* Web Analytics de Vercel: page views + custom events, sin cookies
+            ni datos personales. El componente añade <script src="/_vercel/insights/script.js">
+            solo en producción/preview (en local es no-op). */}
+        <Analytics />
       </body>
     </html>
   );

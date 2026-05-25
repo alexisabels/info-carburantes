@@ -1,0 +1,317 @@
+/* ShareButton + bottom-sheet de proveedores. Reutiliza tokens del proyecto
+ * para no introducir paleta nueva. WhatsApp / Telegram tienen badges de
+ * color de marca SOLO en el icono para no romper la jerarquía monocroma
+ * del resto de la UI.
+ */
+
+.sharebtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  background: var(--bg-2);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0 14px;
+  min-height: 40px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms linear, transform 80ms linear;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sharebtn:hover:not(:disabled) {
+  background: var(--bg-3);
+}
+
+.sharebtn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.sharebtn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.sharebtn:disabled,
+.sharebtn[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.sharebtn--md {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.sharebtn--lg {
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.sharebtn--primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.sharebtn--primary:hover:not(:disabled) {
+  background: var(--ink-2);
+}
+
+.sharebtn--outline {
+  background: transparent;
+  border: 1px solid var(--line-strong, var(--line));
+}
+
+.sharebtn--outline:hover:not(:disabled) {
+  background: var(--bg-2);
+  border-color: var(--ink);
+}
+
+.sharebtn--ghost {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.sharebtn--icon {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  gap: 0;
+}
+
+.sharebtn--icon.sharebtn--lg {
+  width: 48px;
+  min-width: 48px;
+}
+
+.sharebtn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sharebtn__label {
+  line-height: 1;
+}
+
+/* ---------------- Sheet de proveedores ---------------- */
+
+.sharesheet {
+  position: fixed;
+  inset: 0;
+  /* Por encima de stickybar (80), Leaflet panes (200-700), FAB Lista|Mapa (800)
+   * y mapssheet (950). Si conviven nunca queremos quedar debajo. */
+  z-index: 970;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sharesheet__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--scrim-strong);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  animation: sharesheet-fade 160ms ease-out;
+}
+
+.sharesheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-top: 1px solid var(--line);
+  padding: 12px var(--gutter);
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sheet);
+  animation: sharesheet-slide 220ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.sharesheet__handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line-strong, var(--line));
+  margin: 4px auto 8px;
+}
+
+.sharesheet__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 2px;
+  text-align: center;
+}
+
+.sharesheet__preview {
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 4px;
+  white-space: pre-line;
+  line-height: 1.4;
+  max-height: 6rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.sharesheet__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+@media (max-width: 380px) {
+  .sharesheet__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.sharesheet__opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 8px;
+  min-height: 88px;
+  cursor: pointer;
+  transition: background-color 120ms linear, border-color 120ms linear,
+    transform 80ms linear;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sharesheet__opt:hover {
+  background: var(--bg-3);
+  border-color: var(--line-strong, var(--line));
+}
+
+.sharesheet__opt:active {
+  transform: scale(0.97);
+}
+
+.sharesheet__opt:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.sharesheet__opt-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.sharesheet__opt--whatsapp .sharesheet__opt-icon {
+  background: #25d366;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.sharesheet__opt--telegram .sharesheet__opt-icon {
+  background: #229ed9;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.sharesheet__opt-label {
+  line-height: 1;
+}
+
+.sharesheet__cancel {
+  margin-top: 6px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--ink);
+  padding: 12px 18px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms linear;
+}
+
+.sharesheet__cancel:hover {
+  background: var(--bg-3);
+}
+
+.sharesheet__cancel:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@keyframes sharesheet-slide {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sharesheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 720px) {
+  .sharesheet {
+    align-items: center;
+  }
+  .sharesheet__panel {
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    padding-bottom: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sharesheet__backdrop,
+  .sharesheet__panel,
+  .sharebtn {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

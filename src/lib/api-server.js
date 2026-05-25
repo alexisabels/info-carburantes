@@ -8,6 +8,7 @@
 // necesita renderizarse en servidor.
 
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 const BASE_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes";
@@ -83,18 +84,23 @@ export async function fetchGasolineraServer(idMunicipio, ideess) {
 
 // Listado nacional completo. MITECO devuelve ~16 MB y Next.js solo cachea
 // fetches de hasta 2 MB ("Failed to set Next.js data cache, items over 2MB"),
-// así que la persistencia entre invocaciones se nos cae. Tampoco podemos
-// pre-renderizar las 22 marcas en build (×30 s cada fetch = >10 min).
+// así que la persistencia EN BRUTO entre invocaciones se nos cae.
 //
-// Solución: bypass del data cache de Next (`cache: 'no-store'`) + memoización
-// manual a nivel de módulo. En cada instancia/contenedor de Vercel el primer
-// fetch tarda ~5-30 s; los siguientes durante la ventana TTL son instantáneos
-// y reutilizan el objeto en memoria.
+// Solución capas:
+//   1. `cache: 'no-store'` evita el WARNING ruidoso de Next sobre los 2 MB.
+//   2. Memoización a nivel de módulo: durante un build (un único proceso),
+//      las 22 páginas de marca comparten el mismo objeto en memoria, así que
+//      sólo descargamos MITECO UNA vez aunque pre-renderemos 22 rutas. En
+//      producción, dentro de un mismo contenedor warm pasa lo mismo.
+//   3. Para persistir ENTRE invocaciones serverless, no usamos esta función
+//      directamente desde la página de marca: usamos el helper
+//      `fetchEstacionesPorMarcaServer` (más abajo), que filtra el subset
+//      por marca a un tamaño <2 MB y lo deja en el data cache de Next con
+//      `unstable_cache`. Eso sí persiste entre invocaciones.
 //
-// También envolvemos en `React.cache()` para que dentro de UN MISMO render
+// Envolvemos también en `React.cache()` para que dentro de UN MISMO render
 // (página + JSON-LD + componentes hijos que pidan estaciones) solo se
-// resuelva una vez aunque ya haya cache de módulo: evita andar tocando el
-// Map a varias funciones en paralelo.
+// resuelva una vez aunque ya haya cache de módulo.
 
 const ALL_STATIONS_TTL_MS = 60 * 60 * 1000;
 let allStationsMemo = null;
@@ -138,6 +144,59 @@ async function fetchTodasLasEstacionesUncached() {
 export const fetchTodasLasEstacionesServer = cache(
   fetchTodasLasEstacionesUncached
 );
+
+// Subset filtrado y normalizado por marca: solo los campos que necesita la
+// página /marca/[brand]. Esto reduce el JSON nacional (~16 MB) a algo
+// tipicamente <300 KB incluso para la marca más grande (Repsol), lo que sí
+// cabe en el data cache de Next (<2 MB) y permite que `unstable_cache`
+// persista el resultado entre invocaciones serverless.
+//
+// El fetch nacional sigue siendo necesario una vez por contenedor (no hay
+// filtro por marca en MITECO), pero a partir de ahí cada brand subset se
+// mantiene caliente en el cache de Next durante la ventana de revalidación
+// y los renders posteriores son instantáneos sin tocar los 16 MB.
+async function buildBrandSubset(brandId) {
+  const { stationBrand } = await import("./brands");
+  const data = await fetchTodasLasEstacionesUncached();
+  const lista = Array.isArray(data?.ListaEESSPrecio) ? data.ListaEESSPrecio : [];
+  const fecha = data?.Fecha || "";
+  const stations = [];
+  for (const e of lista) {
+    if (stationBrand(e) !== brandId) continue;
+    // Subset mínimo de campos para la página + JSON-LD: dirección,
+    // municipio/provincia, IDs para construir URLs, y datos de schema.org.
+    stations.push({
+      IDEESS: e.IDEESS,
+      IDMunicipio: e.IDMunicipio,
+      IDProvincia: e.IDProvincia,
+      Provincia: e.Provincia,
+      Municipio: e.Municipio,
+      Localidad: e.Localidad,
+      Dirección: e.Dirección,
+      "Rótulo": e["Rótulo"],
+      "C.P.": e["C.P."],
+    });
+  }
+  return { fecha, stations };
+}
+
+// Cache namespaced por marca con TTL de 1 h (mayor que `revalidate=3600` de
+// la página). Las páginas con `revalidate` reusan este cache, así que la
+// ganancia entre invocaciones es real incluso sin warm container.
+export const fetchEstacionesPorMarcaServer = cache(async (brandId) => {
+  if (!brandId) return { fecha: "", stations: [] };
+  const safeId = String(brandId).toLowerCase();
+  const getCached = unstable_cache(
+    () => buildBrandSubset(safeId),
+    ["brand-subset", safeId],
+    { revalidate: 3600, tags: [`brand:${safeId}`] }
+  );
+  try {
+    return await getCached();
+  } catch {
+    return { fecha: "", stations: [] };
+  }
+});
 
 // Helper: precio numérico parseado o null.
 export function parsePrecioSrv(raw) {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchTodasLasEstacionesServer } from "../../../lib/api-server";
-import { getBrand, stationBrand } from "../../../lib/brands";
+import { fetchEstacionesPorMarcaServer } from "../../../lib/api-server";
+import { getBrand, KNOWN_BRANDS } from "../../../lib/brands";
 import {
   buildMetadata,
   jsonLdBreadcrumb,
@@ -10,16 +10,24 @@ import {
 import { slugify } from "../../../utils/slug";
 import { absoluteUrl } from "../../../lib/site";
 
-// ISR puro: dynamicParams=true (default) y NO `generateStaticParams`. El
-// listado nacional pesa ~16 MB y Next no lo puede persistir en su data
-// cache (>2 MB); pre-generar 22 marcas en build hace ×22 fetches de 5-30s
-// y revienta el timeout de 60s por página. En su lugar:
-//   - 1ª visita a /marca/repsol: hit a MITECO + filtra + renderiza
-//     (5-30s, oculto detrás del loading.jsx skeleton vía Suspense).
-//   - Visitas siguientes: edge cache durante 1h (revalidate=3600).
-//   - El memo de módulo en api-server.js comparte la respuesta de MITECO
-//     entre /marca/cepsa, /marca/bp, etc. dentro de la misma instancia.
+// Pre-renderizamos las 22 marcas en build. Aunque el listado nacional pesa
+// ~16 MB, el memo de módulo en api-server.js + `unstable_cache` por marca
+// hacen que el build sólo descargue MITECO UNA vez: las 22 páginas comparten
+// la misma respuesta en memoria y cada subset filtrado se cachea aparte
+// (<300 KB cada uno, cabe en el data cache de Next). Resultado: en
+// producción las 22 páginas se sirven desde el edge sin coldstart.
+//
+// `dynamicParams=true` mantiene compatibilidad por si llega una ruta de
+// marca añadida en KNOWN_BRANDS después del último build (ISR on-demand).
+// `revalidate=3600` regenera los HTML cada hora reaprovechando el subset
+// cacheado, así que aunque la página esté pre-renderizada los precios se
+// refrescan dentro de la SLA del MITECO.
+export const dynamicParams = true;
 export const revalidate = 3600;
+
+export function generateStaticParams() {
+  return KNOWN_BRANDS.map((b) => ({ brand: b.id }));
+}
 
 const collator = new Intl.Collator("es", { sensitivity: "base" });
 
@@ -27,13 +35,10 @@ async function loadBrandContext({ brand }) {
   const def = getBrand(brand);
   if (!def) return { def: null };
 
-  const data = await fetchTodasLasEstacionesServer();
-  const all = Array.isArray(data?.ListaEESSPrecio) ? data.ListaEESSPrecio : [];
-  const fecha = data?.Fecha || null;
-
-  // Filtrado por marca reusando la heurística de logos. Hace ~12 000 lookups
-  // pero todos son O(1) con caché del Map en logoUtils.
-  const stations = all.filter((e) => stationBrand(e) === def.id);
+  // Subset cacheado por marca: en cache hit es instantáneo (<300 KB del data
+  // cache de Next). En cache miss baja los 16 MB del MITECO una vez por
+  // contenedor y los reparte entre todas las marcas vía memo de módulo.
+  const { stations, fecha } = await fetchEstacionesPorMarcaServer(def.id);
 
   // Agrupamos por provincia para que cada h2 alimente una keyword distinta
   // ("Repsol en Madrid", "Repsol en Barcelona", ...) y el listado escanee
