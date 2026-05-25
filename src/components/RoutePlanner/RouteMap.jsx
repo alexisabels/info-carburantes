@@ -20,7 +20,6 @@ import { getLowestPrices } from "../../utils/getLowestPrices";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import { noPriceLabel } from "../../utils/fuelLabels";
 import { useTheme } from "../../hooks/useTheme";
-import { buildRouteWithStopHref } from "../../utils/mapsLinks";
 // Reutilizamos los estilos del MapView (.map-price, .map-tooltip,
 // .map-popup, .peeksheet, filtros dark de los tiles) — son el lenguaje
 // visual compartido para representar gasolineras sobre Leaflet.
@@ -63,10 +62,15 @@ function useIsDesktop() {
 }
 
 // Pill de precio idéntico al de MapView para mantener la lectura visual
-// coherente entre vistas. La "cheapest" lleva el anillo verde + halo.
-const buildPriceIcon = (priceText, isCheapest, hasPrice) => {
+// coherente entre vistas. Variantes:
+//   - default: chip blanco/oscuro con borde sutil
+//   - cheapest: anillo verde + halo
+//   - selected: anillo ámbar grueso + ligero scale para indicar que ES
+//     la parada elegida
+const buildPriceIcon = (priceText, isCheapest, hasPrice, isSelected) => {
   const classes = ["map-price"];
-  if (isCheapest) classes.push("map-price--cheapest");
+  if (isSelected) classes.push("map-price--selected");
+  else if (isCheapest) classes.push("map-price--cheapest");
   if (!hasPrice) classes.push("map-price--na");
   return L.divIcon({
     className: classes.join(" "),
@@ -89,13 +93,19 @@ const buildEndpointIcon = (letter, variant) =>
 const ORIGIN_ICON = buildEndpointIcon("A", "origin");
 const DEST_ICON = buildEndpointIcon("B", "dest");
 
-function FitToRoute({ geometry, refit }) {
+function FitToRoute({ geometry, fitKey }) {
   const map = useMap();
   useEffect(() => {
     if (!geometry || geometry.length < 2) return;
     const bounds = L.latLngBounds(geometry);
     map.fitBounds(bounds, { padding: [50, 50] });
-  }, [map, geometry, refit]);
+    // fitKey nos permite forzar un re-fit cuando el padre cambia
+    // (geometría base ↔ geometría con parada). Sin él, el effect solo
+    // dispara con la referencia de geometry, que cambia siempre que
+    // hay nueva polyline pero también re-encuadra cada vez que el
+    // padre re-renderiza.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, fitKey]);
   return null;
 }
 
@@ -105,6 +115,8 @@ const RouteMap = ({
   destination,
   stations,
   selectedFuel,
+  selectedWaypointId,
+  onSelectWaypoint,
 }) => {
   const router = useRouter();
   const { resolved: theme } = useTheme();
@@ -128,40 +140,48 @@ const RouteMap = ({
   }, [stations]);
 
   const iconCacheRef = useRef(new Map());
-  const getCachedIcon = (priceText, isCheapest, hasPrice) => {
-    const key = `${priceText}|${isCheapest ? "1" : "0"}|${hasPrice ? "1" : "0"}`;
+  const getCachedIcon = (priceText, isCheapest, hasPrice, isSelected) => {
+    const key = `${priceText}|${isCheapest ? "1" : "0"}|${hasPrice ? "1" : "0"}|${isSelected ? "1" : "0"}`;
     const cache = iconCacheRef.current;
     let icon = cache.get(key);
     if (!icon) {
-      icon = buildPriceIcon(priceText, isCheapest, hasPrice);
+      icon = buildPriceIcon(priceText, isCheapest, hasPrice, isSelected);
       cache.set(key, icon);
     }
     return icon;
   };
 
-  const selected = useMemo(
+  const peekStation = useMemo(
     () => decorated.find((s) => s.IDEESS === selectedId) || null,
     [decorated, selectedId]
   );
 
   useEffect(() => {
-    if (!selected) return;
+    if (!peekStation) return;
     const onKey = (e) => {
       if (e.key === "Escape") setSelectedId(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected]);
+  }, [peekStation]);
 
   if (!geometry || geometry.length < 2) return null;
 
   const initialCenter = geometry[Math.floor(geometry.length / 2)];
-  // Leaflet pasa `color` al atributo SVG `stroke` directamente, sin
-  // resolver CSS vars (solo se computan en estilos calculados). Por eso
-  // resolvemos aquí el color de marca según el tema en lugar de pasar
-  // `var(--accent)`.
   const routeColor = theme === "dark" ? "#2db567" : "#0d7a3a";
   const outlineColor = theme === "dark" ? "#000" : "#fff";
+
+  // Re-fit ÚNICAMENTE cuando cambian los extremos o cuando se añade /
+  // quita parada (el polyline rebota a través de un nuevo punto). No
+  // cuando se cambia un filtro que solo añade/quita markers.
+  const fitKey = `${origin?.lat},${origin?.lng}|${destination?.lat},${destination?.lng}|${selectedWaypointId || ""}`;
+
+  const handleStationClick = (s) => {
+    if (typeof onSelectWaypoint === "function") {
+      onSelectWaypoint(s.IDEESS);
+    }
+    setSelectedId(null);
+  };
 
   return (
     <div
@@ -182,11 +202,10 @@ const RouteMap = ({
           subdomains={["a", "b", "c", "d"]}
           maxZoom={19}
         />
-        <FitToRoute geometry={geometry} refit={`${origin?.lat},${destination?.lat}`} />
+        <FitToRoute geometry={geometry} fitKey={fitKey} />
         {/* Doble polyline: capa exterior más ancha (blanco/negro según
             tema) para contraste sobre carreteras claras/amarillas de
-            Voyager; capa interior en color de marca. Sin la capa exterior
-            el trazado se pierde sobre las autopistas amarillas. */}
+            Voyager; capa interior en color de marca. */}
         <Polyline
           positions={geometry}
           pathOptions={{
@@ -227,6 +246,7 @@ const RouteMap = ({
             : null;
           const isCheapest =
             numeric !== null && numeric === lowestPrices[selectedFuel];
+          const isSelected = s.IDEESS === selectedWaypointId;
           const text = formatted || "—";
           const rotulo = s["Rótulo"];
           const detourTxt =
@@ -239,10 +259,12 @@ const RouteMap = ({
             <Marker
               key={s.IDEESS}
               position={[s._lat, s._lng]}
-              icon={getCachedIcon(text, isCheapest, !!formatted)}
-              zIndexOffset={isCheapest ? 1000 : 0}
+              icon={getCachedIcon(text, isCheapest, !!formatted, isSelected)}
+              zIndexOffset={isSelected ? 2000 : isCheapest ? 1000 : 0}
               eventHandlers={
-                isDesktop ? undefined : { click: () => setSelectedId(s.IDEESS) }
+                isDesktop
+                  ? undefined
+                  : { click: () => setSelectedId(s.IDEESS) }
               }
               keyboard
               alt={rotulo}
@@ -257,7 +279,9 @@ const RouteMap = ({
                     className="map-tooltip"
                   >
                     <span className="map-tooltip__name">{rotulo}</span>
-                    <span className="map-tooltip__sep" aria-hidden="true">·</span>
+                    <span className="map-tooltip__sep" aria-hidden="true">
+                      ·
+                    </span>
                     <span className="map-tooltip__price">
                       {formatted
                         ? `${formatted} €/L`
@@ -276,11 +300,8 @@ const RouteMap = ({
                       formatted={formatted}
                       detour={s.detour}
                       selectedFuel={selectedFuel}
-                      mapsHref={buildRouteWithStopHref({
-                        origin,
-                        destination,
-                        waypoint: { lat: s._lat, lng: s._lng },
-                      })}
+                      isSelected={isSelected}
+                      onSelectWaypoint={() => handleStationClick(s)}
                       onOpenDetail={() =>
                         router.push(`/gasolinera/${s.IDMunicipio}/${s.IDEESS}`)
                       }
@@ -293,19 +314,18 @@ const RouteMap = ({
         })}
       </MapContainer>
 
-      {!isDesktop && selected && (
+      {!isDesktop && peekStation && (
         <PeekSheet
-          station={selected}
+          station={peekStation}
           selectedFuel={selectedFuel}
+          isSelected={peekStation.IDEESS === selectedWaypointId}
           onClose={() => setSelectedId(null)}
           onOpenDetail={() =>
-            router.push(`/gasolinera/${selected.IDMunicipio}/${selected.IDEESS}`)
+            router.push(
+              `/gasolinera/${peekStation.IDMunicipio}/${peekStation.IDEESS}`
+            )
           }
-          mapsHref={buildRouteWithStopHref({
-            origin,
-            destination,
-            waypoint: { lat: selected._lat, lng: selected._lng },
-          })}
+          onSelectWaypoint={() => handleStationClick(peekStation)}
         />
       )}
     </div>
@@ -317,7 +337,8 @@ function MarkerPopup({
   formatted,
   detour,
   selectedFuel,
-  mapsHref,
+  isSelected,
+  onSelectWaypoint,
   onOpenDetail,
 }) {
   const detourTxt =
@@ -362,31 +383,32 @@ function MarkerPopup({
         >
           Ver detalle
         </button>
-        {mapsHref && (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="map-popup__btn map-popup__btn--primary"
-          >
-            Parar aquí
-          </a>
-        )}
+        <button
+          type="button"
+          className={`map-popup__btn map-popup__btn--primary${isSelected ? " map-popup__btn--active" : ""}`}
+          onClick={onSelectWaypoint}
+        >
+          {isSelected ? "Parando aquí · quitar" : "Parar aquí"}
+        </button>
       </div>
     </div>
   );
 }
 
-function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
+function PeekSheet({
+  station,
+  selectedFuel,
+  isSelected,
+  onClose,
+  onOpenDetail,
+  onSelectWaypoint,
+}) {
   const formatted = formatPrice(station[selectedFuel]);
   const detourTxt =
     typeof station.detour === "number" && Number.isFinite(station.detour)
       ? `${station.detour.toFixed(1).replace(".", ",")} km desvío`
       : null;
 
-  // Mismo "ghost click" guard que MapView/PeekSheet: en iOS un tap en un
-  // marker dispara un click sintético ~300ms después que cierra el peek
-  // si se abre encima de las coords del tap.
   const mountedAtRef = useRef(Date.now());
   useEffect(() => {
     mountedAtRef.current = Date.now();
@@ -431,7 +453,9 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
                 <strong className="peeksheet__dist">{detourTxt}</strong>
               )}
               {detourTxt && (
-                <span className="peeksheet__dot" aria-hidden="true">·</span>
+                <span className="peeksheet__dot" aria-hidden="true">
+                  ·
+                </span>
               )}
               {station.Dirección}
             </div>
@@ -457,16 +481,13 @@ function PeekSheet({ station, selectedFuel, onClose, onOpenDetail, mapsHref }) {
           >
             Ver detalle
           </button>
-          {mapsHref && (
-            <a
-              className="peeksheet__btn peeksheet__btn--primary"
-              href={mapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Parar aquí
-            </a>
-          )}
+          <button
+            type="button"
+            className={`peeksheet__btn peeksheet__btn--primary${isSelected ? " peeksheet__btn--active" : ""}`}
+            onClick={onSelectWaypoint}
+          >
+            {isSelected ? "Parando aquí · quitar" : "Parar aquí"}
+          </button>
         </div>
         <Link
           className="peeksheet__deeplink"

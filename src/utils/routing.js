@@ -76,19 +76,34 @@ const computeBbox = (coords) => {
   return { minLat, maxLat, minLng, maxLng };
 };
 
-// Devuelve la ruta en coche entre origen y destino. OSRM acepta
-// `lon,lat;lon,lat` en la ruta de la URL (al revés que cualquier API sana).
-// `overview=full` trae la geometría completa, `geometries=geojson` la
-// devuelve como array de [lng, lat]; convertimos a [lat, lng] aquí para
-// que el resto del código no tenga que pensar en el orden inverso.
-export const fetchRoute = async (origin, destination, { signal } = {}) => {
-  if (!validPoint(origin)) {
-    throw new RoutingError("Origen inválido", { code: "bad_origin" });
+// Devuelve la ruta en coche que pasa por los puntos dados, en orden.
+// Acepta `[origin, destination]` para la ruta base, o
+// `[origin, waypoint, destination]` (o más paradas) cuando el usuario
+// elige una gasolinera intermedia.
+//
+// OSRM acepta `lon,lat;lon,lat;...` en la ruta de la URL (al revés que
+// cualquier API sana). `overview=full` trae la geometría completa,
+// `geometries=geojson` la devuelve como array de [lng, lat]; convertimos
+// a [lat, lng] aquí para que el resto del código no tenga que pensar en
+// el orden inverso.
+export const fetchRoute = async (points, { signal } = {}) => {
+  if (!Array.isArray(points) || points.length < 2) {
+    throw new RoutingError("Necesitamos al menos un origen y un destino", {
+      code: "too_few_points",
+    });
   }
-  if (!validPoint(destination)) {
-    throw new RoutingError("Destino inválido", { code: "bad_destination" });
+  for (let i = 0; i < points.length; i++) {
+    if (!validPoint(points[i])) {
+      const code =
+        i === 0
+          ? "bad_origin"
+          : i === points.length - 1
+            ? "bad_destination"
+            : "bad_waypoint";
+      throw new RoutingError(`Punto ${i + 1} inválido`, { code });
+    }
   }
-  const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+  const coords = points.map((p) => `${p.lng},${p.lat}`).join(";");
   const url = `${OSRM_BASE}/route/v1/driving/${coords}?overview=full&geometries=geojson&alternatives=false&steps=false`;
 
   let response;

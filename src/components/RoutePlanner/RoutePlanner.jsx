@@ -20,6 +20,7 @@ import { isOpenNow } from "../../utils/formatHorario";
 import { stationBrand, getBrand, KNOWN_BRANDS } from "../../lib/brands";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import { buildRouteWithStopHref } from "../../utils/mapsLinks";
+import { getUserLocationRobust } from "../../utils/locationUtils";
 import { noPriceLabel } from "../../utils/fuelLabels";
 import "./RoutePlanner.css";
 
@@ -50,14 +51,24 @@ const DETOUR_OPTIONS = [
 ];
 
 const SORT_OPTIONS = [
-  { id: "price", label: "Precio" },
-  { id: "detour", label: "Desvío" },
-  { id: "along", label: "En la ruta" },
+  {
+    id: "price",
+    label: "Precio",
+    title: "De más barata a más cara",
+  },
+  {
+    id: "detour",
+    label: "Desvío",
+    title: "Las que requieren menos kilómetros fuera de la ruta",
+  },
+  {
+    id: "along",
+    label: "Orden de paso",
+    title:
+      "Por orden de aparición en el trayecto: primero las que pillas cerca del origen, después las del destino",
+  },
 ];
 
-// Capacidad de depósito asumida para calcular el "ahorro máximo": elegimos
-// 50 L como referencia común (turismo medio diésel/gasolina). El número se
-// hace explícito en la UI para que el usuario sepa qué significa.
 const REFERENCE_LITERS = 50;
 
 const readStoredFuel = () => {
@@ -83,15 +94,14 @@ const writeStoredFuel = (v) => {
 
 const parsePoint = (raw) => {
   if (!raw || typeof raw !== "string") return null;
-  // Formato: "lat,lng" o "lat,lng,label". El label puede contener comas
-  // porque sólo separamos en los dos primeros.
   const firstComma = raw.indexOf(",");
   if (firstComma < 0) return null;
   const secondComma = raw.indexOf(",", firstComma + 1);
   const latStr = raw.slice(0, firstComma);
-  const lngStr = secondComma > 0
-    ? raw.slice(firstComma + 1, secondComma)
-    : raw.slice(firstComma + 1);
+  const lngStr =
+    secondComma > 0
+      ? raw.slice(firstComma + 1, secondComma)
+      : raw.slice(firstComma + 1);
   const labelRaw = secondComma > 0 ? raw.slice(secondComma + 1) : "";
   const lat = parseFloat(latStr);
   const lng = parseFloat(lngStr);
@@ -125,6 +135,13 @@ const parsePrice = (raw) => {
   if (!raw || raw === "-") return null;
   const n = parseFloat(String(raw).replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+const stationLatLng = (s) => {
+  const lat = parseFloat(String(s.Latitud).replace(",", "."));
+  const lng = parseFloat(String(s["Longitud (WGS84)"]).replace(",", "."));
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 };
 
 const SwapIcon = () => (
@@ -163,6 +180,29 @@ const ArrowRightIcon = () => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+    <path
+      d="m5 12 4 4 10-10"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+    <path
+      d="M4 20h4l10-10-4-4L4 16v4Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const RoutePlanner = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -178,6 +218,16 @@ const RoutePlanner = () => {
 
   const [origin, setOrigin] = useState(() => parsePoint(initialURL.from));
   const [destination, setDestination] = useState(() => parsePoint(initialURL.to));
+  const [geoBusy, setGeoBusy] = useState({ origin: false, destination: false });
+  const [geoError, setGeoError] = useState({
+    origin: null,
+    destination: null,
+  });
+  // Cuando el usuario calcula una ruta, colapsamos el form a una "barra
+  // de viaje" más compacta que muestra "A → B" con un botón Editar. Así
+  // damos más sitio vertical a los resultados sin perder la posibilidad
+  // de cambiar los puntos. `formCollapsed` lo controla.
+  const [formCollapsed, setFormCollapsed] = useState(false);
 
   const [selectedFuel, setSelectedFuel] = useState(() => {
     const fromUrl = initialURL.fuel;
@@ -208,6 +258,14 @@ const RoutePlanner = () => {
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [routeError, setRouteError] = useState(null);
 
+  // Parada elegida (waypoint intermedio). Cuando hay una parada, llamamos
+  // de nuevo a OSRM con 3 puntos para obtener el polyline real que pasa
+  // por la gasolinera. El "Abrir en Google Maps" usa también esos 3.
+  const [selectedWaypointId, setSelectedWaypointId] = useState(null);
+  const [routeWithStop, setRouteWithStop] = useState(null);
+  const [loadingWithStop, setLoadingWithStop] = useState(false);
+  const [withStopError, setWithStopError] = useState(false);
+
   const [allStations, setAllStations] = useState(null);
   const [loadingStations, setLoadingStations] = useState(false);
   const [stationsError, setStationsError] = useState(null);
@@ -233,9 +291,8 @@ const RoutePlanner = () => {
 
   useEffect(() => writeStoredFuel(selectedFuel), [selectedFuel]);
 
-  // Sincroniza la URL con el estado relevante. Replace (no push) para no
-  // contaminar el historial — el usuario quiere volver atrás "fuera de
-  // /ruta", no entre cada cambio de filtro.
+  // URL sync. Replace (no push) para no contaminar historial cada vez
+  // que se toca un filtro — el "atrás" debería volver fuera de /ruta.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
@@ -252,10 +309,7 @@ const RoutePlanner = () => {
     if (sortBy !== "price") params.set("sort", sortBy);
     const qs = params.toString();
     const next = qs ? `/ruta?${qs}` : "/ruta";
-    if (
-      window.location.pathname + window.location.search !==
-      next
-    ) {
+    if (window.location.pathname + window.location.search !== next) {
       router.replace(next, { scroll: false });
     }
   }, [
@@ -269,24 +323,26 @@ const RoutePlanner = () => {
     sortBy,
   ]);
 
-  // Auto-fetch de la ruta cuando ambos extremos están definidos.
+  // Fetch de la ruta base cuando ambos extremos están definidos.
   useEffect(() => {
     if (!origin || !destination) {
       setRoute(null);
       setRouteError(null);
+      setFormCollapsed(false);
       return undefined;
     }
     let cancelled = false;
     const controller = new AbortController();
     setLoadingRoute(true);
     setRouteError(null);
-    fetchRoute(origin, destination, { signal: controller.signal })
+    fetchRoute([origin, destination], { signal: controller.signal })
       .then((r) => {
         if (cancelled) return;
         setRoute({
           ...r,
           geometry: downsampleGeometry(r.geometry, 150),
         });
+        setFormCollapsed(true);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -303,9 +359,9 @@ const RoutePlanner = () => {
     };
   }, [origin, destination]);
 
-  // Carga el listado nacional. Reutilizamos la caché de fetchTodasLasEstaciones
-  // (en memoria + localStorage TTL 1h) — si el usuario viene de /cerca, lo
-  // tenemos ya cargado y la "primera ruta" del día va instantánea.
+  // Carga el listado nacional. Reutilizamos el caché de fetchTodasLasEstaciones
+  // (memoria + localStorage TTL 1h) — si el usuario viene de /cerca, lo
+  // tenemos ya cargado y la primera ruta del día va instantánea.
   useEffect(() => {
     if (!route) return undefined;
     if (allStations) return undefined;
@@ -332,10 +388,10 @@ const RoutePlanner = () => {
     };
   }, [route, allStations]);
 
-  // Estaciones a lo largo de la ruta, con métricas (desvío, km recorridos).
-  // Memo pesado: 12k estaciones × ~1k vértices ≈ varios millones de
-  // comparaciones; aún así <200ms en JS, y solo se recalcula cuando cambia
-  // la ruta o el desvío máximo.
+  // Estaciones a lo largo de la ruta base, con métricas. Memo pesado
+  // (12k×1k = millones de comparaciones, <200ms) que solo se recalcula
+  // cuando cambia ruta o desvío máximo. NO depende del waypoint: la
+  // lista visible no cambia al añadir parada — solo el polyline.
   const alongRoute = useMemo(() => {
     if (!route || !Array.isArray(allStations)) {
       return { stations: [], totalMeters: 0 };
@@ -347,9 +403,85 @@ const RoutePlanner = () => {
     });
   }, [route, allStations, maxDetourKm]);
 
-  // Marcas disponibles (chips). Solo mostramos las que aparecen al menos
-  // una vez en las estaciones de la ruta, y respetando el catálogo
-  // KNOWN_BRANDS para mantener un display consistente.
+  // Si origen/destino cambian, el waypoint elegido deja de tener sentido.
+  // Lo limpiamos para evitar referencias huérfanas y polylines con
+  // paradas que ya no existen.
+  useEffect(() => {
+    setSelectedWaypointId(null);
+    setRouteWithStop(null);
+    setWithStopError(false);
+  }, [origin?.lat, origin?.lng, destination?.lat, destination?.lng]);
+
+  // Si el waypoint queda fuera del filtro (cambió el desvío máximo, marca,
+  // abierto…), también lo limpiamos para no quedarnos con un "parada
+  // invisible".
+  useEffect(() => {
+    if (!selectedWaypointId) return;
+    const stillThere = alongRoute.stations.some(
+      (s) => s.IDEESS === selectedWaypointId
+    );
+    if (!stillThere) {
+      setSelectedWaypointId(null);
+      setRouteWithStop(null);
+      setWithStopError(false);
+    }
+  }, [selectedWaypointId, alongRoute.stations]);
+
+  // Fetch de la ruta CON parada cuando el usuario elige una. Si OSRM
+  // falla, mostramos un aviso suave y nos quedamos con la polyline base
+  // — el botón "Abrir en Google Maps" sigue funcionando porque GMaps
+  // resuelve el waypoint por su cuenta.
+  useEffect(() => {
+    if (!selectedWaypointId || !origin || !destination) {
+      setRouteWithStop(null);
+      setWithStopError(false);
+      return undefined;
+    }
+    const station = alongRoute.stations.find(
+      (s) => s.IDEESS === selectedWaypointId
+    );
+    const coords = station ? stationLatLng(station) : null;
+    if (!coords) {
+      setRouteWithStop(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const controller = new AbortController();
+    setLoadingWithStop(true);
+    setWithStopError(false);
+    fetchRoute([origin, coords, destination], { signal: controller.signal })
+      .then((r) => {
+        if (cancelled) return;
+        setRouteWithStop({
+          ...r,
+          geometry: downsampleGeometry(r.geometry, 150),
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRouteWithStop(null);
+        setWithStopError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingWithStop(false);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [selectedWaypointId, origin, destination, alongRoute.stations]);
+
+  const selectedWaypointStation = useMemo(
+    () =>
+      selectedWaypointId
+        ? alongRoute.stations.find((s) => s.IDEESS === selectedWaypointId) ||
+          null
+        : null,
+    [selectedWaypointId, alongRoute.stations]
+  );
+
+  // Marcas disponibles (chips). Solo las que aparecen al menos una vez,
+  // ordenadas según KNOWN_BRANDS para mantener un display estable.
   const availableBrands = useMemo(() => {
     const counts = new Map();
     for (const s of alongRoute.stations) {
@@ -363,9 +495,8 @@ const RoutePlanner = () => {
     }));
   }, [alongRoute.stations]);
 
-  // Si el usuario eligió marcas que después dejaron de existir (cambió la
-  // ruta y la marca ya no aparece), las podamos del estado para que la
-  // URL no quede con basura y los filtros se mantengan coherentes.
+  // Si el usuario eligió marcas que después dejaron de existir, poda el
+  // estado para mantener la URL coherente.
   useEffect(() => {
     if (selectedBrands.size === 0) return;
     const validIds = new Set(availableBrands.map((b) => b.id));
@@ -408,8 +539,7 @@ const RoutePlanner = () => {
     return arr;
   }, [alongRoute.stations, selectedBrands, onlyOpen, selectedFuel, sortBy]);
 
-  // Estadísticas de precio para el banner: mínimo, máximo y ahorro por 50L.
-  // Solo consideramos estaciones con precio del combustible seleccionado.
+  // Stats de precio para el banner sobre la lista FILTRADA.
   const priceStats = useMemo(() => {
     let min = Infinity;
     let max = -Infinity;
@@ -428,6 +558,15 @@ const RoutePlanner = () => {
     return { min, max, count, savingsEur };
   }, [visibleStations, selectedFuel]);
 
+  // Delta de la ruta con parada vs base — el "coste real" de hacer ese
+  // desvío en km y minutos.
+  const stopDelta = useMemo(() => {
+    if (!route || !routeWithStop) return null;
+    const dKm = (routeWithStop.distance - route.distance) / 1000;
+    const dMin = (routeWithStop.duration - route.duration) / 60;
+    return { dKm, dMin };
+  }, [route, routeWithStop]);
+
   const handleSwap = () => {
     setOrigin(destination);
     setDestination(origin);
@@ -438,6 +577,13 @@ const RoutePlanner = () => {
     setDestination(null);
     setRoute(null);
     setRouteError(null);
+    setSelectedWaypointId(null);
+    setRouteWithStop(null);
+    setFormCollapsed(false);
+  };
+
+  const handleEditForm = () => {
+    setFormCollapsed(false);
   };
 
   const toggleBrand = (id) => {
@@ -449,10 +595,30 @@ const RoutePlanner = () => {
     });
   };
 
-  const hasRoute = !!route && !loadingRoute && !routeError;
-  const showForm = !hasRoute && !loadingRoute;
+  // Geolocalización para origen y destino, con retry iOS y feedback
+  // visual mientras se resuelve.
+  const triggerGeolocationFor = async (which) => {
+    setGeoBusy((s) => ({ ...s, [which]: true }));
+    setGeoError((s) => ({ ...s, [which]: null }));
+    try {
+      const pos = await getUserLocationRobust();
+      const point = { lat: pos.lat, lng: pos.lng, label: "Mi ubicación" };
+      if (which === "origin") setOrigin(point);
+      else setDestination(point);
+    } catch (err) {
+      const msg =
+        err && err.code === "GEO_PERMISSION_DENIED"
+          ? "Permiso denegado. Actívalo en los ajustes del navegador."
+          : "No hemos podido obtener tu ubicación. Inténtalo de nuevo.";
+      setGeoError((s) => ({ ...s, [which]: msg }));
+    } finally {
+      setGeoBusy((s) => ({ ...s, [which]: false }));
+    }
+  };
 
-  // Mensajes humanos para los códigos de error del cliente de routing.
+  const hasRoute = !!route && !loadingRoute && !routeError;
+  const showFormFull = !hasRoute || !formCollapsed;
+
   const routeErrorMessage = useMemo(() => {
     if (!routeError) return null;
     if (routeError === "no_route")
@@ -465,6 +631,10 @@ const RoutePlanner = () => {
     if (routeError === "bad_destination") return "El destino no es válido.";
     return "No hemos podido calcular la ruta. Inténtalo de nuevo.";
   }, [routeError]);
+
+  // Polyline efectiva: con parada si está cargada, base si no (o si la
+  // parada falló al calcularse).
+  const effectiveGeometry = routeWithStop?.geometry || route?.geometry || null;
 
   return (
     <main id="main">
@@ -489,87 +659,55 @@ const RoutePlanner = () => {
         </div>
       </div>
 
-      <section className="ruteform" aria-label="Origen y destino">
-        <div className="ruteform__inputs">
-          <div className="ruteform__field">
-            <span className="ruteform__chip ruteform__chip--origin" aria-hidden="true">
-              A
-            </span>
-            <LocationSearch
-              // LocationSearch inicializa su input desde initialValue solo
-              // en el primer render. Forzamos re-mount cuando cambia el
-              // punto (swap o "Usar mi ubicación") para que el input refleje
-              // la nueva etiqueta. Mientras el usuario teclea, lat/lng no
-              // cambian todavía, por lo que el key se mantiene y no se
-              // interrumpe la edición.
-              key={`origin-${origin ? `${origin.lat},${origin.lng}` : "empty"}`}
+      {/* Form de origen/destino. Cuando hay ruta calculada lo colapsamos
+          a una barra A→B con un botón Editar para no robar altura útil. */}
+      {showFormFull ? (
+        <section className="ruteform" aria-label="Origen y destino">
+          <div className="ruteform__inputs">
+            <FormField
+              variant="origin"
+              point={origin}
+              setPoint={setOrigin}
               placeholder="Desde… dirección, ciudad o CP"
-              initialValue={origin?.label || ""}
-              initialPoint={origin}
-              onSelectLocation={(p) => setOrigin(p)}
-              onUseMyLocation={async () => {
-                try {
-                  const { getUserLocation } = await import(
-                    "../../utils/locationUtils"
-                  );
-                  const pos = await getUserLocation();
-                  setOrigin({
-                    lat: pos.lat,
-                    lng: pos.lng,
-                    label: "Mi ubicación",
-                  });
-                } catch {
-                  /* el LocationSearch ya muestra error si hace falta */
-                }
-              }}
+              onUseMyLocation={() => triggerGeolocationFor("origin")}
+              busy={geoBusy.origin}
+              error={geoError.origin}
             />
-          </div>
-          <button
-            type="button"
-            className="ruteform__swap"
-            onClick={handleSwap}
-            disabled={!origin && !destination}
-            aria-label="Intercambiar origen y destino"
-            title="Intercambiar origen y destino"
-          >
-            <SwapIcon />
-          </button>
-          <div className="ruteform__field">
-            <span className="ruteform__chip ruteform__chip--dest" aria-hidden="true">
-              B
-            </span>
-            <LocationSearch
-              key={`dest-${destination ? `${destination.lat},${destination.lng}` : "empty"}`}
+            <button
+              type="button"
+              className="ruteform__swap"
+              onClick={handleSwap}
+              disabled={!origin && !destination}
+              aria-label="Intercambiar origen y destino"
+              title="Intercambiar origen y destino"
+            >
+              <SwapIcon />
+            </button>
+            <FormField
+              variant="dest"
+              point={destination}
+              setPoint={setDestination}
               placeholder="Hasta… dirección, ciudad o CP"
-              initialValue={destination?.label || ""}
-              initialPoint={destination}
-              onSelectLocation={(p) => setDestination(p)}
-              onUseMyLocation={async () => {
-                try {
-                  const { getUserLocation } = await import(
-                    "../../utils/locationUtils"
-                  );
-                  const pos = await getUserLocation();
-                  setDestination({
-                    lat: pos.lat,
-                    lng: pos.lng,
-                    label: "Mi ubicación",
-                  });
-                } catch {
-                  /* noop */
-                }
-              }}
+              onUseMyLocation={() => triggerGeolocationFor("destination")}
+              busy={geoBusy.destination}
+              error={geoError.destination}
             />
           </div>
-        </div>
-        {showForm && (!origin || !destination) && (
-          <p className="ruteform__hint">
-            Indica un <strong>origen</strong> y un <strong>destino</strong>{" "}
-            (dirección, ciudad o GPS) y calcularemos qué gasolineras tienes
-            cerca del trayecto, ordenadas por precio.
-          </p>
-        )}
-      </section>
+          {(!origin || !destination) && !loadingRoute && !routeError && (
+            <p className="ruteform__hint">
+              Indica un <strong>origen</strong> y un <strong>destino</strong>{" "}
+              (dirección, ciudad o GPS) y calcularemos qué gasolineras tienes
+              cerca del trayecto, ordenadas por precio.
+            </p>
+          )}
+        </section>
+      ) : (
+        <CollapsedRoute
+          origin={origin}
+          destination={destination}
+          onEdit={handleEditForm}
+        />
+      )}
 
       {loadingRoute && (
         <div className="loading" role="status" aria-live="polite">
@@ -586,8 +724,6 @@ const RoutePlanner = () => {
             <button
               type="button"
               onClick={() => {
-                // Re-disparar el efecto: forzamos un cambio de identidad de
-                // origin para que el effect se reejecute.
                 if (origin) setOrigin({ ...origin });
               }}
             >
@@ -637,6 +773,18 @@ const RoutePlanner = () => {
               </div>
             )}
           </section>
+
+          {selectedWaypointStation && (
+            <WaypointBanner
+              station={selectedWaypointStation}
+              origin={origin}
+              destination={destination}
+              delta={stopDelta}
+              loading={loadingWithStop}
+              warning={withStopError}
+              onClear={() => setSelectedWaypointId(null)}
+            />
+          )}
 
           <section className="rutefilters" aria-label="Filtros">
             <div className="rutefilters__group">
@@ -691,6 +839,7 @@ const RoutePlanner = () => {
                     aria-checked={sortBy === opt.id}
                     aria-pressed={sortBy === opt.id}
                     onClick={() => setSortBy(opt.id)}
+                    title={opt.title}
                   >
                     {opt.label}
                   </button>
@@ -801,16 +950,24 @@ const RoutePlanner = () => {
                   destination={destination}
                   selectedFuel={selectedFuel}
                   priceStats={priceStats}
+                  selectedWaypointId={selectedWaypointId}
+                  onSelectWaypoint={(id) =>
+                    setSelectedWaypointId((prev) => (prev === id ? null : id))
+                  }
                 />
               )}
 
-              {visibleStations.length > 0 && viewMode === "map" && (
+              {visibleStations.length > 0 && viewMode === "map" && effectiveGeometry && (
                 <RouteMap
-                  geometry={route.geometry}
+                  geometry={effectiveGeometry}
                   origin={origin}
                   destination={destination}
                   stations={visibleStations}
                   selectedFuel={selectedFuel}
+                  selectedWaypointId={selectedWaypointId}
+                  onSelectWaypoint={(id) =>
+                    setSelectedWaypointId((prev) => (prev === id ? null : id))
+                  }
                 />
               )}
 
@@ -868,7 +1025,195 @@ const RoutePlanner = () => {
   );
 };
 
-function StationList({ stations, origin, destination, selectedFuel, priceStats }) {
+// FormField — input de origen o destino. Encapsula el LocationSearch +
+// chip A/B + indicador "Localizando…" en su propio bloque para que el
+// chip nunca solape el input ni el panel de sugerencias.
+function FormField({
+  variant,
+  point,
+  setPoint,
+  placeholder,
+  onUseMyLocation,
+  busy,
+  error,
+}) {
+  const letter = variant === "origin" ? "A" : "B";
+  const keyBase = variant === "origin" ? "origin" : "dest";
+  return (
+    <div className={`ruteform__field ruteform__field--${variant}`}>
+      <span
+        className={`ruteform__chip ruteform__chip--${variant}`}
+        aria-hidden="true"
+      >
+        {letter}
+      </span>
+      <div className="ruteform__input">
+        <LocationSearch
+          // LocationSearch inicializa su input desde initialValue solo en
+          // el primer render. Cambiamos el key cuando cambia el punto
+          // (swap, "Mi ubicación", URL preset) para forzar re-mount con
+          // el nuevo valor. Mientras el usuario teclea, las coords no
+          // cambian todavía y el key se mantiene.
+          key={`${keyBase}-${point ? `${point.lat},${point.lng}` : "empty"}`}
+          placeholder={placeholder}
+          initialValue={point?.label || ""}
+          initialPoint={point}
+          onSelectLocation={(p) => setPoint(p)}
+          onUseMyLocation={onUseMyLocation}
+          busy={busy}
+        />
+        {busy && (
+          <p className="ruteform__status" role="status" aria-live="polite">
+            Localizando tu ubicación…
+          </p>
+        )}
+        {!busy && error && (
+          <p className="ruteform__status ruteform__status--error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// CollapsedRoute — chip "A → B" con un botón Editar. Aparece cuando la
+// ruta ya está calculada, para que la sección de resultados gane altura
+// y el usuario pueda seguir cambiando puntos sin abrir el form completo.
+function CollapsedRoute({ origin, destination, onEdit }) {
+  const labelOf = (p) => {
+    if (!p) return "";
+    if (p.label) return p.label;
+    return `${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}`;
+  };
+  return (
+    <section className="rutecollapsed" aria-label="Ruta seleccionada">
+      <div className="rutecollapsed__main">
+        <div className="rutecollapsed__row">
+          <span
+            className="ruteform__chip ruteform__chip--origin"
+            aria-hidden="true"
+          >
+            A
+          </span>
+          <span className="rutecollapsed__label">{labelOf(origin)}</span>
+        </div>
+        <div className="rutecollapsed__row">
+          <span
+            className="ruteform__chip ruteform__chip--dest"
+            aria-hidden="true"
+          >
+            B
+          </span>
+          <span className="rutecollapsed__label">{labelOf(destination)}</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="rutecollapsed__edit"
+        onClick={onEdit}
+        aria-label="Editar origen o destino"
+      >
+        <EditIcon />
+        <span>Editar</span>
+      </button>
+    </section>
+  );
+}
+
+// WaypointBanner — banner sticky cuando hay parada elegida. Muestra el
+// coste real del desvío y el botón primario "Abrir en Google Maps con
+// esta parada".
+function WaypointBanner({
+  station,
+  origin,
+  destination,
+  delta,
+  loading,
+  warning,
+  onClear,
+}) {
+  const coords = stationLatLng(station);
+  const mapsHref = coords
+    ? buildRouteWithStopHref({
+        origin,
+        destination,
+        waypoint: coords,
+      })
+    : null;
+  const rotulo = station["Rótulo"];
+  const dirEcc =
+    [station.Dirección, station.Localidad].filter(Boolean).join(" · ") || "";
+
+  let deltaText = null;
+  if (delta) {
+    const km = Math.max(0, delta.dKm);
+    const min = Math.max(0, delta.dMin);
+    const kmTxt =
+      km < 0.1 ? "sin km extra" : `+${km.toFixed(1).replace(".", ",")} km`;
+    const minTxt =
+      min < 0.5 ? "sin tiempo extra" : `+${Math.round(min)} min`;
+    deltaText = `${kmTxt} · ${minTxt} con esta parada`;
+  } else if (loading) {
+    deltaText = "Calculando el desvío…";
+  } else if (warning) {
+    deltaText =
+      "No pudimos recalcular la ruta con esta parada, pero Google Maps lo hará al abrir el enlace.";
+  }
+
+  return (
+    <section className="waypointbar" aria-label="Parada elegida">
+      <div className="waypointbar__main">
+        <div className="waypointbar__head">
+          <span className="waypointbar__check" aria-hidden="true">
+            <CheckIcon />
+          </span>
+          <span className="waypointbar__title">
+            Parando en <strong>{rotulo}</strong>
+          </span>
+        </div>
+        {dirEcc && <p className="waypointbar__sub">{dirEcc}</p>}
+        {deltaText && (
+          <p
+            className={`waypointbar__delta${warning ? " waypointbar__delta--warn" : ""}`}
+          >
+            {deltaText}
+          </p>
+        )}
+      </div>
+      <div className="waypointbar__actions">
+        {mapsHref && (
+          <a
+            className="waypointbar__btn waypointbar__btn--primary"
+            href={mapsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir en Google Maps
+            <ArrowRightIcon />
+          </a>
+        )}
+        <button
+          type="button"
+          className="waypointbar__btn waypointbar__btn--ghost"
+          onClick={onClear}
+        >
+          Quitar parada
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StationList({
+  stations,
+  origin,
+  destination,
+  selectedFuel,
+  priceStats,
+  selectedWaypointId,
+  onSelectWaypoint,
+}) {
   return (
     <ul className="rutelist" aria-label="Gasolineras en tu ruta">
       {stations.map((s) => {
@@ -883,16 +1228,17 @@ function StationList({ stations, origin, destination, selectedFuel, priceStats }
         const brand = brandId ? getBrand(brandId) : null;
         const detourTxt = `${s.detour.toFixed(1).replace(".", ",")} km desvío`;
         const alongTxt = formatDistanceMeters(s.alongMeters);
-        const lat = parseFloat(String(s.Latitud).replace(",", "."));
-        const lng = parseFloat(String(s["Longitud (WGS84)"]).replace(",", "."));
-        const mapsHref = buildRouteWithStopHref({
-          origin,
-          destination,
-          waypoint: { lat, lng },
-        });
         const open = isOpenNow(s.Horario);
+        const isWaypoint = selectedWaypointId === s.IDEESS;
+        const itemClass = [
+          "rutelist__item",
+          isMin ? "rutelist__item--best" : "",
+          isWaypoint ? "rutelist__item--waypoint" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
         return (
-          <li key={s.IDEESS} className={`rutelist__item${isMin ? " rutelist__item--best" : ""}`}>
+          <li key={s.IDEESS} className={itemClass}>
             <div className="rutelist__head">
               <span className="rutelist__logo">
                 <img
@@ -908,12 +1254,17 @@ function StationList({ stations, origin, destination, selectedFuel, priceStats }
               <div className="rutelist__heading">
                 <div className="rutelist__name">
                   {s["Rótulo"]}
-                  {isMin && (
+                  {isWaypoint && (
+                    <span className="rutelist__badge rutelist__badge--waypoint">
+                      Parando aquí
+                    </span>
+                  )}
+                  {!isWaypoint && isMin && (
                     <span className="rutelist__badge rutelist__badge--best">
                       Más barata
                     </span>
                   )}
-                  {isMax && !isMin && (
+                  {!isWaypoint && isMax && !isMin && (
                     <span className="rutelist__badge rutelist__badge--worst">
                       Más cara
                     </span>
@@ -924,18 +1275,24 @@ function StationList({ stations, origin, destination, selectedFuel, priceStats }
                   {s.Localidad ? ` · ${s.Localidad}` : ""}
                 </div>
                 <div className="rutelist__metrics">
-                  <span title="Desvío respecto al trayecto">{detourTxt}</span>
+                  <span title="Cuántos km tienes que salir de la ruta para llegar a la gasolinera">
+                    {detourTxt}
+                  </span>
                   {alongTxt && (
                     <>
-                      <span className="rutelist__dot" aria-hidden="true">·</span>
-                      <span title="Distancia desde el origen siguiendo la ruta">
+                      <span className="rutelist__dot" aria-hidden="true">
+                        ·
+                      </span>
+                      <span title="A qué altura del trayecto, contando desde el origen, queda la gasolinera">
                         km {alongTxt} de ruta
                       </span>
                     </>
                   )}
                   {brand && (
                     <>
-                      <span className="rutelist__dot" aria-hidden="true">·</span>
+                      <span className="rutelist__dot" aria-hidden="true">
+                        ·
+                      </span>
                       <Link
                         href={`/marca/${brand.id}`}
                         className="rutelist__brand"
@@ -946,13 +1303,17 @@ function StationList({ stations, origin, destination, selectedFuel, priceStats }
                   )}
                   {open === true && (
                     <>
-                      <span className="rutelist__dot" aria-hidden="true">·</span>
+                      <span className="rutelist__dot" aria-hidden="true">
+                        ·
+                      </span>
                       <span className="rutelist__open">Abierto</span>
                     </>
                   )}
                   {open === false && (
                     <>
-                      <span className="rutelist__dot" aria-hidden="true">·</span>
+                      <span className="rutelist__dot" aria-hidden="true">
+                        ·
+                      </span>
                       <span className="rutelist__closed">Cerrado</span>
                     </>
                   )}
@@ -978,17 +1339,23 @@ function StationList({ stations, origin, destination, selectedFuel, priceStats }
               >
                 Ver detalle
               </Link>
-              {mapsHref && (
-                <a
-                  href={mapsHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rutelist__btn rutelist__btn--primary"
-                >
-                  Parar aquí
-                  <ArrowRightIcon />
-                </a>
-              )}
+              <button
+                type="button"
+                className={`rutelist__btn rutelist__btn--primary${isWaypoint ? " rutelist__btn--active" : ""}`}
+                onClick={() => onSelectWaypoint(s.IDEESS)}
+              >
+                {isWaypoint ? (
+                  <>
+                    <CheckIcon />
+                    Parando aquí · quitar
+                  </>
+                ) : (
+                  <>
+                    Parar aquí
+                    <ArrowRightIcon />
+                  </>
+                )}
+              </button>
             </div>
           </li>
         );

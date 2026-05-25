@@ -16,6 +16,45 @@
   }
 }
 
+/* Marker de la gasolinera ELEGIDA como parada. Anillo ámbar para
+   distinguirla del verde de "más barata" — la jerarquía visual es:
+   ámbar (parada activa) > verde (cheapest) > default. Z-index del
+   marker en RouteMap.jsx asegura que la parada se renderiza encima. */
+.map-price--selected .map-price__bubble {
+  background: #f59e0b;
+  color: #1a1a1a;
+  border-color: #b45309;
+  box-shadow:
+    0 0 0 4px rgba(245, 158, 11, 0.28),
+    0 4px 12px rgba(245, 158, 11, 0.4);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .map-price--selected .map-price__bubble {
+  background: #fbbf24;
+  color: #1a1a1a;
+  border-color: #d97706;
+  box-shadow:
+    0 0 0 3px rgba(251, 191, 36, 0.28),
+    0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+/* Estado activo del botón "Parar aquí" cuando ESTA estación ya es la
+   parada. El usuario ve que está marcada y que ese mismo botón ahora
+   la quita. */
+.map-popup__btn--primary.map-popup__btn--active,
+.peeksheet__btn--primary.peeksheet__btn--active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
+.map-popup__btn--primary.map-popup__btn--active:hover,
+.peeksheet__btn--primary.peeksheet__btn--active:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
 /* Marker de inicio/fin: círculo sólido con letra. Mismo lenguaje visual
    que los chips de los inputs de origen/destino para que el usuario
    relacione A=verde=origen, B=rojo=destino. */

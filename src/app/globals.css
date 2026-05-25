@@ -480,6 +480,10 @@ a:focus-visible,
   font-size: 1.0625rem;
   font-weight: 600;
   cursor: pointer;
+  /* Reset cuando .bigbtn renderiza como <a> (next/link): el browser
+     subraya por defecto el texto del anchor y se "comen" las jerarquías
+     visuales internas (.bigbtn__title / .bigbtn__sub). */
+  text-decoration: none;
   transition: background-color 120ms linear, transform 80ms linear,
     box-shadow 120ms linear;
 }
