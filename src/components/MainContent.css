@@ -1,6 +1,70 @@
 /* MainContent — estilos locales (NO tocar App.css) */
 
 /* ──────────────────────────────────────────────────────────────────────
+ * Home — bloque del LocationSearch primario
+ * El input es la acción principal: combina "Mi ubicación" (GPS) con
+ * búsqueda por dirección estilo Google Maps. Lo separamos del resto del
+ * home__primary con un margen extra para que respire visualmente.
+ * ────────────────────────────────────────────────────────────────────── */
+.home__locsearch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.home__locsearch-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  padding: 0 4px;
+}
+
+.home__locsearch-hint strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * /cerca — barra de búsqueda de ubicación + chip de origen
+ * Se monta justo debajo del toolbar para que el usuario pueda cambiar de
+ * zona sin volver atrás. El chip de origen muestra de qué punto se está
+ * calculando la distancia (texto literal del usuario o "Mi ubicación").
+ * ────────────────────────────────────────────────────────────────────── */
+.nearbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0 6px;
+}
+
+.nearbar__origin {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+  padding: 0 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.nearbar__origin strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Botón "Compartir" alineado a la derecha en la fila del toolbar. */
+.toolbar__share {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+
+
+/* ──────────────────────────────────────────────────────────────────────
  * Home — botones primarios "Cerca de mí" / "Buscar por municipio"
  * Reglas locales que afinan ergonomía sin pisar App.css:
  * - touch target ≥ 56px (acción primaria, regla pulgar)

@@ -17,8 +17,14 @@ import { handleSelectProvincia } from "../utils/handlers";
 import GasolineraTable from "./GasolineraTable";
 import FuelTypeSelector from "./Selectors/FuelTypeSelector";
 import FavoriteButton from "./Favorites/FavoriteButton";
+import LocationSearch from "./LocationSearch/LocationSearch";
+import ShareButton from "./ShareButton/ShareButton";
 import useFavorites from "../hooks/useFavorites";
 import { getUserLocation, calculateDistance } from "../utils/locationUtils";
+import { reverseGeocode } from "../utils/geocoder";
+import { getLowestPrices } from "../utils/getLowestPrices";
+import { fuelShortLabel } from "../utils/fuelLabels";
+import { absoluteUrl } from "../lib/site";
 import "./MainContent.css";
 
 // react-leaflet (~70KB gzip) NO debe entrar en el bundle de servidor: dynamic
@@ -249,6 +255,12 @@ const MainContent = ({ initialData = null, mode = null }) => {
     if (pos.t && Date.now() - pos.t > 10 * 60 * 1000) return null;
     return { lat: pos.lat, lng: pos.lng };
   });
+  // Etiqueta humana del origen de la búsqueda "cerca" — bien "Mi ubicación"
+  // (vía GPS), bien la dirección que escribió el usuario. Solo se usa para
+  // pintar contexto y permitir compartir la búsqueda.
+  const [searchOriginLabel, setSearchOriginLabel] = useState(
+    seedSnapshot?.searchOriginLabel || null
+  );
   const [onlyOpen, setOnlyOpen] = useState(!!seedSnapshot?.onlyOpen);
   const [loadError, setLoadError] = useState(false);
   const [showAllFavs, setShowAllFavs] = useState(false);
@@ -322,6 +334,7 @@ const MainContent = ({ initialData = null, mode = null }) => {
       userPos: userPos
         ? { lat: userPos.lat, lng: userPos.lng, t: Date.now() }
         : null,
+      searchOriginLabel,
       provinciaSeleccionada,
       municipioSeleccionado,
       municipios,
@@ -334,6 +347,7 @@ const MainContent = ({ initialData = null, mode = null }) => {
     viewMode,
     onlyOpen,
     userPos,
+    searchOriginLabel,
     provinciaSeleccionada,
     municipioSeleccionado,
     municipios,
@@ -361,10 +375,14 @@ const MainContent = ({ initialData = null, mode = null }) => {
 
     if (pathname === "/cerca") {
       if (scope !== "near") setScope("near");
+      // Auto-trigger de GPS solo si el usuario llega "en frío": sin resultados,
+      // sin error y sin búsqueda manual previa (searchOriginLabel). Si ya hay
+      // una posición elegida por dirección no la pisamos.
       if (
         listadoPrecios.length === 0 &&
         !loadingPrecios &&
-        !nearMeError
+        !nearMeError &&
+        !userPos
       ) {
         const t = setTimeout(() => {
           if (isMountedRef.current) handleNearMe();
@@ -449,11 +467,17 @@ const MainContent = ({ initialData = null, mode = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, params?.idMunicipio, params?.slug]);
 
-  const handleNearMe = async () => {
+  // Resuelve la posición (vía GPS o vía geocoder previo), descarga el
+  // listado nacional y filtra las 50 más cercanas. Centralizamos para que
+  // "Cerca de mí" (GPS) y "Buscar dirección" (Nominatim) compartan código.
+  const runNearbySearch = async ({
+    preset = null,
+    label = null,
+  } = {}) => {
     if (loadingPrecios) return;
     const requestId = ++nearMeRequestIdRef.current;
     setLoadingPrecios(true);
-    setNearMePhase("geo");
+    setNearMePhase(preset ? "fetch" : "geo");
     setScope("near");
     writeStoredScope("near");
     setSortBy("price");
@@ -464,23 +488,42 @@ const MainContent = ({ initialData = null, mode = null }) => {
     setNearMeError(null);
 
     try {
-      const locationPromise = getUserLocation().then((loc) => {
+      let location = preset;
+      let resolvedLabel = label;
+      if (!location) {
+        location = await getUserLocation();
         if (
           isMountedRef.current &&
           requestId === nearMeRequestIdRef.current
         ) {
           setNearMePhase("fetch");
         }
-        return loc;
-      });
-      const [location, allStationsData] = await Promise.all([
-        locationPromise,
-        fetchTodasLasEstaciones(),
-      ]);
+        // Reverse geocoding "best effort": sin él la búsqueda funciona;
+        // solo lo usamos para mostrar "Cerca de Calle X" en lugar de
+        // coordenadas crudas.
+        if (!resolvedLabel) {
+          reverseGeocode(location.lat, location.lng)
+            .then((g) => {
+              if (
+                g &&
+                isMountedRef.current &&
+                requestId === nearMeRequestIdRef.current
+              ) {
+                setSearchOriginLabel(g.label || "Mi ubicación");
+              }
+            })
+            .catch(() => {
+              /* sin label, no es crítico */
+            });
+        }
+      }
+
+      const allStationsData = await fetchTodasLasEstaciones();
       if (!isMountedRef.current || requestId !== nearMeRequestIdRef.current) {
         return;
       }
       setUserPos({ lat: location.lat, lng: location.lng });
+      setSearchOriginLabel(resolvedLabel || (preset ? null : "Mi ubicación"));
       const allStations = allStationsData.ListaEESSPrecio || [];
 
       const LAT_DELTA = 0.7;
@@ -533,6 +576,10 @@ const MainContent = ({ initialData = null, mode = null }) => {
     }
   };
 
+  const handleNearMe = () => runNearbySearch();
+  const handleNearByAddress = (point) =>
+    runNearbySearch({ preset: point, label: point?.label || null });
+
   const handleManualSearchClick = () => {
     nearMeRequestIdRef.current++;
     writeStoredScope("manual");
@@ -579,8 +626,128 @@ const MainContent = ({ initialData = null, mode = null }) => {
     else router.push(`/municipio/${id}`);
   };
 
+  // Disparado desde la home cuando el usuario selecciona una dirección en el
+  // LocationSearch. Lanzamos la búsqueda en el acto (que ya pone
+  // `loadingPrecios=true`) y navegamos a /cerca; el effect de pathname ve que
+  // ya hay loadingPrecios en curso y NO dispara el auto-geo.
+  const handleLocationFromHome = (point) => {
+    if (!point) return;
+    runNearbySearch({ preset: point, label: point.label || null });
+    router.push("/cerca");
+  };
+
+  const handleUseMyLocationFromHome = () => {
+    nearMeRequestIdRef.current++;
+    setListadoPrecios([]);
+    setMunicipioSeleccionado(null);
+    setProvinciaSeleccionada(null);
+    setNearMeError(null);
+    lastFetchedMunicipioRef.current = null;
+    router.push("/cerca");
+  };
+
   const showHome = scope === "home";
   const showResults = listadoPrecios.length > 0 || loadingPrecios;
+
+  // Genera el payload de share para WhatsApp/Telegram/Email. Se invoca al
+  // pulsar Compartir para que el texto refleje el ESTADO ACTUAL (mínimos
+  // y filtros pueden haber cambiado tras el último render).
+  const buildShareData = () => {
+    const fechaLine = fechaActualizacion
+      ? `Actualizado el ${fechaActualizacion}.`
+      : null;
+    const lowest = getLowestPrices(listadoPrecios);
+    const tieneAlguno = Object.values(lowest).some((v) => v !== null);
+    const fmt = (n) =>
+      typeof n === "number" ? `${n.toFixed(3).replace(".", ",")} €/L` : null;
+    const lineas = [];
+    if (lowest["Precio Gasolina 95 E5"] !== null) {
+      lineas.push(
+        `· Gasolina 95 desde ${fmt(lowest["Precio Gasolina 95 E5"])}`
+      );
+    }
+    if (lowest["Precio Gasoleo A"] !== null) {
+      lineas.push(`· Diésel desde ${fmt(lowest["Precio Gasoleo A"])}`);
+    }
+    if (lowest["Precio Gasolina 98 E5"] !== null) {
+      lineas.push(
+        `· Gasolina 98 desde ${fmt(lowest["Precio Gasolina 98 E5"])}`
+      );
+    }
+
+    if (scope === "manual" && municipioSeleccionado?.IDMunicipio) {
+      const nombre = municipioSeleccionado.Municipio || "este municipio";
+      const provincia = municipioSeleccionado.Provincia || "";
+      const totalLine =
+        listadoPrecios.length > 0
+          ? `${listadoPrecios.length} ${
+              listadoPrecios.length === 1 ? "gasolinera" : "gasolineras"
+            } en ${nombre}${provincia ? ` (${provincia})` : ""}.`
+          : `Gasolineras en ${nombre}${provincia ? ` (${provincia})` : ""}.`;
+      const slug = slugify(nombre);
+      const path = slug
+        ? `/municipio/${municipioSeleccionado.IDMunicipio}/${slug}`
+        : `/municipio/${municipioSeleccionado.IDMunicipio}`;
+      const url = absoluteUrl(path);
+      const text = [
+        `⛽ ${totalLine}`,
+        tieneAlguno
+          ? `Mejores precios hoy:\n${lineas.join("\n")}`
+          : null,
+        fechaLine,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      const preview = tieneAlguno
+        ? `${totalLine} ${lineas.join(" · ")}`
+        : totalLine;
+      return {
+        title: `Gasolineras en ${nombre}${provincia ? ` · ${provincia}` : ""}`,
+        text,
+        url,
+        preview,
+      };
+    }
+
+    if (scope === "near") {
+      const origen = searchOriginLabel || "tu zona";
+      const totalLine =
+        listadoPrecios.length > 0
+          ? `${listadoPrecios.length} ${
+              listadoPrecios.length === 1
+                ? "gasolinera"
+                : `gasolineras más cercanas`
+            } a ${origen}.`
+          : `Gasolineras cerca de ${origen}.`;
+      const url = absoluteUrl("/cerca");
+      const text = [
+        `⛽ ${totalLine}`,
+        tieneAlguno
+          ? `Mejores precios ahora:\n${lineas.join("\n")}`
+          : null,
+        fechaLine,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      const preview = tieneAlguno
+        ? `${totalLine} ${lineas.join(" · ")}`
+        : totalLine;
+      return {
+        title: `Gasolineras cerca de ${origen}`,
+        text,
+        url,
+        preview,
+      };
+    }
+
+    return null;
+  };
+
+  const shareReady =
+    !loadingPrecios &&
+    listadoPrecios.length > 0 &&
+    ((scope === "manual" && !!municipioSeleccionado?.IDMunicipio) ||
+      scope === "near");
 
   const headerTitle =
     scope === "near"
@@ -638,13 +805,23 @@ const MainContent = ({ initialData = null, mode = null }) => {
           )}
 
           <div className="home__primary">
+            <div className="home__locsearch">
+              <LocationSearch
+                placeholder="Busca una dirección, calle, CP o ciudad"
+                onSelectLocation={handleLocationFromHome}
+                onUseMyLocation={handleUseMyLocationFromHome}
+              />
+              <p className="home__locsearch-hint">
+                Escribe una dirección o pulsa <strong>Usar mi ubicación</strong>{" "}
+                para ver las gasolineras cercanas.
+              </p>
+            </div>
             <button
               type="button"
               className={`bigbtn${initialLastScope === "near" ? " bigbtn--recent" : ""}`}
               onClick={goNearMe}
               disabled={loadingPrecios}
               aria-busy={loadingPrecios || undefined}
-              autoFocus={initialLastScope === "near"}
             >
               <span className="bigbtn__icon">
                 <PinIcon />
@@ -780,6 +957,22 @@ const MainContent = ({ initialData = null, mode = null }) => {
                 {headerTitle}
                 {headerSub && <small>{headerSub}</small>}
               </div>
+              {shareReady && (
+                <ShareButton
+                  className="toolbar__share"
+                  variant="ghost"
+                  size="md"
+                  iconOnly
+                  ariaLabel={
+                    scope === "manual"
+                      ? `Compartir gasolineras en ${
+                          municipioSeleccionado?.Municipio || "este municipio"
+                        }`
+                      : "Compartir esta búsqueda"
+                  }
+                  getShare={buildShareData}
+                />
+              )}
             </div>
             <div className="toolbar__filters">
               <FuelTypeSelector
@@ -810,6 +1003,23 @@ const MainContent = ({ initialData = null, mode = null }) => {
               )}
             </div>
           </div>
+
+          {scope === "near" && (
+            <section className="nearbar" aria-label="Búsqueda de ubicación">
+              <LocationSearch
+                placeholder="Cambia de zona: dirección, calle o CP"
+                onSelectLocation={handleNearByAddress}
+                onUseMyLocation={handleNearMe}
+                busy={loadingPrecios}
+              />
+              {searchOriginLabel && !loadingPrecios && (
+                <p className="nearbar__origin">
+                  Resultados cerca de{" "}
+                  <strong>{searchOriginLabel}</strong>
+                </p>
+              )}
+            </section>
+          )}
 
           {scope === "manual" && (
             <section className="locator" aria-label="Selección de ubicación">
