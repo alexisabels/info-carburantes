@@ -75,37 +75,117 @@
   min-width: 0;
 }
 
-.ruteform__status {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--ink-muted);
-  padding: 0 4px;
-  line-height: 1.4;
-  display: inline-flex;
+/* Bloque "Pidiendo tu ubicación…" — sustituye al LocationSearch
+   mientras el browser espera a la respuesta del permiso o al fix de
+   GPS. Mantiene la altura del input para que no haya saltos de layout
+   cuando termina. */
+.ruteform__geoloading {
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 52px;
+  background: var(--bg-2);
+  border: 1px dashed var(--ink-muted);
+  border-radius: 10px;
+  color: var(--ink);
+  animation: ruteform-pulse 1.6s ease-in-out infinite;
 }
 
-.ruteform__status::before {
-  content: "";
-  width: 10px;
-  height: 10px;
+[data-theme="dark"] .ruteform__geoloading {
+  border-color: var(--ink-muted);
+}
+
+.ruteform__spinner {
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid var(--line);
+  border: 2.5px solid var(--line);
   border-top-color: var(--ink);
   animation: ruteform-spin 0.7s linear infinite;
+  flex-shrink: 0;
 }
 
-.ruteform__status--error {
+.ruteform__geoloading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.ruteform__geoloading-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ruteform__geoloading-text span {
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+}
+
+.ruteform__geoloading-text em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* Bloque de error: caja inline bajo el input cuando la geolocalización
+   falla. Permite reintentar sin tener que volver a abrir el dropdown. */
+.ruteform__geoerror {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .ruteform__geoerror {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.ruteform__geoerror-text {
   color: #b91c1c;
+  flex: 1;
 }
 
-[data-theme="dark"] .ruteform__status--error {
+[data-theme="dark"] .ruteform__geoerror-text {
   color: #fca5a5;
 }
 
-.ruteform__status--error::before {
-  display: none;
+.ruteform__geoerror-retry {
+  background: transparent;
+  border: 1px solid #b91c1c;
+  color: #b91c1c;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms linear, color 120ms linear;
+  flex-shrink: 0;
+}
+
+.ruteform__geoerror-retry:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+[data-theme="dark"] .ruteform__geoerror-retry {
+  border-color: #fca5a5;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .ruteform__geoerror-retry:hover {
+  background: #fca5a5;
+  color: #1a1a1a;
 }
 
 @keyframes ruteform-spin {
@@ -114,8 +194,21 @@
   }
 }
 
+@keyframes ruteform-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ruteform__status::before {
+  .ruteform__spinner {
+    animation: none;
+  }
+  .ruteform__geoloading {
     animation: none;
   }
 }
@@ -223,19 +316,36 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: transparent;
+  background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink-2);
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: 500;
   min-height: 40px;
-  transition: border-color 120ms linear, color 120ms linear;
+  flex-shrink: 0;
+  transition:
+    background-color 120ms linear,
+    border-color 120ms linear,
+    color 120ms linear,
+    box-shadow 120ms linear;
 }
 
 .rutecollapsed__edit:hover {
-  border-color: var(--ink-muted);
-  color: var(--ink);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rutecollapsed__edit:active {
+  transform: translateY(1px);
+}
+
+.rutecollapsed__edit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 @media (pointer: coarse), (max-width: 768px) {
@@ -269,6 +379,40 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+/* Skeleton mientras carga el listado de estaciones. Evita mostrar "0
+   gasolineras" como si fuera un dato real cuando todavía no sabemos
+   nada — sin esto el banner pasaba por 0 y al instante saltaba al
+   número real. */
+.rutestats__num--skeleton {
+  display: inline-block;
+  width: 36px;
+  height: 1em;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--line) 0%,
+    var(--bg-3, var(--bg-2)) 50%,
+    var(--line) 100%
+  );
+  background-size: 200% 100%;
+  animation: rutestats-skeleton 1.4s ease-in-out infinite;
+}
+
+@keyframes rutestats-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rutestats__num--skeleton {
+    animation: none;
+  }
 }
 
 .rutestats__lbl {
@@ -319,10 +463,28 @@
   border: 1px solid #16a34a;
   border-radius: 12px;
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
-  /* Sticky en móvil para que no se pierda al hacer scroll por la lista */
-  position: sticky;
-  top: 8px;
-  z-index: 5;
+  /* Cuando el padre hace scrollIntoView al activar la parada, el banner
+     queda debajo de la toolbar sticky (~72px de alto). `scroll-margin`
+     compensa ese offset sin necesidad de hacer cálculos manuales. */
+  scroll-margin-top: 84px;
+  animation: waypointbar-in 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@keyframes waypointbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waypointbar {
+    animation: none;
+  }
 }
 
 [data-theme="dark"] .waypointbar {

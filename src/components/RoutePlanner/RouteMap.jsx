@@ -20,6 +20,7 @@ import { getLowestPrices } from "../../utils/getLowestPrices";
 import { getLogoForGasolinera } from "../../utils/logoUtils";
 import { noPriceLabel } from "../../utils/fuelLabels";
 import { useTheme } from "../../hooks/useTheme";
+import { findClosestIndex } from "../../utils/routing";
 // Reutilizamos los estilos del MapView (.map-price, .map-tooltip,
 // .map-popup, .peeksheet, filtros dark de los tiles) — son el lenguaje
 // visual compartido para representar gasolineras sobre Leaflet.
@@ -116,6 +117,7 @@ const RouteMap = ({
   stations,
   selectedFuel,
   selectedWaypointId,
+  selectedWaypointCoords,
   onSelectWaypoint,
 }) => {
   const router = useRouter();
@@ -176,6 +178,25 @@ const RouteMap = ({
   // cuando se cambia un filtro que solo añade/quita markers.
   const fitKey = `${origin?.lat},${origin?.lng}|${destination?.lat},${destination?.lng}|${selectedWaypointId || ""}`;
 
+  // Si hay parada elegida Y nos llega la geometría con parada, partimos
+  // el polyline en dos tramos en el vértice más cercano al waypoint.
+  // Renderizamos:
+  //   - leg1 (origen→parada): trazo sólido (la ruta "ya recorrida hasta
+  //     la decisión")
+  //   - leg2 (parada→destino): trazo discontinuo (la ruta "que sigue
+  //     después de la parada")
+  // Es la convención usual en navegadores tipo Google Maps cuando hay
+  // un waypoint intermedio: distingue visualmente los dos tramos sin
+  // necesidad de leyenda. Sin parada (o sin geometría con parada
+  // todavía cargada) renderizamos un único polyline sólido.
+  const splitIndex = selectedWaypointCoords
+    ? findClosestIndex(geometry, selectedWaypointCoords)
+    : null;
+  const hasSplit =
+    splitIndex !== null && splitIndex > 0 && splitIndex < geometry.length - 1;
+  const leg1 = hasSplit ? geometry.slice(0, splitIndex + 1) : null;
+  const leg2 = hasSplit ? geometry.slice(splitIndex) : null;
+
   const handleStationClick = (s) => {
     if (typeof onSelectWaypoint === "function") {
       onSelectWaypoint(s.IDEESS);
@@ -205,27 +226,78 @@ const RouteMap = ({
         <FitToRoute geometry={geometry} fitKey={fitKey} />
         {/* Doble polyline: capa exterior más ancha (blanco/negro según
             tema) para contraste sobre carreteras claras/amarillas de
-            Voyager; capa interior en color de marca. */}
-        <Polyline
-          positions={geometry}
-          pathOptions={{
-            color: outlineColor,
-            weight: 8,
-            opacity: 0.65,
-            lineCap: "round",
-            lineJoin: "round",
-          }}
-        />
-        <Polyline
-          positions={geometry}
-          pathOptions={{
-            color: routeColor,
-            weight: 5,
-            opacity: 0.95,
-            lineCap: "round",
-            lineJoin: "round",
-          }}
-        />
+            Voyager; capa interior en color de marca. Cuando hay parada
+            partimos los dos legs con su propio par outline + color, y
+            el leg2 lleva dashArray para diferenciar visualmente. */}
+        {hasSplit ? (
+          <>
+            <Polyline
+              positions={leg1}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.65,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={leg1}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.95,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={leg2}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.55,
+                lineCap: "round",
+                lineJoin: "round",
+                dashArray: "10 8",
+              }}
+            />
+            <Polyline
+              positions={leg2}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.9,
+                lineCap: "round",
+                lineJoin: "round",
+                dashArray: "10 8",
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <Polyline
+              positions={geometry}
+              pathOptions={{
+                color: outlineColor,
+                weight: 8,
+                opacity: 0.65,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <Polyline
+              positions={geometry}
+              pathOptions={{
+                color: routeColor,
+                weight: 5,
+                opacity: 0.95,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+          </>
+        )}
         {origin && (
           <Marker position={[origin.lat, origin.lng]} icon={ORIGIN_ICON}>
             {origin.label && <Tooltip direction="top">{origin.label}</Tooltip>}

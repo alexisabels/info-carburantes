@@ -3,7 +3,7 @@
 /* eslint-disable react/prop-types */
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import LocationSearch from "../LocationSearch/LocationSearch";
 import FuelTypeSelector from "../Selectors/FuelTypeSelector";
@@ -480,6 +480,29 @@ const RoutePlanner = () => {
     [selectedWaypointId, alongRoute.stations]
   );
 
+  const selectedWaypointCoords = useMemo(
+    () => (selectedWaypointStation ? stationLatLng(selectedWaypointStation) : null),
+    [selectedWaypointStation]
+  );
+
+  // Auto-scroll al banner de parada cuando se selecciona una. Si el
+  // banner ya está visible (típico en desktop con todo a la vista), no
+  // forzamos nada. `scroll-margin-top` del CSS compensa el toolbar
+  // sticky para que el banner no quede tapado por la cabecera.
+  const waypointBannerRef = useRef(null);
+  useEffect(() => {
+    if (!selectedWaypointId) return;
+    const el = waypointBannerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewportH = window.innerHeight || document.documentElement.clientHeight;
+    const toolbarH = 72; // toolbar sticky de la página
+    const fullyVisible = rect.top >= toolbarH && rect.bottom <= viewportH;
+    if (!fullyVisible) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedWaypointId]);
+
   // Marcas disponibles (chips). Solo las que aparecen al menos una vez,
   // ordenadas según KNOWN_BRANDS para mantener un display estable.
   const availableBrands = useMemo(() => {
@@ -755,27 +778,44 @@ const RoutePlanner = () => {
               </span>
               <span className="rutestats__lbl">en coche</span>
             </div>
-            <div className="rutestats__item">
-              <span className="rutestats__num">{priceStats.count}</span>
-              <span className="rutestats__lbl">
-                {priceStats.count === 1 ? "gasolinera" : "gasolineras"} con
-                precio
-              </span>
-            </div>
-            {priceStats.savingsEur !== null && priceStats.savingsEur > 0.5 && (
-              <div className="rutestats__item rutestats__item--savings">
-                <span className="rutestats__num">
-                  {priceStats.savingsEur.toFixed(2).replace(".", ",")} €
-                </span>
-                <span className="rutestats__lbl">
-                  ahorro máx. por {REFERENCE_LITERS} L
-                </span>
+            {/* Mientras cargan las estaciones, evitamos mostrar "0
+                gasolineras" — sería un dato falso (todavía no sabemos
+                cuántas hay). Mostramos un skeleton con el mismo layout
+                para no saltar el banner cuando llegue el dato. */}
+            {!allStations || loadingStations ? (
+              <div className="rutestats__item rutestats__item--loading">
+                <span
+                  className="rutestats__num rutestats__num--skeleton"
+                  aria-hidden="true"
+                />
+                <span className="rutestats__lbl">buscando gasolineras…</span>
               </div>
+            ) : (
+              <>
+                <div className="rutestats__item">
+                  <span className="rutestats__num">{priceStats.count}</span>
+                  <span className="rutestats__lbl">
+                    {priceStats.count === 1 ? "gasolinera" : "gasolineras"} con
+                    precio
+                  </span>
+                </div>
+                {priceStats.savingsEur !== null && priceStats.savingsEur > 0.5 && (
+                  <div className="rutestats__item rutestats__item--savings">
+                    <span className="rutestats__num">
+                      {priceStats.savingsEur.toFixed(2).replace(".", ",")} €
+                    </span>
+                    <span className="rutestats__lbl">
+                      ahorro máx. por {REFERENCE_LITERS} L
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </section>
 
           {selectedWaypointStation && (
             <WaypointBanner
+              ref={waypointBannerRef}
               station={selectedWaypointStation}
               origin={origin}
               destination={destination}
@@ -965,6 +1005,9 @@ const RoutePlanner = () => {
                   stations={visibleStations}
                   selectedFuel={selectedFuel}
                   selectedWaypointId={selectedWaypointId}
+                  selectedWaypointCoords={
+                    routeWithStop ? selectedWaypointCoords : null
+                  }
                   onSelectWaypoint={(id) =>
                     setSelectedWaypointId((prev) => (prev === id ? null : id))
                   }
@@ -1026,8 +1069,11 @@ const RoutePlanner = () => {
 };
 
 // FormField — input de origen o destino. Encapsula el LocationSearch +
-// chip A/B + indicador "Localizando…" en su propio bloque para que el
-// chip nunca solape el input ni el panel de sugerencias.
+// chip A/B en columnas reales (sin posicionamiento absoluto) y, cuando
+// el usuario pide "Mi ubicación", sustituye el input por un bloque
+// prominente "Pidiendo permiso de ubicación…" con spinner. Sin esto,
+// el feedback se reduce a un texto pequeño y el usuario cree que no
+// pasa nada mientras el browser espera al permiso.
 function FormField({
   variant,
   point,
@@ -1048,30 +1094,57 @@ function FormField({
         {letter}
       </span>
       <div className="ruteform__input">
-        <LocationSearch
-          // LocationSearch inicializa su input desde initialValue solo en
-          // el primer render. Cambiamos el key cuando cambia el punto
-          // (swap, "Mi ubicación", URL preset) para forzar re-mount con
-          // el nuevo valor. Mientras el usuario teclea, las coords no
-          // cambian todavía y el key se mantiene.
-          key={`${keyBase}-${point ? `${point.lat},${point.lng}` : "empty"}`}
-          placeholder={placeholder}
-          initialValue={point?.label || ""}
-          initialPoint={point}
-          onSelectLocation={(p) => setPoint(p)}
-          onUseMyLocation={onUseMyLocation}
-          busy={busy}
-        />
-        {busy && (
-          <p className="ruteform__status" role="status" aria-live="polite">
-            Localizando tu ubicación…
-          </p>
+        {busy ? (
+          <GeoLoadingBlock />
+        ) : (
+          <LocationSearch
+            // LocationSearch inicializa su input desde initialValue solo
+            // en el primer render. Cambiamos el key cuando cambia el
+            // punto (swap, "Mi ubicación", URL preset) para forzar
+            // re-mount con el nuevo valor. Mientras el usuario teclea,
+            // las coords no cambian todavía y el key se mantiene.
+            key={`${keyBase}-${point ? `${point.lat},${point.lng}` : "empty"}`}
+            placeholder={placeholder}
+            initialValue={point?.label || ""}
+            initialPoint={point}
+            onSelectLocation={(p) => setPoint(p)}
+            onUseMyLocation={onUseMyLocation}
+          />
         )}
         {!busy && error && (
-          <p className="ruteform__status ruteform__status--error" role="alert">
-            {error}
-          </p>
+          <div className="ruteform__geoerror" role="alert">
+            <span className="ruteform__geoerror-text">{error}</span>
+            <button
+              type="button"
+              className="ruteform__geoerror-retry"
+              onClick={onUseMyLocation}
+            >
+              Reintentar
+            </button>
+          </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Bloque grande "Pidiendo permiso de ubicación…". Tiene la altura
+// mínima del LocationSearch para que sustituirlo no provoque saltos de
+// layout. Mensaje explícito: el usuario sabe que la app está esperando
+// al browser, no que se ha quedado colgada.
+function GeoLoadingBlock() {
+  return (
+    <div
+      className="ruteform__geoloading"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="ruteform__spinner" aria-hidden="true" />
+      <div className="ruteform__geoloading-text">
+        <strong>Pidiendo tu ubicación…</strong>
+        <span>
+          Si te aparece un aviso del navegador, pulsa <em>Permitir</em>.
+        </span>
       </div>
     </div>
   );
@@ -1121,18 +1194,15 @@ function CollapsedRoute({ origin, destination, onEdit }) {
   );
 }
 
-// WaypointBanner — banner sticky cuando hay parada elegida. Muestra el
-// coste real del desvío y el botón primario "Abrir en Google Maps con
-// esta parada".
-function WaypointBanner({
-  station,
-  origin,
-  destination,
-  delta,
-  loading,
-  warning,
-  onClear,
-}) {
+// WaypointBanner — banner cuando hay parada elegida. Muestra el coste
+// real del desvío y el botón primario "Abrir en Google Maps con esta
+// parada". Aceptamos ref para que el padre pueda hacer scrollIntoView
+// al activarse (útil cuando el usuario picks una estación desde el
+// mapa y el banner queda fuera de viewport en móvil).
+const WaypointBanner = forwardRef(function WaypointBanner(
+  { station, origin, destination, delta, loading, warning, onClear },
+  ref
+) {
   const coords = stationLatLng(station);
   const mapsHref = coords
     ? buildRouteWithStopHref({
@@ -1162,7 +1232,7 @@ function WaypointBanner({
   }
 
   return (
-    <section className="waypointbar" aria-label="Parada elegida">
+    <section ref={ref} className="waypointbar" aria-label="Parada elegida">
       <div className="waypointbar__main">
         <div className="waypointbar__head">
           <span className="waypointbar__check" aria-hidden="true">
@@ -1203,7 +1273,7 @@ function WaypointBanner({
       </div>
     </section>
   );
-}
+});
 
 function StationList({
   stations,

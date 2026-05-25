@@ -210,3 +210,27 @@ export const formatDistanceMeters = (meters) => {
   if (km >= 100) return `${Math.round(km)} km`;
   return `${km.toFixed(1).replace(".", ",")} km`;
 };
+
+// Encuentra el índice del vértice de `geometry` ([lat,lng][]) más
+// cercano a `point` ({lat, lng}). Lo usamos para partir la polyline de
+// la ruta CON parada en dos tramos visualmente diferenciados:
+// origen→parada (solid) y parada→destino (dashed), al estilo Google
+// Maps. Como nuestra geometría está downsampleada a ~150m, la
+// diferencia entre el vértice más cercano y el punto exacto del
+// waypoint es <75m: imperceptible al zoom típico de la ruta.
+export const findClosestIndex = (geometry, point) => {
+  if (!Array.isArray(geometry) || geometry.length === 0 || !point) return 0;
+  const { lat, lng } = point;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return 0;
+  let bestIdx = 0;
+  let bestM = Infinity;
+  for (let i = 0; i < geometry.length; i++) {
+    const [glat, glng] = geometry[i];
+    const m = haversineMeters(lat, lng, glat, glng);
+    if (m < bestM) {
+      bestM = m;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+};
