@@ -5,7 +5,23 @@ import {
   jsonLdBlog,
 } from "../../lib/seo";
 import { absoluteUrl } from "../../lib/site";
-import { GUIDES, GUIDE_CATEGORIES, getGuidesByCategory } from "../../content/guides";
+import {
+  GUIDES,
+  GUIDE_CATEGORIES,
+  getGuidesByCategory,
+  getGuide,
+} from "../../content/guides";
+
+// Slugs destacados que abren el hub. Se resuelven contra el registro con
+// getGuide(); si alguno desaparece del registro, simplemente se omite (no
+// rompe el render). El orden aquí es el orden de aparición.
+const FEATURED_SLUGS = [
+  "gasolineras-low-cost",
+  "mejor-hora-dia-repostar",
+  "gasolina-95-vs-98",
+  "como-se-forma-precio-gasolina",
+  "me-he-equivocado-combustible",
+];
 
 // Hub estático de guías. No depende de MITECO, así que Next puede
 // pre-renderizar y servir desde edge en milisegundos. Revalidate alto para
@@ -22,6 +38,15 @@ export const metadata = buildMetadata({
 export default function GuiasIndexPage() {
   const path = "/guias";
   const url = absoluteUrl(path);
+
+  // Resolvemos las destacadas y las categorías no vacías una sola vez. Las
+  // categorías se mapean DINÁMICAMENTE desde GUIDE_CATEGORIES: añadir una
+  // categoría nueva al registro la hace aparecer aquí sin tocar la página.
+  const featured = FEATURED_SLUGS.map(getGuide).filter(Boolean);
+  const sections = GUIDE_CATEGORIES.map((cat) => ({
+    cat,
+    guides: getGuidesByCategory(cat.id),
+  })).filter((s) => s.guides.length > 0);
 
   const breadcrumbJsonLd = jsonLdBreadcrumb([
     { name: "Inicio", url: "/" },
@@ -93,9 +118,48 @@ export default function GuiasIndexPage() {
         </p>
       </header>
 
-      {GUIDE_CATEGORIES.map((cat) => {
-        const guides = getGuidesByCategory(cat.id);
-        if (!guides.length) return null;
+      {featured.length > 0 && (
+        <section className="guides__featured" aria-labelledby="guides-featured">
+          <p id="guides-featured" className="guides__featured-title">
+            Para empezar
+          </p>
+          <ul className="guides__featured-list">
+            {featured.map((g) => (
+              <li key={g.slug} className="guides__featured-item">
+                <Link
+                  href={`/guias/${g.slug}`}
+                  className="guides__featured-link"
+                >
+                  <span className="guides__featured-name">{g.title}</span>
+                  <span className="guides__featured-meta">
+                    {g.readingMinutes} min
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {sections.length > 1 && (
+        <nav className="guides__nav" aria-label="Categorías de guías">
+          <ul className="guides__nav-list">
+            {sections.map(({ cat, guides }) => (
+              <li key={cat.id} className="guides__nav-item">
+                <a href={`#cat-${cat.id}`} className="guides__nav-link">
+                  {cat.name}
+                  <span className="guides__nav-count" aria-hidden="true">
+                    {" "}
+                    ({guides.length})
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {sections.map(({ cat, guides }) => {
         return (
           <section
             key={cat.id}
@@ -104,6 +168,10 @@ export default function GuiasIndexPage() {
           >
             <h2 id={`cat-${cat.id}`} className="guides__cat-title">
               {cat.name}
+              <span className="guides__cat-count">
+                {" "}
+                · {guides.length} {guides.length === 1 ? "guía" : "guías"}
+              </span>
             </h2>
             <p className="guides__cat-desc">{cat.description}</p>
             <ul className="guides__grid">

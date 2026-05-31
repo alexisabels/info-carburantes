@@ -19,6 +19,34 @@ import etiquetaDgtCombustible from "./etiqueta-dgt-combustible";
 import repostarPortugalFranciaAndorra from "./repostar-portugal-francia-andorra";
 import gasolineras24Horas from "./gasolineras-24-horas";
 import cocheDieselOGasolina from "./coche-diesel-o-gasolina";
+// Ampliación 2026: 27 guías nuevas en 6 categorías.
+import gncGasNaturalVehicular from "./gnc-gas-natural-vehicular";
+import cocheHidrogenoEspana from "./coche-hidrogeno-espana";
+import aditivosCombustibleSirven from "./aditivos-combustible-sirven";
+import hvoCombustibleRenovable from "./hvo-combustible-renovable";
+import cuantoSeAhorraComparandoGasolineras from "./cuanto-se-ahorra-comparando-gasolineras";
+import llenoOMedioDeposito from "./lleno-o-medio-deposito";
+import tarjetasCombustibleEmpresa from "./tarjetas-combustible-empresa";
+import mereceLaPenaDesviarseRepostar from "./merece-la-pena-desviarse-repostar";
+import gasolinerasSupermercado from "./gasolineras-supermercado";
+import porQueSubeBajaPrecioGasolina from "./por-que-sube-baja-precio-gasolina";
+import impuestosGasolinaEspana from "./impuestos-gasolina-espana";
+import precioCarburantePorComunidad from "./precio-carburante-por-comunidad";
+import margenGasolinerasPorLitro from "./margen-gasolineras-por-litro";
+import historicoPrecioGasolinaEspana from "./historico-precio-gasolina-espana";
+import meHeEquivocadoCombustible from "./me-he-equivocado-combustible";
+import comoLeerPreciosSurtidor from "./como-leer-precios-surtidor";
+import gasolinerasAutomaticasComoFuncionan from "./gasolineras-automaticas-como-funcionan";
+import repostarCorrectamentePasos from "./repostar-correctamente-pasos";
+import pagarGasolinaMovilApp from "./pagar-gasolina-movil-app";
+import presionNeumaticosConsumo from "./presion-neumaticos-consumo";
+import aireAcondicionadoConsumo from "./aire-acondicionado-consumo";
+import velocidadConsumoAutovia from "./velocidad-consumo-autovia";
+import ralentiArranqueFrioConsumo from "./ralenti-arranque-frio-consumo";
+import mantenimientoCocheConsumo from "./mantenimiento-coche-consumo";
+import ahorrarCombustibleViajeLargo from "./ahorrar-combustible-viaje-largo";
+import repostarPuebloOCiudad from "./repostar-pueblo-o-ciudad";
+import planificarRepostajesRuta from "./planificar-repostajes-ruta";
 
 // Categorías editoriales: agrupan guías por intención de búsqueda. El orden
 // aquí condiciona cómo se renderizan en el hub /guias.
@@ -47,6 +75,18 @@ export const GUIDE_CATEGORIES = [
     description:
       "Encontrar la gasolinera más barata, abierta 24 h, etiquetas DGT, decisiones de compra.",
   },
+  {
+    id: "conduccion",
+    name: "Conducción y consumo",
+    description:
+      "Hábitos al volante y mantenimiento que reducen de verdad lo que gastas en combustible.",
+  },
+  {
+    id: "viajes",
+    name: "Viajes y rutas",
+    description:
+      "Dónde y cómo repostar cuando sales de ruta o viajas por España.",
+  },
 ];
 
 // Lista completa ordenada. La primera entrada es la "destacada" del hub.
@@ -67,6 +107,40 @@ export const GUIDES = [
   gasolineras24Horas,
   queEsElAdblue,
   glpAutogasEspana,
+  // ── Ampliación 2026 ──
+  // Tipos de combustible
+  gncGasNaturalVehicular,
+  cocheHidrogenoEspana,
+  aditivosCombustibleSirven,
+  hvoCombustibleRenovable,
+  // Ahorrar al repostar
+  cuantoSeAhorraComparandoGasolineras,
+  llenoOMedioDeposito,
+  tarjetasCombustibleEmpresa,
+  mereceLaPenaDesviarseRepostar,
+  gasolinerasSupermercado,
+  // Mercado y precios
+  porQueSubeBajaPrecioGasolina,
+  impuestosGasolinaEspana,
+  precioCarburantePorComunidad,
+  margenGasolinerasPorLitro,
+  historicoPrecioGasolinaEspana,
+  // Guías prácticas
+  meHeEquivocadoCombustible,
+  comoLeerPreciosSurtidor,
+  gasolinerasAutomaticasComoFuncionan,
+  repostarCorrectamentePasos,
+  pagarGasolinaMovilApp,
+  // Conducción y consumo
+  presionNeumaticosConsumo,
+  aireAcondicionadoConsumo,
+  velocidadConsumoAutovia,
+  ralentiArranqueFrioConsumo,
+  mantenimientoCocheConsumo,
+  // Viajes y rutas
+  ahorrarCombustibleViajeLargo,
+  repostarPuebloOCiudad,
+  planificarRepostajesRuta,
 ];
 
 const BY_SLUG = new Map(GUIDES.map((g) => [g.slug, g]));

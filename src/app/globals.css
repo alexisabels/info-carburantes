@@ -2179,11 +2179,127 @@ a:focus-visible,
   max-width: 60ch;
 }
 
+/* Destacadas: lista editorial con hairlines bajo la cabecera. Mismo
+   lenguaje que las listas por categoría, pero con el tiempo de lectura
+   alineado a la derecha para que se lea como un índice de portada.
+   Sin tarjetas, sin color: solo título + meta gris. */
+.guides__featured {
+  margin: 36px 0 0;
+}
+
+.guides__featured-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.guides__featured-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.guides__featured-item {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.guides__featured-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.guides__featured-name {
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--ink);
+  font-weight: 600;
+  transition: color 120ms ease;
+}
+
+.guides__featured-link:hover .guides__featured-name {
+  color: var(--ink-muted);
+}
+
+.guides__featured-meta {
+  flex: none;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* Navegación por categorías: enlaces de texto en línea separados por
+   "·" (al estilo de InternalLinks). Sin pills, sin fondo — solo
+   anclas grises con subrayado al hover. */
+.guides__nav {
+  margin: 28px 0 0;
+}
+
+.guides__nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--ink-muted);
+}
+
+.guides__nav-item {
+  display: inline;
+  margin: 0;
+}
+
+.guides__nav-item:not(:last-child)::after {
+  content: " · ";
+  color: var(--ink-faint);
+}
+
+.guides__nav-link {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 120ms ease, color 120ms ease;
+}
+
+.guides__nav-link:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+.guides__nav-count {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
 /* Cabecera de cada categoría en el hub. Mantenemos el "small caps"
    gris del resto de la app (mismo treatment que .sitemap__sec-title)
    para que la página se sienta parte de la familia. */
 .guides__cat {
   margin-top: 48px;
+  scroll-margin-top: 16px;
+}
+
+/* Nº de guías de la categoría, discreto y en línea con el título.
+   Mismo peso visual que el texto del título (uppercase muted) pero sin
+   negrita para que se lea como anotación, no como parte del nombre. */
+.guides__cat-count {
+  font-weight: 400;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
 }
 
 .guides__cat-title {
