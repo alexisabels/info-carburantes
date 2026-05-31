@@ -5,7 +5,26 @@ import {
   jsonLdBlog,
 } from "../../lib/seo";
 import { absoluteUrl } from "../../lib/site";
-import { GUIDES, GUIDE_CATEGORIES, getGuidesByCategory } from "../../content/guides";
+import {
+  GUIDES,
+  GUIDE_CATEGORIES,
+  getGuide,
+} from "../../content/guides";
+import GuidesBrowser from "../../components/Guides/GuidesBrowser";
+
+// Slugs destacados que abren el hub. Se resuelven contra el registro con
+// getGuide(); si alguno desaparece del registro, simplemente se omite (no
+// rompe el render). El orden aquí es el orden de aparición. Los dos pilares
+// abren la lista (guía de tipos de combustible y guía de ahorro).
+const FEATURED_SLUGS = [
+  "tipos-de-combustible-guia-completa",
+  "como-ahorrar-en-combustible-guia",
+  "gasolineras-low-cost",
+  "mejor-hora-dia-repostar",
+  "gasolina-95-vs-98",
+  "como-se-forma-precio-gasolina",
+  "me-he-equivocado-combustible",
+];
 
 // Hub estático de guías. No depende de MITECO, así que Next puede
 // pre-renderizar y servir desde edge en milisegundos. Revalidate alto para
@@ -22,6 +41,27 @@ export const metadata = buildMetadata({
 export default function GuiasIndexPage() {
   const path = "/guias";
   const url = absoluteUrl(path);
+
+  // Resolvemos las destacadas una sola vez. El agrupado por categoría y el
+  // filtrado viven en <GuidesBrowser> (componente cliente), que se renderiza
+  // también en servidor: las secciones y enlaces salen en el HTML inicial.
+
+  const featured = FEATURED_SLUGS.map(getGuide).filter(Boolean);
+
+  // Solo campos serializables hacia el componente cliente (NUNCA el campo
+  // Body, que es una función y no cruza la frontera servidor → cliente).
+  const guideItems = GUIDES.map((g) => ({
+    slug: g.slug,
+    title: g.title,
+    description: g.description,
+    category: g.category,
+    readingMinutes: g.readingMinutes,
+  }));
+  const categories = GUIDE_CATEGORIES.map((c) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+  }));
 
   const breadcrumbJsonLd = jsonLdBreadcrumb([
     { name: "Inicio", url: "/" },
@@ -93,35 +133,30 @@ export default function GuiasIndexPage() {
         </p>
       </header>
 
-      {GUIDE_CATEGORIES.map((cat) => {
-        const guides = getGuidesByCategory(cat.id);
-        if (!guides.length) return null;
-        return (
-          <section
-            key={cat.id}
-            className="guides__cat"
-            aria-labelledby={`cat-${cat.id}`}
-          >
-            <h2 id={`cat-${cat.id}`} className="guides__cat-title">
-              {cat.name}
-            </h2>
-            <p className="guides__cat-desc">{cat.description}</p>
-            <ul className="guides__grid">
-              {guides.map((g) => (
-                <li key={g.slug} className="guides__card">
-                  <Link href={`/guias/${g.slug}`} className="guides__card-link">
-                    <h3 className="guides__card-title">{g.title}</h3>
-                    <p className="guides__card-desc">{g.description}</p>
-                    <span className="guides__card-meta">
-                      {g.readingMinutes} min · Leer guía →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      {featured.length > 0 && (
+        <section className="guides__featured" aria-labelledby="guides-featured">
+          <p id="guides-featured" className="guides__featured-title">
+            Para empezar
+          </p>
+          <ul className="guides__featured-list">
+            {featured.map((g) => (
+              <li key={g.slug} className="guides__featured-item">
+                <Link
+                  href={`/guias/${g.slug}`}
+                  className="guides__featured-link"
+                >
+                  <span className="guides__featured-name">{g.title}</span>
+                  <span className="guides__featured-meta">
+                    {g.readingMinutes} min
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <GuidesBrowser guides={guideItems} categories={categories} />
 
       <aside className="guides__cta-bottom" aria-label="Usar la app">
         <p className="guides__cta-title">¿Necesitas precios reales?</p>

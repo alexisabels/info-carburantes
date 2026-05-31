@@ -14,6 +14,8 @@ import {
   getRelatedGuides,
   categoryName,
 } from "../../../content/guides";
+import ReadingProgress from "../../../components/Guides/ReadingProgress";
+import GuideToc from "../../../components/Guides/GuideToc";
 
 // Las guías son contenido editorial estático (no dependen de MITECO). Las
 // pre-generamos todas en build: 15 páginas se construyen en segundos y se
@@ -95,6 +97,15 @@ export default async function GuidePage({ params }) {
 
   const Body = guide.Body;
 
+  // Fecha legible "Actualizada" — señal de confianza E-E-A-T. Se calcula
+  // aquí (servidor) para que aparezca en el HTML inicial.
+  const updatedIso = guide.dateModified || guide.datePublished;
+  const updatedLabel = new Date(updatedIso).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <main id="main" className="guide">
       <script
@@ -118,7 +129,19 @@ export default async function GuidePage({ params }) {
         />
       )}
 
-      <article className="guide__article">
+      {/* Pieza cliente: barra de progreso de lectura. Mejora progresiva —
+          sin JS no aparece y el artículo se lee igual. */}
+      <ReadingProgress targetId="guide-article" />
+
+      <div className="guide__layout">
+        {/* Pieza cliente: índice "En esta guía". Lee los <h2 id> ya
+            renderizados en servidor; sin JS no se pinta. En ancho es la
+            columna lateral pegajosa; en móvil, bloque colapsable arriba. */}
+        <aside className="guide__aside" aria-label="Índice de la guía">
+          <GuideToc scopeSelector=".guide__body" includeFaqId="guide-faq" />
+        </aside>
+
+        <article id="guide-article" className="guide__article">
         <header className="guide__head">
           <nav className="guide__crumbs" aria-label="Migas">
             <Link href="/">Inicio</Link>
@@ -136,15 +159,8 @@ export default async function GuidePage({ params }) {
             <span aria-hidden="true">·</span>
             <span>{guide.readingMinutes} min de lectura</span>
             <span aria-hidden="true">·</span>
-            <time dateTime={guide.dateModified || guide.datePublished}>
-              Actualizada{" "}
-              {new Date(
-                guide.dateModified || guide.datePublished
-              ).toLocaleDateString("es-ES", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+            <time className="guide__updated" dateTime={updatedIso}>
+              Actualizada el {updatedLabel}
             </time>
           </div>
         </header>
@@ -192,13 +208,35 @@ export default async function GuidePage({ params }) {
           </section>
         )}
 
+        {/* Cierre: CTA final sobrio al buscador / Cerca de mí. Monocromo,
+            sin estridencias — refuerza la acción sin gritar. */}
+        <section className="guide__end" aria-label="Buscar gasolineras">
+          <p className="guide__end-title">
+            Pon en práctica lo que acabas de leer
+          </p>
+          <p className="guide__end-body">
+            Compara precios reales actualizados cada media hora. Busca por
+            municipio o usa «Cerca de mí» para ver las gasolineras más baratas
+            de tu zona.
+          </p>
+          <div className="guide__end-actions">
+            <Link href="/" className="guide__end-btn">
+              Buscar gasolineras <span aria-hidden="true">→</span>
+            </Link>
+            <Link href="/cerca" className="guide__end-link">
+              Cerca de mí
+            </Link>
+          </div>
+        </section>
+
         <footer className="guide__foot">
           <p>
             Volver a <Link href="/guias">todas las guías</Link> o ir al{" "}
             <Link href="/">buscador de gasolineras</Link>.
           </p>
         </footer>
-      </article>
+        </article>
+      </div>
     </main>
   );
 }
