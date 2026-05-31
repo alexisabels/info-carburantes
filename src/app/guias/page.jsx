@@ -8,14 +8,17 @@ import { absoluteUrl } from "../../lib/site";
 import {
   GUIDES,
   GUIDE_CATEGORIES,
-  getGuidesByCategory,
   getGuide,
 } from "../../content/guides";
+import GuidesBrowser from "../../components/Guides/GuidesBrowser";
 
 // Slugs destacados que abren el hub. Se resuelven contra el registro con
 // getGuide(); si alguno desaparece del registro, simplemente se omite (no
-// rompe el render). El orden aquí es el orden de aparición.
+// rompe el render). El orden aquí es el orden de aparición. Los dos pilares
+// abren la lista (guía de tipos de combustible y guía de ahorro).
 const FEATURED_SLUGS = [
+  "tipos-de-combustible-guia-completa",
+  "como-ahorrar-en-combustible-guia",
   "gasolineras-low-cost",
   "mejor-hora-dia-repostar",
   "gasolina-95-vs-98",
@@ -39,14 +42,26 @@ export default function GuiasIndexPage() {
   const path = "/guias";
   const url = absoluteUrl(path);
 
-  // Resolvemos las destacadas y las categorías no vacías una sola vez. Las
-  // categorías se mapean DINÁMICAMENTE desde GUIDE_CATEGORIES: añadir una
-  // categoría nueva al registro la hace aparecer aquí sin tocar la página.
+  // Resolvemos las destacadas una sola vez. El agrupado por categoría y el
+  // filtrado viven en <GuidesBrowser> (componente cliente), que se renderiza
+  // también en servidor: las secciones y enlaces salen en el HTML inicial.
+
   const featured = FEATURED_SLUGS.map(getGuide).filter(Boolean);
-  const sections = GUIDE_CATEGORIES.map((cat) => ({
-    cat,
-    guides: getGuidesByCategory(cat.id),
-  })).filter((s) => s.guides.length > 0);
+
+  // Solo campos serializables hacia el componente cliente (NUNCA el campo
+  // Body, que es una función y no cruza la frontera servidor → cliente).
+  const guideItems = GUIDES.map((g) => ({
+    slug: g.slug,
+    title: g.title,
+    description: g.description,
+    category: g.category,
+    readingMinutes: g.readingMinutes,
+  }));
+  const categories = GUIDE_CATEGORIES.map((c) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+  }));
 
   const breadcrumbJsonLd = jsonLdBreadcrumb([
     { name: "Inicio", url: "/" },
@@ -141,55 +156,7 @@ export default function GuiasIndexPage() {
         </section>
       )}
 
-      {sections.length > 1 && (
-        <nav className="guides__nav" aria-label="Categorías de guías">
-          <ul className="guides__nav-list">
-            {sections.map(({ cat, guides }) => (
-              <li key={cat.id} className="guides__nav-item">
-                <a href={`#cat-${cat.id}`} className="guides__nav-link">
-                  {cat.name}
-                  <span className="guides__nav-count" aria-hidden="true">
-                    {" "}
-                    ({guides.length})
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-
-      {sections.map(({ cat, guides }) => {
-        return (
-          <section
-            key={cat.id}
-            className="guides__cat"
-            aria-labelledby={`cat-${cat.id}`}
-          >
-            <h2 id={`cat-${cat.id}`} className="guides__cat-title">
-              {cat.name}
-              <span className="guides__cat-count">
-                {" "}
-                · {guides.length} {guides.length === 1 ? "guía" : "guías"}
-              </span>
-            </h2>
-            <p className="guides__cat-desc">{cat.description}</p>
-            <ul className="guides__grid">
-              {guides.map((g) => (
-                <li key={g.slug} className="guides__card">
-                  <Link href={`/guias/${g.slug}`} className="guides__card-link">
-                    <h3 className="guides__card-title">{g.title}</h3>
-                    <p className="guides__card-desc">{g.description}</p>
-                    <span className="guides__card-meta">
-                      {g.readingMinutes} min · Leer guía →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      <GuidesBrowser guides={guideItems} categories={categories} />
 
       <aside className="guides__cta-bottom" aria-label="Usar la app">
         <p className="guides__cta-title">¿Necesitas precios reales?</p>

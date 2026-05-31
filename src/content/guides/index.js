@@ -47,6 +47,33 @@ import mantenimientoCocheConsumo from "./mantenimiento-coche-consumo";
 import ahorrarCombustibleViajeLargo from "./ahorrar-combustible-viaje-largo";
 import repostarPuebloOCiudad from "./repostar-pueblo-o-ciudad";
 import planificarRepostajesRuta from "./planificar-repostajes-ruta";
+// Ampliación 2026 (tanda 2): 2 pilares + 24 spokes, categoría "normativa".
+import tiposDeCombustibleGuiaCompleta from "./tipos-de-combustible-guia-completa";
+import comoAhorrarEnCombustibleGuia from "./como-ahorrar-en-combustible-guia";
+import cetanoOctanajeQueSignifican from "./cetano-octanaje-que-significan";
+import dieselInviernoAnticongelante from "./diesel-invierno-anticongelante";
+import biodieselB7B10Xtl from "./biodiesel-b7-b10-xtl";
+import caducaLaGasolinaCuantoDura from "./caduca-la-gasolina-cuanto-dura";
+import cocheElectricoVsGasolinaCoste from "./coche-electrico-vs-gasolina-coste";
+import etanolCochesAntiguos from "./etanol-coches-antiguos";
+import combustibleInviernoVerano from "./combustible-invierno-verano";
+import gasolineraMasBarataCercaComoEncontrar from "./gasolinera-mas-barata-cerca-como-encontrar";
+import cuantoCuestaLlenarElDeposito from "./cuanto-cuesta-llenar-el-deposito";
+import pagoEfectivoVsTarjetaGasolinera from "./pago-efectivo-vs-tarjeta-gasolinera";
+import calcularCosteCombustibleViaje from "./calcular-coste-combustible-viaje";
+import porQueGasolinaMasCaraAutopista from "./por-que-gasolina-mas-cara-autopista";
+import luzReservaCuantosKmQuedan from "./luz-reserva-cuantos-km-quedan";
+import llenarDepositoDeMasRebosa from "./llenar-deposito-de-mas-rebosa";
+import aguaEnElDepositoSintomas from "./agua-en-el-deposito-sintomas";
+import consumoRealVsWltp from "./consumo-real-vs-wltp";
+import estacionServicioVsUnidadSuministro from "./estacion-servicio-vs-unidad-suministro";
+import distintivoAmbientalDgt from "./distintivo-ambiental-dgt";
+import deducirIvaGasolinaAutonomo from "./deducir-iva-gasolina-autonomo";
+import facturaGasolinaAutonomo from "./factura-gasolina-autonomo";
+import repostarMotorEncendidoMulta from "./repostar-motor-encendido-multa";
+import llevarGasolinaEnBidon from "./llevar-gasolina-en-bidon";
+import reclamarCombustibleMalaCalidad from "./reclamar-combustible-mala-calidad";
+import cooperativaAgricolaRepostarParticular from "./cooperativa-agricola-repostar-particular";
 
 // Categorías editoriales: agrupan guías por intención de búsqueda. El orden
 // aquí condiciona cómo se renderizan en el hub /guias.
@@ -86,6 +113,12 @@ export const GUIDE_CATEGORIES = [
     name: "Viajes y rutas",
     description:
       "Dónde y cómo repostar cuando sales de ruta o viajas por España.",
+  },
+  {
+    id: "normativa",
+    name: "Normativa y trámites",
+    description:
+      "Etiqueta ambiental DGT, IVA y facturas, multas, transporte de combustible y otros trámites del día a día.",
   },
 ];
 
@@ -141,6 +174,36 @@ export const GUIDES = [
   ahorrarCombustibleViajeLargo,
   repostarPuebloOCiudad,
   planificarRepostajesRuta,
+  // ── Ampliación 2026 · tanda 2 ──
+  // Pilares (cornerstone) primero en sus categorías
+  tiposDeCombustibleGuiaCompleta,
+  cetanoOctanajeQueSignifican,
+  dieselInviernoAnticongelante,
+  biodieselB7B10Xtl,
+  caducaLaGasolinaCuantoDura,
+  cocheElectricoVsGasolinaCoste,
+  etanolCochesAntiguos,
+  combustibleInviernoVerano,
+  comoAhorrarEnCombustibleGuia,
+  gasolineraMasBarataCercaComoEncontrar,
+  cuantoCuestaLlenarElDeposito,
+  pagoEfectivoVsTarjetaGasolinera,
+  calcularCosteCombustibleViaje,
+  porQueGasolinaMasCaraAutopista,
+  // Guías prácticas
+  luzReservaCuantosKmQuedan,
+  llenarDepositoDeMasRebosa,
+  aguaEnElDepositoSintomas,
+  consumoRealVsWltp,
+  estacionServicioVsUnidadSuministro,
+  // Normativa y trámites
+  distintivoAmbientalDgt,
+  deducirIvaGasolinaAutonomo,
+  facturaGasolinaAutonomo,
+  repostarMotorEncendidoMulta,
+  llevarGasolinaEnBidon,
+  reclamarCombustibleMalaCalidad,
+  cooperativaAgricolaRepostarParticular,
 ];
 
 const BY_SLUG = new Map(GUIDES.map((g) => [g.slug, g]));
