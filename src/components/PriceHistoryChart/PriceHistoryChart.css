@@ -185,9 +185,100 @@
   margin-left: 2px;
 }
 
+/* Entrada del chart: el <Area> de Recharts ya se dibuja de izquierda a
+   derecha; sumamos un fundido suave del contenedor para que los ejes y el
+   área aparezcan juntos en lugar de "a palo seco". Se re-dispara en cada
+   frame porque el div lleva `key={display.key}` y se remonta. */
+.pricehist__chartwrap--enter {
+  animation: pricehist-fade 520ms ease-out both;
+}
+
+@keyframes pricehist-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Esqueleto de carga: silueta de gráfico con un brillo que la barre. */
+.pricehist__skeleton {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.pricehist__skeleton-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--ink);
+  animation: pricehist-skel-pulse 1.6s ease-in-out infinite;
+}
+
+.pricehist__skeleton-fill {
+  fill: currentColor;
+  opacity: 0.06;
+}
+
+.pricehist__skeleton-stroke {
+  stroke: currentColor;
+  stroke-opacity: 0.18;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Barrido de luz sobre la silueta. */
+.pricehist__shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: pricehist-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes pricehist-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pricehist-skel-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pricehist__pill,
   .pricehist__fuel {
     transition: none;
+  }
+
+  /* Nada de dibujado/fundido/brillo: el esqueleto queda como silueta fija. */
+  .pricehist__chartwrap--enter {
+    animation: none;
+  }
+
+  .pricehist__skeleton-svg {
+    animation: none;
+  }
+
+  .pricehist__shimmer {
+    display: none;
   }
 }

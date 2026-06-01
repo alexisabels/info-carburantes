@@ -75,6 +75,22 @@ const tickConfig = (range) => {
   return { interval: 13, formatter: (d) => FMT_TICK_SHORT.format(d).replace(".", "") };
 };
 
+// matchMedia reactivo para respetar "prefers-reduced-motion". Recharts no lo
+// mira por su cuenta, así que con esto apagamos la animación de dibujado del
+// área cuando el usuario ha pedido reducir el movimiento en el sistema.
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = (e) => setReduced(e.matches);
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
+  return reduced;
+}
+
 const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
   const [range, setRange] = useState(7);
   // Combustible activo. Inicializamos con `defaultFuel` si está entre los
@@ -109,6 +125,8 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
   const [rawByFecha, setRawByFecha] = useState(new Map());
   const [status, setStatus] = useState("idle"); // idle | loading | ready | error
   const [progress, setProgress] = useState({ fetched: 0, total: 0 });
+  // Respeta prefers-reduced-motion para la animación de dibujado del área.
+  const reducedMotion = usePrefersReducedMotion();
 
   const requestIdRef = useRef(0);
   const abortRef = useRef(null);
@@ -211,8 +229,38 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
     });
   }, [range, rawByFecha, activeFuel]);
 
+  // --- Buffer de presentación -------------------------------------------
+  // `serie` se recalcula con CADA lote que entra (rawByFecha cambia de 8 en 8
+  // fechas). Pintar eso directamente era lo que producía las "franjas a palo
+  // seco": el área crecía a tirones, sin transición. En su lugar congelamos
+  // lo que se dibuja y solo lo actualizamos cuando el rango está COMPLETO
+  // (status === "ready"). Cada commit incrementa `key`, lo que remonta el
+  // chart y reproduce su animación de dibujado una sola vez con el dataset
+  // entero, en vez de redibujarse a trompicones en cada lote.
+  const stationId = `${idMunicipio}|${idEstacion}`;
+  const [display, setDisplay] = useState({
+    serie: [],
+    range,
+    key: 0,
+    station: "",
+  });
+  useEffect(() => {
+    if (status !== "ready") return;
+    setDisplay((prev) => ({
+      serie,
+      range,
+      station: stationId,
+      key: prev.station === stationId ? prev.key + 1 : 1,
+    }));
+  }, [status, serie, range, stationId]);
+
+  // Mientras no haya un frame completo para esta estación mostramos el
+  // esqueleto (carga en frío o cambio de estación): nunca datos a medias.
+  const showSkeleton = display.key === 0 || display.station !== stationId;
+  const drawSerie = display.serie;
+
   const stats = useMemo(() => {
-    const valores = serie.map((p) => p.precio).filter((v) => v != null);
+    const valores = drawSerie.map((p) => p.precio).filter((v) => v != null);
     if (valores.length === 0) return null;
     let min = valores[0];
     let max = valores[0];
@@ -223,15 +271,15 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
       sum += v;
     }
     return { min, max, avg: sum / valores.length, count: valores.length };
-  }, [serie]);
+  }, [drawSerie]);
 
-  // Punto destacado: último día con precio del rango actual.
+  // Punto destacado: último día con precio del rango dibujado.
   const lastPoint = useMemo(() => {
-    for (let i = serie.length - 1; i >= 0; i--) {
-      if (serie[i].precio != null) return serie[i];
+    for (let i = drawSerie.length - 1; i >= 0; i--) {
+      if (drawSerie[i].precio != null) return drawSerie[i];
     }
     return null;
-  }, [serie]);
+  }, [drawSerie]);
 
   // Dominio Y con un 12% de aire arriba y abajo para que la línea no toque
   // los bordes. Recharts acepta números fijos o funciones — aquí precomputo
@@ -243,8 +291,8 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
     return [stats.min - pad, stats.max + pad];
   }, [stats]);
 
-  const tick = useMemo(() => tickConfig(range), [range]);
-  const noData = status === "ready" && !stats;
+  const tick = useMemo(() => tickConfig(display.range), [display.range]);
+  const noData = !showSkeleton && status === "ready" && !stats;
   const showFuelPicker = Array.isArray(fuels) && fuels.length > 1;
   // Sin picker (estación con un solo carburante) el título lo nombra; con
   // picker redunda con el chip activo, así que generalizamos.
@@ -295,12 +343,17 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
         <p className="pricehist__empty">
           Sin histórico disponible para este combustible.
         </p>
+      ) : showSkeleton ? (
+        <ChartSkeleton />
       ) : (
         <>
-          <div className="pricehist__chartwrap">
+          <div
+            key={display.key}
+            className="pricehist__chartwrap pricehist__chartwrap--enter"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={serie}
+                data={drawSerie}
                 margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
               >
                 <defs>
@@ -365,10 +418,10 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
                   // los stats parecerían "mentir" al usuario.
                   dot={(props) => {
                     const { cx, cy, index } = props;
-                    const point = serie[index];
+                    const point = drawSerie[index];
                     if (!point || point.precio == null) return null;
-                    const prev = serie[index - 1]?.precio;
-                    const next = serie[index + 1]?.precio;
+                    const prev = drawSerie[index - 1]?.precio;
+                    const next = drawSerie[index + 1]?.precio;
                     if (prev != null || next != null) return null;
                     return (
                       <circle
@@ -389,7 +442,14 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
                     strokeWidth: 2,
                   }}
                   connectNulls={false}
-                  isAnimationActive={false}
+                  // El área se dibuja sola (barrido de izq. a der.) una vez
+                  // por frame: como `drawSerie` solo cambia con el rango
+                  // completo, no hay re-animaciones a trompicones.
+                  isAnimationActive={!reducedMotion}
+                  animationDuration={reducedMotion ? 0 : 750}
+                  animationEasing="ease-out"
+                  // Los puntos/dots aparecen al terminar el trazo, no antes.
+                  animationBegin={reducedMotion ? 0 : 80}
                 />
                 {lastPoint && (
                   <ReferenceDot
@@ -413,17 +473,20 @@ const PriceHistoryChart = ({ idMunicipio, idEstacion, fuels, defaultFuel }) => {
               <strong>{fmtPrecio(stats.avg)}</strong> €/L
             </p>
           )}
-          {status === "loading" && (
-            <p className="pricehist__loading" role="status" aria-live="polite">
-              Cargando histórico… ({progress.fetched}/{progress.total})
-            </p>
-          )}
-          {status === "error" && (
-            <p className="pricehist__error" role="alert">
-              No se pudo cargar el histórico completo.
-            </p>
-          )}
         </>
+      )}
+      {/* El progreso/errores van a nivel de sección para acompañar tanto al
+          esqueleto (carga en frío) como al chart ya dibujado (rangos largos
+          que siguen completándose). */}
+      {status === "loading" && (
+        <p className="pricehist__loading" role="status" aria-live="polite">
+          Cargando histórico… ({progress.fetched}/{progress.total})
+        </p>
+      )}
+      {status === "error" && (
+        <p className="pricehist__error" role="alert">
+          No se pudo cargar el histórico completo.
+        </p>
       )}
     </section>
   );
@@ -443,6 +506,36 @@ function ChartTooltip({ active, payload }) {
       <div className="pricehist__tip-price">
         <strong>{fmtPrecio(row.precio)}</strong>
         <span> €/L</span>
+      </div>
+    </div>
+  );
+}
+
+// Esqueleto de carga: silueta de un gráfico (área + línea suavizadas) con un
+// brillo que la barre, para que el espacio "respire" mientras llegan los
+// datos en lugar de quedarse vacío o ir poblándose a tirones. El SVG se
+// estira al contenedor (preserveAspectRatio="none") y el trazo se mantiene
+// fino gracias a vector-effect.
+function ChartSkeleton() {
+  return (
+    <div className="pricehist__chartwrap" aria-hidden="true">
+      <div className="pricehist__skeleton">
+        <svg
+          className="pricehist__skeleton-svg"
+          viewBox="0 0 100 40"
+          preserveAspectRatio="none"
+        >
+          <path
+            className="pricehist__skeleton-fill"
+            d="M0,28 C10,24 18,16 30,18 C42,20 50,9 62,12 C74,15 84,7 100,5 L100,40 L0,40 Z"
+          />
+          <path
+            className="pricehist__skeleton-stroke"
+            fill="none"
+            d="M0,28 C10,24 18,16 30,18 C42,20 50,9 62,12 C74,15 84,7 100,5"
+          />
+        </svg>
+        <div className="pricehist__shimmer" />
       </div>
     </div>
   );
