@@ -8,6 +8,11 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Precios de gasolineras en el municipio";
 
+// La tarjeta para compartir no necesita precios al minuto: con regenerarla a
+// diario basta (comparte el data-cache diario de MITECO). Antes heredaba la
+// ventana de 30 min y reescribía ~8000 imágenes constantemente.
+export const revalidate = 86400;
+
 export default async function Image({ params }) {
   const { idMunicipio } = await params;
   const data = await fetchMunicipioCompletoServer(idMunicipio);

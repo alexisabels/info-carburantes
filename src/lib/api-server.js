@@ -62,9 +62,14 @@ export async function fetchMunicipiosPorProvinciaServer(idProvincia) {
 
 export async function fetchMunicipioCompletoServer(idMunicipio) {
   try {
+    // revalidate diario (no 30 min): este fetch alimenta la copia ISR de las
+    // páginas/OG de municipio y gasolinera. En Next, la ruta se regenera al
+    // ritmo del fetch MÁS frecuente, así que dejarlo en 30 min reescribía la
+    // caché ISR cada media hora. La frescura para el usuario la da el fetch de
+    // CLIENTE (utils/api.js), que no pasa por aquí.
     const data = await fetchJson(
       `${BASE_URL}/EstacionesTerrestres/FiltroMunicipio/${encodeURIComponent(idMunicipio)}`,
-      { revalidate: REVALIDATE_HALF_HOUR, tag: `municipio:${idMunicipio}` }
+      { revalidate: REVALIDATE_DAY, tag: `municipio:${idMunicipio}` }
     );
     return data && typeof data === "object"
       ? data

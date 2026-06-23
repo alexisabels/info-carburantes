@@ -5,6 +5,10 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Precios de la gasolinera en Carburantes";
 
+// Tarjeta para compartir: regenerar a diario es de sobra. Antes heredaba la
+// ventana de 30 min y reescribía la imagen de cada estación sin parar.
+export const revalidate = 86400;
+
 function formatearPrecio(raw) {
   if (raw === undefined || raw === null) return null;
   const s = String(raw).trim();
