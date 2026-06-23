@@ -10,7 +10,10 @@ import { absoluteUrl } from "../../../../lib/site";
 import Gasolinera from "../../../../components/StationDetail/Gasolinera";
 
 export const dynamicParams = true;
-export const revalidate = 1800;
+// Copia ISR regenerada 1 vez/día (la ven crawlers y el primer paint). El
+// usuario ve el precio EN VIVO: la ficha refresca contra MITECO al montar en
+// cliente. Antes 30 min → reescrituras ISR masivas con ~12 000 estaciones.
+export const revalidate = 86400;
 
 function formatearPrecio(raw) {
   if (raw === undefined || raw === null) return null;

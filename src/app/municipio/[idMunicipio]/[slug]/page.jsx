@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   fetchMunicipioCompletoServer,
   fetchProvinciasServer,
@@ -110,10 +110,13 @@ export async function generateStaticParams() {
   }
 }
 
-// ISR: revalidate cada 30 min (cota natural de MITECO). dynamicParams=true
-// permite que llegue cualquier idMunicipio (no hace falta pregenerar todos).
+// ISR: la copia cacheada se regenera 1 vez al día. Es la que ven los crawlers
+// y el primer paint; el usuario recibe precios EN VIVO vía el refetch de
+// cliente de MainContent. Antes era 30 min y, con ~8000 municipios + sus
+// imágenes OG, disparaba cientos de miles de escrituras ISR en Vercel.
+// dynamicParams=true permite que llegue cualquier idMunicipio sin pregenerar.
 export const dynamicParams = true;
-export const revalidate = 1800;
+export const revalidate = 86400;
 
 async function getMunicipioContext({ idMunicipio, slug }) {
   const data = await fetchMunicipioCompletoServer(idMunicipio);
@@ -177,6 +180,13 @@ export async function generateMetadata({ params }) {
 export default async function MunicipioListadoPage({ params }) {
   const { idMunicipio, slug } = await params;
   const ctx = await getMunicipioContext({ idMunicipio, slug });
+
+  // Sin datos válidos (id inexistente o MITECO sin estaciones) devolvemos 404
+  // en vez de cachear/indexar una página vacía. De paso evita que un bot
+  // enumerando IDs genere páginas reales.
+  if (!ctx.nombre) {
+    notFound();
+  }
 
   // Si el slug no coincide con el canónico, redirigimos con 308 para
   // que solo exista una URL indexable por municipio.

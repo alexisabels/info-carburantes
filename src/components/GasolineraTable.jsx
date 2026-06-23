@@ -33,6 +33,7 @@ const GasolineraTable = ({
   isNearMeMode,
   sortBy,
   onSort,
+  fechaActualizacion,
 }) => {
   const { isFavorite } = useFavorites();
 
@@ -341,6 +342,18 @@ const GasolineraTable = ({
           );
         })}
       </ul>
+
+      <p
+        style={{
+          marginTop: "1.25rem",
+          fontSize: "0.8rem",
+          opacity: 0.7,
+          textAlign: "center",
+        }}
+      >
+        {fechaActualizacion ? `Actualizado el ${fechaActualizacion}. ` : ""}
+        Precios declarados al MITECO; pueden variar. Confírmalos en el surtidor.
+      </p>
     </section>
   );
 };

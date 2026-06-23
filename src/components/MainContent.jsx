@@ -508,6 +508,44 @@ const MainContent = ({ initialData = null, mode = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, params?.idMunicipio, params?.slug]);
 
+  // Refresco EN VIVO de la ficha de municipio sembrada por SSR. La copia ISR
+  // que sirve el servidor puede tener hasta ~1 día; para que el usuario vea
+  // siempre el precio oficial actual, al montar pedimos a MITECO el dato fresco
+  // en segundo plano y reemplazamos precios + fecha. Es silencioso: no mostramos
+  // skeleton ni vaciamos la tabla, así que si MITECO tarda o falla se conserva
+  // el dato del servidor. Solo corre una vez.
+  const didLiveRefreshRef = useRef(false);
+  useEffect(() => {
+    const seededId = initialData?.municipioSeleccionado?.IDMunicipio;
+    if (!seededId || didLiveRefreshRef.current) return undefined;
+    didLiveRefreshRef.current = true;
+    const idMun = String(seededId);
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchMunicipioCompleto(idMun);
+        if (cancelled || !isMountedRef.current) return;
+        const lista = data?.ListaEESSPrecio || [];
+        if (lista.length === 0) return; // no pisamos datos válidos con vacío
+        setListadoPrecios(lista);
+        setFechaActualizacion(data?.Fecha || null);
+        const first = lista[0] || {};
+        setMunicipioSeleccionado((prev) => ({
+          IDMunicipio: idMun,
+          Municipio: first.Municipio || prev?.Municipio || "",
+          Provincia: first.Provincia || prev?.Provincia || "",
+          IDProvincia: first.IDProvincia || prev?.IDProvincia || "",
+        }));
+      } catch {
+        /* silencioso: conservamos el dato SSR */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Codifica una búsqueda "cerca" como URL ?lat&lng&q. La compartimos para
   // que el destinatario aterrice en EL MISMO punto, no en su GPS. 5 decimales
   // ≈ 1 m: suficiente sin filtrar metadatos GPS.

@@ -180,28 +180,40 @@ function Gasolinera({ idMunicipio, idGasolinera, initialStation = null }) {
     setMapsSheetOpen(true);
   };
 
-  // Si llegamos con initialStation (SSR), no refetcheamos: la API del MITECO
-  // es lenta y los datos ya han sido validados por el servidor.
+  // Carga / refresco de la ficha. Si llega initialStation (SSR) la mostramos al
+  // instante y refrescamos contra MITECO en SEGUNDO PLANO, para que el usuario
+  // vea el precio EN VIVO aunque la copia ISR tenga hasta ~1 día. Ese refresco
+  // es silencioso: sin spinner y sin pisar el dato válido si MITECO falla. Sin
+  // initialStation (navegación en cliente) sí mostramos el spinner clásico.
   useEffect(() => {
-    if (initialStation) return undefined;
     if (!idMunicipio || !idGasolinera) {
-      setError("Parámetros de gasolinera no válidos");
-      setLoading(false);
+      if (!initialStation) {
+        setError("Parámetros de gasolinera no válidos");
+        setLoading(false);
+      }
       return undefined;
     }
 
+    const silent = !!initialStation;
     let cancelled = false;
 
     const fetchData = async () => {
-      setLoading(true);
-      setError("");
+      if (!silent) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const data = await fetchGasolineraPorID(idMunicipio, idGasolinera);
-        if (!cancelled) setGasolinera(data || null);
+        if (cancelled) return;
+        if (data) setGasolinera(data);
+        else if (!silent) setGasolinera(null);
       } catch (err) {
-        if (!cancelled && err.name !== "AbortError") setError(err.message);
+        // En refresco silencioso conservamos el dato SSR ante un fallo de MITECO.
+        if (!cancelled && !silent && err.name !== "AbortError") {
+          setError(err.message);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
     };
 
@@ -805,6 +817,10 @@ function Gasolinera({ idMunicipio, idGasolinera, initialStation = null }) {
         {gasolinera["Toma de datos"] && (
           <p>Última actualización: {gasolinera["Toma de datos"]}</p>
         )}
+        <p>
+          Precios declarados por la estación al MITECO; pueden variar.
+          Confírmalos en el surtidor antes de repostar.
+        </p>
         <p>Datos: Ministerio para la Transición Ecológica (MITECO).</p>
       </footer>
 
