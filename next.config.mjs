@@ -43,6 +43,13 @@ const withPWA = withPWAInit({
 
 const nextConfig = {
   reactStrictMode: true,
+  // Los tiles raster de CARTO exigen API key en la URL (ver utils/tileUrls.js).
+  // En Vercel la variable se llama `API_KEY_CARTO`; como la piden desde el
+  // navegador, la inlinamos en el bundle cliente bajo un nombre NEXT_PUBLIC_.
+  env: {
+    NEXT_PUBLIC_CARTO_API_KEY:
+      process.env.API_KEY_CARTO || process.env.NEXT_PUBLIC_CARTO_API_KEY || "",
+  },
   // Cabeceras de seguridad y caché estática. Las páginas SSR las cachea Next
   // según `revalidate`; aquí solo tuneamos defaults para activos estáticos
   // y para las OG dinámicas (Vercel ya las cachea pero ser explícito ayuda
