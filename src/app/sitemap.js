@@ -12,6 +12,14 @@ import { GUIDES } from "../content/guides";
 // entradas) — los crawlers las descubren siguiendo enlaces internos desde
 // cada municipio. Se regenera cada 24h.
 //
+// IMPORTANTE — no pongas `lastModified: now` en las entradas masivas. Este
+// sitemap se regenera cada 24 h, así que un `now` fresco le anunciaba a los
+// crawlers que las ~8000 URLs de municipio se habían modificado HOY, y con
+// `changeFrequency: "daily"` encima. Resultado: rastreo completo diario de la
+// cola larga y una escritura ISR por URL y día (~8000/día contra las 200 000
+// mensuales del plan). Sin fecha, el crawler usa su propia heurística y
+// espacia las visitas. Las guías sí llevan fecha porque es real y estable.
+//
 // Tamaño esperado: ~52 provincias + ~8000 municipios + 4 estáticas =
 // ~8060 entradas → dentro del límite de 50 000 por sitemap.
 
@@ -81,8 +89,7 @@ export default async function sitemap() {
   for (const b of KNOWN_BRANDS) {
     entries.push({
       url: `${base}/marca/${b.id}`,
-      lastModified: now,
-      changeFrequency: "daily",
+      changeFrequency: "weekly",
       priority: 0.7,
     });
   }
@@ -113,7 +120,6 @@ export default async function sitemap() {
     if (!slug) continue;
     entries.push({
       url: `${base}/provincia/${encodeURIComponent(id)}/${slug}`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.7,
     });
@@ -143,8 +149,7 @@ export default async function sitemap() {
         if (!slug) continue;
         municipioEntries.push({
           url: `${base}/municipio/${encodeURIComponent(id)}/${slug}`,
-          lastModified: now,
-          changeFrequency: "daily",
+          changeFrequency: "weekly",
           priority: 0.65,
         });
       }
